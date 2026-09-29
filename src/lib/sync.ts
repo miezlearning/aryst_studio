@@ -120,7 +120,7 @@ export function generateManifestCSV(
   });
 
   return [
-    `# LUMINA PROOF STUDIO - MANIFEST SELEKSI FOTO`,
+    `# ARYST - MANIFEST SELEKSI FOTO`,
     `# Klien: ${session.clientName || "-"}`,
     `# Kontak: ${session.clientContact || "-"}`,
     `# Project: ${session.projectId || "-"}`,
@@ -139,7 +139,7 @@ export function generateManifestJSON(
   session: ClientSelectionSession
 ): string {
   const data = {
-    studio: "Lumina Proof Studio",
+    studio: "ARYST",
     client: {
       name: session.clientName,
       contact: session.clientContact,

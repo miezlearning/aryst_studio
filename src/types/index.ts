@@ -25,6 +25,9 @@ export interface ClientSelectionSession {
   selectedPhotoIds: string[];
   revisionNotes: Record<string, string>;
   isLocked: boolean;
+  // Lock was applied automatically by the selection deadline
+  // (clears itself when the deadline is extended)
+  autoLocked?: boolean;
   lastModified: number;
 }
 
@@ -58,10 +61,26 @@ export interface ClientProject {
   location?: string; // e.g. "Pantai Melasti & Kintamani, Bali"
   sessionDate?: string;
 
+  // Client selection deadline (epoch ms). null/undefined = no deadline.
+  // When passed, the session auto-locks for the client.
+  selectionDeadline?: number | null;
+
   createdAt: number;
 }
 
 export type ViewMode = "landing" | "client" | "admin";
+
+export interface ShowcaseItem {
+  id: string;
+  name: string;
+  thumbnailUrl: string;
+  previewUrl: string;
+  source: "photo" | "upload";
+}
+
+export interface ShowcaseCandidate extends PhotoMetadata {
+  groupLabel: string;
+}
 
 export interface P2PSelectionPayload {
   type: "SELECTION_UPDATE" | "REQUEST_SYNC" | "INITIAL_SYNC";

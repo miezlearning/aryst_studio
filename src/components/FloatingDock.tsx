@@ -1,6 +1,7 @@
 import React from "react";
 import { useProofingStore } from "@/lib/storage";
 import { CheckCircle2, ChevronRight, Lock, Camera, Filter } from "lucide-react";
+import { DeadlineCountdown } from "./DeadlineCountdown";
 
 export const FloatingDock: React.FC = () => {
   const {
@@ -8,7 +9,12 @@ export const FloatingDock: React.FC = () => {
     activeFilter,
     setActiveFilter,
     setIsSubmissionOpen,
+    clientProjects,
+    activeProjectId,
   } = useProofingStore();
+
+  const activeProject = clientProjects.find((p) => p.id === activeProjectId);
+  const deadline = activeProject?.selectionDeadline;
 
   const selectedCount = session.selectedPhotoIds.length;
   const maxQuota = session.maxQuota || 20;
@@ -60,6 +66,15 @@ export const FloatingDock: React.FC = () => {
               style={{ width: `${percentage}%` }}
             />
           </div>
+
+          {deadline ? (
+            <div className="mt-1.5 flex items-center justify-between gap-2">
+              <DeadlineCountdown variant="inline" deadline={deadline} />
+              <span className="text-[10px] text-zinc-600 hidden sm:inline">
+                Batas pilihan foto
+              </span>
+            </div>
+          ) : null}
         </div>
 
         {/* Action Controls */}

@@ -5,6 +5,9 @@ import { generateClientShareUrl } from "@/lib/sync";
 import { extractFolderId } from "@/lib/googleDrive";
 import { formatDate } from "@/lib/utils";
 import { ClientSelectionInspectorModal } from "./ClientSelectionInspectorModal";
+import { ShowcaseManager } from "./ShowcaseManager";
+import { HeroVideoManager } from "./HeroVideoManager";
+import { AdminSidebar, AdminTab } from "./AdminSidebar";
 import {
   Users,
   Plus,
@@ -36,7 +39,26 @@ import {
   Calendar,
   Target,
   FolderPlus,
+  CalendarClock,
 } from "lucide-react";
+import { DeadlineBadge } from "./DeadlineCountdown";
+
+// datetime-local helpers for the selection deadline field
+const toDeadlineInput = (ms?: number | null): string => {
+  if (!ms) return "";
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const fromDeadlineInput = (value: string): number | null => {
+  if (!value.trim()) return null;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? null : time;
+};
+
+const defaultDeadlineInput = (days = 7): string =>
+  toDeadlineInput(Date.now() + days * 86_400_000);
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -54,7 +76,7 @@ export const AdminDashboard: React.FC = () => {
     setViewMode,
   } = useProofingStore();
 
-  const [activeTab, setActiveTab] = useState<"projects" | "settings" | "gas_guide">("projects");
+  const [activeTab, setActiveTab] = useState<AdminTab>("projects");
   const [viewLayout, setViewLayout] = useState<"by_client" | "table" | "grid">("by_client");
   const [searchQuery, setSearchQuery] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState(globalApiKey);
@@ -78,6 +100,7 @@ export const AdminDashboard: React.FC = () => {
   const [formLocation, setFormLocation] = useState("");
   const [formSessionPurpose, setFormSessionPurpose] = useState("");
   const [formSessionDate, setFormSessionDate] = useState("");
+  const [formDeadline, setFormDeadline] = useState("");
   const [formFolderId, setFormFolderId] = useState("");
   const [formQuota, setFormQuota] = useState(20);
   const [formPassword, setFormPassword] = useState("");
@@ -136,6 +159,7 @@ export const AdminDashboard: React.FC = () => {
     setFormContact("");
     setFormNotes("");
     setFormSections("Persiapan (Suite Hotel), Akad Nikah (Masjid Raya), Resepsi (Grand Ballroom)");
+    setFormDeadline(defaultDeadlineInput(7));
     setIsModalOpen(true);
   };
 
@@ -154,6 +178,7 @@ export const AdminDashboard: React.FC = () => {
     setFormContact(clientContact || "");
     setFormNotes("");
     setFormSections("");
+    setFormDeadline(defaultDeadlineInput(7));
     setIsModalOpen(true);
   };
 
@@ -174,6 +199,7 @@ export const AdminDashboard: React.FC = () => {
     setFormSections(
       proj.sections?.map((s) => (s.location ? `${s.name} (${s.location})` : s.name)).join(", ") || ""
     );
+    setFormDeadline(toDeadlineInput(proj.selectionDeadline));
     setIsModalOpen(true);
   };
 
@@ -217,6 +243,8 @@ export const AdminDashboard: React.FC = () => {
       clientContact: formContact.trim(),
       notes: formNotes.trim(),
       sections: parsedSections.length > 0 ? parsedSections : undefined,
+      selectionDeadline: fromDeadlineInput(formDeadline),
+      webhookUrl: editingProject?.webhookUrl,
       createdAt: editingProject ? editingProject.createdAt : Date.now(),
     };
 
@@ -250,7 +278,7 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const gasScriptCode = `// Google Apps Script (Code.gs)
-// Integrasi otomatis Aryst Lens Studio dengan Google Sheets
+// Integrasi otomatis ARYST dengan Google Sheets
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
@@ -277,13 +305,15 @@ function doPost(e) {
 }`;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in pb-24">
+    <div className="animate-fade-in pb-28 lg:pb-12 lg:pl-[264px]">
+      <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
         <div>
           <div className="flex items-center gap-2 mb-1 text-xs">
             <span className="font-semibold text-amber-400">
-              Studio Admin
+              Admin
             </span>
             <span className="text-zinc-600">•</span>
             {isP2PConnected ? (
@@ -356,45 +386,6 @@ function doPost(e) {
             {clientProjects.find((p) => p.id === activeProjectId)?.clientName || "Belum dipilih"}
           </p>
         </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="flex items-center gap-1.5 mb-6 p-1 bg-zinc-900 rounded-lg border border-zinc-800 w-fit text-xs font-medium">
-        <button
-          onClick={() => setActiveTab("projects")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md transition-colors ${
-            activeTab === "projects"
-              ? "bg-zinc-800 text-white font-semibold"
-              : "text-zinc-400 hover:text-zinc-200"
-          }`}
-        >
-          <Users className="w-3.5 h-3.5 text-amber-400" />
-          <span>Sesi Klien ({clientProjects.length})</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("settings")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md transition-colors ${
-            activeTab === "settings"
-              ? "bg-zinc-800 text-white font-semibold"
-              : "text-zinc-400 hover:text-zinc-200"
-          }`}
-        >
-          <Sliders className="w-3.5 h-3.5 text-zinc-400" />
-          <span>Pengaturan Studio & PIN</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab("gas_guide")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-md transition-colors ${
-            activeTab === "gas_guide"
-              ? "bg-zinc-800 text-white font-semibold"
-              : "text-zinc-400 hover:text-zinc-200"
-          }`}
-        >
-          <Code2 className="w-3.5 h-3.5 text-zinc-400" />
-          <span>Integrasi Google Sheets</span>
-        </button>
       </div>
 
       {/* TAB 1: PROJECTS LIST */}
@@ -538,6 +529,7 @@ function doPost(e) {
                                     Aktif di Preview
                                   </span>
                                 )}
+                                <DeadlineBadge deadline={proj.selectionDeadline} />
                               </div>
 
                               {/* Venue & Purpose (Esensi Sesi) */}
@@ -706,6 +698,7 @@ function doPost(e) {
                             <span className="text-zinc-500 font-mono text-[11px]">
                               ({proj.projectId})
                             </span>
+                            <DeadlineBadge deadline={proj.selectionDeadline} />
                           </div>
                         </td>
 
@@ -883,12 +876,13 @@ function doPost(e) {
                         )}
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center justify-between text-xs text-zinc-400">
-                        <div>
+                      <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center justify-between gap-2 text-xs text-zinc-400">
+                        <div className="flex items-center gap-2">
                           <span>Kuota: </span>
                           <strong className="text-zinc-200">{proj.maxQuota} foto</strong>
+                          <DeadlineBadge deadline={proj.selectionDeadline} />
                         </div>
-                        <span className="text-[11px] text-zinc-500">
+                        <span className="text-[11px] text-zinc-500 shrink-0">
                           {proj.sessionDate || formatDate(proj.createdAt)}
                         </span>
                       </div>
@@ -969,6 +963,14 @@ function doPost(e) {
         </div>
       )}
 
+      {/* TAB: LANDING SHOWCASE */}
+      {activeTab === "showcase" && (
+        <div className="space-y-5">
+          <HeroVideoManager />
+          <ShowcaseManager />
+        </div>
+      )}
+
       {/* TAB 2: STUDIO SETTINGS */}
       {activeTab === "settings" && (
         <div className="max-w-2xl space-y-5">
@@ -976,7 +978,7 @@ function doPost(e) {
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
             <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
               <Lock className="w-4 h-4 text-amber-400" />
-              <span>PIN Master Admin Studio</span>
+              <span>PIN Master Admin</span>
             </h2>
             <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
               PIN ini melindungi akses ke Dashboard Admin agar klien tidak dapat membuka konfigurasi studio Anda.
@@ -1186,6 +1188,45 @@ function doPost(e) {
                 </div>
               </div>
 
+              {/* Batas Waktu Pilihan Foto (Deadline) */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <CalendarClock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Batas Waktu Pilihan Foto</span>
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="datetime-local"
+                    value={formDeadline}
+                    onChange={(e) => setFormDeadline(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  />
+                  <div className="flex flex-wrap gap-1.5">
+                    {[3, 7, 14].map((days) => (
+                      <button
+                        key={days}
+                        type="button"
+                        onClick={() => setFormDeadline(defaultDeadlineInput(days))}
+                        className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-[11px] font-semibold transition-colors"
+                      >
+                        +{days} hari
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setFormDeadline("")}
+                      className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-500 text-[11px] font-medium transition-colors"
+                    >
+                      Tanpa batas
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  Setelah lewat waktu, sesi terkunci otomatis untuk klien (pilihan tetap
+                  tersimpan). Perpanjang tanggal untuk membuka kembali.
+                </p>
+              </div>
+
               {/* Judul Sesi & Tempat / Lokasi */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -1357,6 +1398,7 @@ function doPost(e) {
           onClose={() => setInspectingProject(null)}
         />
       )}
+      </div>
     </div>
   );
 };

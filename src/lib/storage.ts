@@ -1,13 +1,15 @@
 import { create } from "zustand";
-import { get, set } from "idb-keyval";
+import { get, set, del } from "idb-keyval";
 import {
   PhotoMetadata,
   ClientSelectionSession,
   ProofingConfig,
   ClientProject,
   ViewMode,
+  ShowcaseItem,
+  ShowcaseCandidate,
 } from "@/types";
-import { DEMO_PHOTOS, getDemoPhotosForProject, fetchGoogleDriveFolder } from "./googleDrive";
+import { DEMO_PHOTOS, PREWED_PHOTOS, MATERNITY_PHOTOS, ENGAGEMENT_PHOTOS, getDemoPhotosForProject, fetchGoogleDriveFolder } from "./googleDrive";
 import { extractSelectionFromUrl } from "./sync";
 import { hashPassword } from "./utils";
 import {
@@ -22,8 +24,68 @@ const IDB_ACTIVE_PROJECT_KEY = "lumina_active_project_id";
 const IDB_GLOBAL_KEY = "lumina_global_api_key";
 const IDB_ADMIN_PIN_KEY = "lumina_admin_master_pin";
 const IDB_PHOTOS_CACHE_KEY = "lumina_photos_catalog_";
+const IDB_SHOWCASE_KEY = "lumina_showcase_items";
+const IDB_HERO_VIDEO_URL_KEY = "lumina_hero_video_url";
+const IDB_HERO_VIDEO_BLOB_KEY = "lumina_hero_video_blob";
+
+export const MAX_SHOWCASE = 4;
+export const MAX_HERO_VIDEO_BYTES = 30 * 1024 * 1024;
+
+export const DEFAULT_HERO_VIDEO_HD = "https://assets.mixkit.co/videos/5382/5382-720.mp4";
+export const DEFAULT_HERO_VIDEO_SD = "https://assets.mixkit.co/videos/5382/5382-360.mp4";
+export const DEFAULT_HERO_POSTER = "https://assets.mixkit.co/videos/5382/5382-thumb-720-0.jpg";
 
 const DEFAULT_ADMIN_PIN = "studio2026";
+
+// ── Selection deadline helpers ────────────────────────────────
+export const isDeadlinePassed = (project?: ClientProject | null): boolean =>
+  Boolean(project?.selectionDeadline && Date.now() > project.selectionDeadline);
+
+export const formatDeadlineRemaining = (ms: number): string => {
+  if (ms <= 0) return "Berakhir";
+  const totalSec = Math.floor(ms / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const minutes = Math.floor((totalSec % 3600) / 60);
+  const seconds = totalSec % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (days > 0) return `${days} hari ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+};
+
+// Applied lock automatically when the deadline crosses while the app is open
+let deadlineTimer: number | null = null;
+
+// Keeps a project session in sync with its selection deadline:
+// past deadline -> auto-lock, deadline removed/extended -> clear auto-lock
+const reconcileDeadlineLock = async (
+  session: ClientSelectionSession,
+  project: ClientProject,
+  storageKey: string
+): Promise<ClientSelectionSession> => {
+  const expired = isDeadlinePassed(project);
+  if (expired && !session.isLocked) {
+    const next: ClientSelectionSession = {
+      ...session,
+      isLocked: true,
+      autoLocked: true,
+      lastModified: Date.now(),
+    };
+    await set(storageKey, next);
+    return next;
+  }
+  if (!expired && session.autoLocked) {
+    const next: ClientSelectionSession = {
+      ...session,
+      isLocked: false,
+      autoLocked: false,
+      lastModified: Date.now(),
+    };
+    await set(storageKey, next);
+    return next;
+  }
+  return session;
+};
 
 const DEFAULT_PROJECTS: ClientProject[] = [
   // Client 1: Rian & Amanda - Session 1: Prewedding Bali
@@ -48,6 +110,8 @@ const DEFAULT_PROJECTS: ClientProject[] = [
       { id: "sec-pantai", name: "Pantai Melasti (Sunset)", location: "Ungasan, Bali", description: "Golden hour dramatis di tebing karang" },
     ],
     createdAt: Date.now() - 172800000,
+    // Demo: 7-day selection window (2 days already elapsed)
+    selectionDeadline: Date.now() + 432000000,
   },
   // Client 1: Rian & Amanda - Session 2: Wedding Day Jakarta
   {
@@ -166,6 +230,17 @@ interface ProofingState {
   config: ProofingConfig;
   session: ClientSelectionSession;
 
+  // Landing showcase (editable preview photos)
+  showcaseItems: ShowcaseItem[];
+
+  // True once init() hydrated showcase/hero/projects from IndexedDB
+  // (used to hold skeletons instead of flashing default content)
+  isBooted: boolean;
+
+  // Hero background video ("" = default, upload blob takes precedence)
+  heroVideoUrl: string;
+  hasHeroVideoUpload: boolean;
+
   // Actions
   init: () => Promise<void>;
   setViewMode: (view: ViewMode) => void;
@@ -178,7 +253,11 @@ interface ProofingState {
   toggleSelectPhoto: (id: string) => boolean;
   isPhotoSelected: (id: string) => boolean;
   setRevisionNote: (photoId: string, note: string) => void;
-  setLockState: (isLocked: boolean) => void;
+  setLockState: (isLocked: boolean, auto?: boolean) => void;
+  // Effective lock = manual lock OR selection deadline passed
+  isSelectionLocked: () => boolean;
+  // (Re)arm the timer that auto-locks the active session at its deadline
+  scheduleDeadlineLock: () => void;
   updateSessionInfo: (info: Partial<ClientSelectionSession>) => void;
   updateConfig: (newConfig: Partial<ProofingConfig>) => void;
   setActiveFilter: (filter: "all" | "selected" | "unselected") => void;
@@ -197,6 +276,20 @@ interface ProofingState {
   setGlobalApiKey: (key: string) => Promise<void>;
   loadProjectSession: (projectId: string) => Promise<ClientSelectionSession>;
   importClientSelection: (projectId: string, selectedIds: string[], notes: Record<string, string>) => Promise<void>;
+
+  // Showcase actions
+  fetchShowcaseCandidates: () => Promise<ShowcaseCandidate[]>;
+  addShowcasePhoto: (photo: PhotoMetadata) => Promise<boolean>;
+  addShowcaseUpload: (item: ShowcaseItem) => Promise<boolean>;
+  removeShowcaseItem: (id: string) => Promise<void>;
+  moveShowcaseItem: (id: string, direction: -1 | 1) => Promise<void>;
+  resetShowcase: () => Promise<void>;
+
+  // Hero video actions
+  setHeroVideoUrl: (url: string) => Promise<void>;
+  saveHeroVideoUpload: (blob: Blob) => Promise<void>;
+  clearHeroVideo: () => Promise<void>;
+  resolveHeroVideoUrl: () => Promise<string>;
 }
 
 const DEFAULT_CONFIG: ProofingConfig = {
@@ -243,6 +336,10 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
 
   config: DEFAULT_CONFIG,
   session: DEFAULT_SESSION,
+  showcaseItems: [],
+  isBooted: false,
+  heroVideoUrl: "",
+  hasHeroVideoUpload: false,
 
   init: async () => {
     // 1. Read URL query params
@@ -378,9 +475,20 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       await set(projectSessionKey, projectSession);
     }
 
-    // 9. Load photos cache
+    // Auto-lock when the selection deadline has passed (or release it
+    // if the deadline was extended / removed by the photographer)
+    projectSession = await reconcileDeadlineLock(
+      projectSession,
+      targetProject,
+      projectSessionKey
+    );
+
+    // 9. Load photos cache + landing showcase
     const cacheKey = IDB_PHOTOS_CACHE_KEY + targetProject.id;
     const cachedPhotos = await get<PhotoMetadata[]>(cacheKey);
+    const savedShowcase = (await get<ShowcaseItem[]>(IDB_SHOWCASE_KEY)) || [];
+    const savedHeroVideoUrl = (await get<string>(IDB_HERO_VIDEO_URL_KEY)) || "";
+    const savedHeroVideoBlob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
 
     setStore({
       viewMode,
@@ -394,7 +502,14 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       session: projectSession,
       isDemoMode: !targetProject.folderId || !savedApiKey,
       photos: cachedPhotos && cachedPhotos.length > 0 ? cachedPhotos : getDemoPhotosForProject(targetProject.sessionType),
+      showcaseItems: savedShowcase.slice(0, MAX_SHOWCASE),
+      heroVideoUrl: savedHeroVideoUrl,
+      hasHeroVideoUpload: Boolean(savedHeroVideoBlob),
+      isBooted: true,
     });
+
+    // Arm the deadline auto-lock timer for the active session
+    getStore().scheduleDeadlineLock();
 
     // 10. Start P2P depending on view
     if (viewMode === "client") {
@@ -542,7 +657,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     };
 
     const projectSessionKey = `lumina_session_${target.id}`;
-    const projectSession = (await get<ClientSelectionSession>(projectSessionKey)) || {
+    let projectSession = (await get<ClientSelectionSession>(projectSessionKey)) || {
       projectId: target.projectId,
       clientName: target.clientName,
       clientContact: target.clientContact || "",
@@ -552,6 +667,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       isLocked: false,
       lastModified: Date.now(),
     };
+
+    // Sync lock state with the selection deadline of the target session
+    projectSession = await reconcileDeadlineLock(projectSession, target, projectSessionKey);
 
     const cacheKey = IDB_PHOTOS_CACHE_KEY + target.id;
     const cachedPhotos = await get<PhotoMetadata[]>(cacheKey);
@@ -564,6 +682,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       isDemoMode: !target.folderId || !globalApiKey,
       photos: cachedPhotos && cachedPhotos.length > 0 ? cachedPhotos : getDemoPhotosForProject(target.sessionType),
     });
+
+    // Re-arm the deadline auto-lock timer for the newly active session
+    getStore().scheduleDeadlineLock();
 
     // Re-wire P2P for new project
     if (viewMode === "client") {
@@ -639,6 +760,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
         await getStore().loadPhotos(true);
       }
     }
+
+    // Deadline may have been set / extended / removed
+    getStore().scheduleDeadlineLock();
   },
 
   deleteProject: async (projectId: string) => {
@@ -733,6 +857,113 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     }
   },
 
+  fetchShowcaseCandidates: async () => {
+    const { clientProjects, photos } = getStore();
+    const seen = new Map<string, ShowcaseCandidate>();
+    const push = (p: PhotoMetadata, groupLabel: string) => {
+      if (!seen.has(p.id)) seen.set(p.id, { ...p, groupLabel });
+    };
+
+    // All session catalogs (demo)
+    DEMO_PHOTOS.forEach((p) => push(p, "Pernikahan"));
+    PREWED_PHOTOS.forEach((p) => push(p, "Prewedding"));
+    MATERNITY_PHOTOS.forEach((p) => push(p, "Maternity"));
+    ENGAGEMENT_PHOTOS.forEach((p) => push(p, "Lamaran"));
+
+    // Currently loaded catalog (may include Google Drive photos)
+    photos.forEach((p) => push(p, "Sesi Aktif"));
+
+    // Cached Google Drive photos from every project
+    for (const proj of clientProjects) {
+      try {
+        const cached = await get<PhotoMetadata[]>(IDB_PHOTOS_CACHE_KEY + proj.id);
+        cached?.forEach((p) => push(p, `Drive • ${proj.projectId}`));
+      } catch {
+        // Ignore unreadable caches
+      }
+    }
+
+    return [...seen.values()];
+  },
+
+  addShowcasePhoto: async (photo: PhotoMetadata) => {
+    const { showcaseItems } = getStore();
+    if (showcaseItems.length >= MAX_SHOWCASE) return false;
+    if (showcaseItems.some((item) => item.id === photo.id)) return false;
+    const updated: ShowcaseItem[] = [
+      ...showcaseItems,
+      {
+        id: photo.id,
+        name: photo.name,
+        thumbnailUrl: photo.thumbnailUrl,
+        previewUrl: photo.previewUrl,
+        source: "photo",
+      },
+    ];
+    await set(IDB_SHOWCASE_KEY, updated);
+    setStore({ showcaseItems: updated });
+    return true;
+  },
+
+  addShowcaseUpload: async (item: ShowcaseItem) => {
+    const { showcaseItems } = getStore();
+    if (showcaseItems.length >= MAX_SHOWCASE) return false;
+    if (showcaseItems.some((existing) => existing.id === item.id)) return false;
+    const updated: ShowcaseItem[] = [...showcaseItems, { ...item, source: "upload" }];
+    await set(IDB_SHOWCASE_KEY, updated);
+    setStore({ showcaseItems: updated });
+    return true;
+  },
+
+  removeShowcaseItem: async (id: string) => {
+    const updated = getStore().showcaseItems.filter((item) => item.id !== id);
+    await set(IDB_SHOWCASE_KEY, updated);
+    setStore({ showcaseItems: updated });
+  },
+
+  moveShowcaseItem: async (id: string, direction: -1 | 1) => {
+    const items = [...getStore().showcaseItems];
+    const idx = items.findIndex((item) => item.id === id);
+    const target = idx + direction;
+    if (idx < 0 || target < 0 || target >= items.length) return;
+    [items[idx], items[target]] = [items[target], items[idx]];
+    await set(IDB_SHOWCASE_KEY, items);
+    setStore({ showcaseItems: items });
+  },
+
+  resetShowcase: async () => {
+    await set(IDB_SHOWCASE_KEY, []);
+    setStore({ showcaseItems: [] });
+  },
+
+  setHeroVideoUrl: async (url: string) => {
+    const clean = url.trim();
+    await set(IDB_HERO_VIDEO_URL_KEY, clean);
+    setStore({ heroVideoUrl: clean });
+  },
+
+  saveHeroVideoUpload: async (blob: Blob) => {
+    await set(IDB_HERO_VIDEO_BLOB_KEY, blob);
+    setStore({ hasHeroVideoUpload: true });
+  },
+
+  clearHeroVideo: async () => {
+    await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
+    await set(IDB_HERO_VIDEO_URL_KEY, "");
+    setStore({ heroVideoUrl: "", hasHeroVideoUpload: false });
+  },
+
+  resolveHeroVideoUrl: async () => {
+    const { heroVideoUrl } = getStore();
+    try {
+      const blob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY);
+      if (blob && blob.size > 0) return URL.createObjectURL(blob);
+    } catch {
+      // Fall through to URL / default
+    }
+    return heroVideoUrl;
+  },
+
   loadPhotos: async (forceReload = false) => {
     const { config, isOnline, activeProjectId } = getStore();
 
@@ -777,7 +1008,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
 
   toggleSelectPhoto: (id: string) => {
     const { session, activeProjectId } = getStore();
-    if (session.isLocked) return false;
+    if (getStore().isSelectionLocked()) return false;
 
     const isAlreadySelected = session.selectedPhotoIds.includes(id);
     let updated: string[];
@@ -817,6 +1048,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
 
   setRevisionNote: (photoId: string, note: string) => {
     const { session, activeProjectId } = getStore();
+    if (getStore().isSelectionLocked()) return;
     const updatedNotes = { ...session.revisionNotes };
     if (note.trim()) {
       updatedNotes[photoId] = note.trim();
@@ -841,15 +1073,47 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     });
   },
 
-  setLockState: (isLocked: boolean) => {
+  setLockState: (isLocked: boolean, auto = false) => {
     const { session, activeProjectId } = getStore();
     const newSession: ClientSelectionSession = {
       ...session,
       isLocked,
+      autoLocked: isLocked ? auto : false,
       lastModified: Date.now(),
     };
     setStore({ session: newSession });
     set(`lumina_session_${activeProjectId}`, newSession);
+  },
+
+  isSelectionLocked: () => {
+    const { session, clientProjects, activeProjectId } = getStore();
+    if (session.isLocked) return true;
+    const project = clientProjects.find((p) => p.id === activeProjectId);
+    return isDeadlinePassed(project);
+  },
+
+  scheduleDeadlineLock: () => {
+    if (deadlineTimer !== null) {
+      window.clearTimeout(deadlineTimer);
+      deadlineTimer = null;
+    }
+    const { clientProjects, activeProjectId, session } = getStore();
+    const project = clientProjects.find((p) => p.id === activeProjectId);
+    if (!project?.selectionDeadline) return;
+
+    const delay = project.selectionDeadline - Date.now();
+    if (delay <= 0) {
+      if (!session.isLocked) getStore().setLockState(true, true);
+      return;
+    }
+    // Deadline moved into the future: release a previous auto-lock
+    if (session.isLocked && session.autoLocked) getStore().setLockState(false);
+    // setTimeout overflows above ~24.8 days; re-arm from a longer interval
+    const MAX_DELAY = 2_000_000_000;
+    deadlineTimer = window.setTimeout(
+      () => getStore().scheduleDeadlineLock(),
+      Math.min(delay, MAX_DELAY)
+    );
   },
 
   updateSessionInfo: (info: Partial<ClientSelectionSession>) => {

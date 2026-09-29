@@ -11,7 +11,7 @@ export const AdminAuthGate: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!pinInput.trim()) {
-      setError("Silakan masukkan PIN Master Admin Studio.");
+      setError("Silakan masukkan PIN Master Admin.");
       return;
     }
 
@@ -34,7 +34,7 @@ export const AdminAuthGate: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-xl font-bold tracking-tight text-white">
-            Akses Studio Admin
+            Akses Admin
           </h2>
           <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">
             Masukkan PIN Master Admin untuk mengelola sesi klien, kuota, dan tautan kurasi.

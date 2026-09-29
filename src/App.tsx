@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useProofingStore } from "@/lib/storage";
 import { Navbar } from "@/components/Navbar";
+import { BrandMark } from "@/components/BrandMark";
 import { LandingPage } from "@/components/LandingPage";
 import { MasonryGallery } from "@/components/MasonryGallery";
 import { FloatingDock } from "@/components/FloatingDock";
@@ -9,8 +10,9 @@ import { SubmissionModal } from "@/components/SubmissionModal";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminAuthGate } from "@/components/AdminAuthGate";
 import { PasswordGate } from "@/components/PasswordGate";
+import { DeadlineCountdown } from "@/components/DeadlineCountdown";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
-import { Camera, Sliders, Eye, Home, MapPin, Target, Calendar, Sparkles } from "lucide-react";
+import { Sliders, Eye, Home, MapPin, Target, Calendar, Sparkles } from "lucide-react";
 
 export const App: React.FC = () => {
   const {
@@ -128,8 +130,16 @@ export const App: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="text-xs text-zinc-500 font-medium shrink-0 self-start">
-                  Pilihan tersimpan otomatis
+                <div className="shrink-0 self-start w-full sm:w-64 space-y-2">
+                  {currentProject?.selectionDeadline ? (
+                    <DeadlineCountdown
+                      deadline={currentProject.selectionDeadline}
+                      createdAt={currentProject.createdAt}
+                    />
+                  ) : null}
+                  <p className="text-xs text-zinc-500 font-medium text-left sm:text-right">
+                    Pilihan tersimpan otomatis
+                  </p>
                 </div>
               </div>
 
@@ -140,7 +150,7 @@ export const App: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                       <span className="text-xs font-semibold text-zinc-200">
-                        Sesi Foto Lain Anda Bersama Aryst Lens Studio:
+                        Sesi lain Anda:
                       </span>
                     </div>
                     <span className="text-[11px] text-zinc-500">
@@ -204,13 +214,9 @@ export const App: React.FC = () => {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-zinc-900 py-8 px-4 text-center text-xs text-zinc-600 bg-zinc-950 mt-auto">
+      <footer className="border-t border-zinc-900 py-6 px-4 text-xs text-zinc-500 bg-zinc-950 mt-auto">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Camera className="w-4 h-4 text-amber-500/80" />
-            <span className="font-semibold text-zinc-400">Aryst Lens Studio</span>
-            <span>: Client Photo Proofing Solution</span>
-          </div>
+          <BrandMark iconClassName="w-6 h-6" textClassName="text-[13px]" />
 
           <div className="flex items-center gap-4 text-zinc-500">
             <button
@@ -225,19 +231,19 @@ export const App: React.FC = () => {
               <button
                 onClick={() => setViewMode("admin")}
                 className="flex items-center gap-1.5 text-zinc-400 hover:text-amber-400 transition-colors"
-                title="Beralih ke Dashboard Fotografer"
+                title="Dashboard Fotografer"
               >
                 <Sliders className="w-3.5 h-3.5" />
-                <span>Dashboard Admin Studio</span>
+                <span>Dashboard</span>
               </button>
             ) : (
               <button
                 onClick={() => setViewMode("client")}
                 className="flex items-center gap-1.5 text-zinc-400 hover:text-amber-400 transition-colors"
-                title="Beralih ke Tampilan Klien"
+                title="Tampilan Klien"
               >
                 <Eye className="w-3.5 h-3.5" />
-                <span>Lihat Tampilan Klien</span>
+                <span>Tampilan Klien</span>
               </button>
             )}
           </div>

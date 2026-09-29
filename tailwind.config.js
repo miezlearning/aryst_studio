@@ -62,10 +62,15 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.6" },
         },
+        "hero-ripple": {
+          "0%": { transform: "translate(-50%, -50%) scale(0)", opacity: "0.8" },
+          "100%": { transform: "translate(-50%, -50%) scale(1)", opacity: "0" },
+        },
       },
       animation: {
         "fade-in": "fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
         "pulse-subtle": "pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "hero-ripple": "hero-ripple 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
     },
   },

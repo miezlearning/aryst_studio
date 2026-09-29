@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "apple-touch-icon.png", "masked-icon.svg"],
       manifest: {
-        name: "Lumina Proof Studio",
-        short_name: "LuminaProof",
-        description: "Platform Seleksi dan Kurasi Foto Profesional Berbasis Google Drive",
+        name: "ARYST",
+        short_name: "ARYST",
+        description: "Galeri Kurasi Foto Klien ARYST",
         theme_color: "#0a0a0a",
         background_color: "#0a0a0a",
         display: "standalone",
@@ -21,6 +21,12 @@ export default defineConfig({
         start_url: "./",
         scope: "./",
         icons: [
+          {
+            src: "favicon.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any",
+          },
           {
             src: "pwa-192x192.png",
             sizes: "192x192",

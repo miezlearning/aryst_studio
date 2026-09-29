@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useProofingStore } from "@/lib/storage";
+import { BrandMark } from "@/components/BrandMark";
+import { HeroVideo } from "@/components/HeroVideo";
 import {
-  Camera,
   KeyRound,
   ArrowRight,
   Lock,
@@ -13,10 +14,34 @@ export const LandingPage: React.FC = () => {
     setViewMode,
     clientProjects,
     photos,
+    showcaseItems,
+    isBooted,
   } = useProofingStore();
 
   const [sessionCodeInput, setSessionCodeInput] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [now, setNow] = useState(() => new Date());
+
+  // Live clock (WIB) for the floating navbar
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 15000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const timeStr =
+    new Intl.DateTimeFormat("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    })
+      .format(now)
+      .replace(".", ":") + " WIB";
+  const dateStr = new Intl.DateTimeFormat("id-ID", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Jakarta",
+  }).format(now);
 
   const handleSearchSession = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,48 +59,42 @@ export const LandingPage: React.FC = () => {
     }
   };
 
-  // Sample curated showcase previews from DEMO_PHOTOS
-  const previewShowcase = photos.slice(0, 4);
+  // Showcase preview: admin-curated picks, fallback to first photos
+  const previewShowcase =
+    showcaseItems.length > 0
+      ? showcaseItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          thumbnailUrl: item.thumbnailUrl,
+        }))
+      : photos.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-amber-500/20 selection:text-amber-300">
-      {/* Floating Centered Navbar */}
-      <header className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-4xl bg-zinc-900/90 border border-zinc-800 rounded-xl px-4 sm:px-6 h-14 flex items-center justify-between backdrop-blur-md shadow-xl shadow-black/30">
-        <div className="flex items-center gap-3">
-          <div
-            onDoubleClick={() => setViewMode("admin")}
-            className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-amber-400 select-none cursor-default"
-            title="Aryst Lens Studio"
-          >
-            <Camera className="w-4 h-4" />
-          </div>
-          <div>
-            <span className="text-sm font-bold tracking-tight text-white block">
-              Aryst Lens Studio
-            </span>
-            <span className="text-[11px] text-zinc-400 block -mt-0.5">
-              Client Proofing Portal
-            </span>
-          </div>
+      {/* Floating Liquid-Glass Navbar */}
+      <header className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-4xl liquid-glass rounded-2xl px-4 sm:px-5 h-16 flex items-center justify-between">
+        <div onDoubleClick={() => setViewMode("admin")} className="cursor-default" title="ARYST">
+          <BrandMark />
         </div>
 
-        {/* Public Clean Indicator (NO ADMIN BUTTON IN PUBLIC) */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-400 hidden sm:inline font-medium">
-            Kurasi & Seleksi Foto Eksklusif
+        <div className="flex items-center gap-2.5 shrink-0">
+          <span className="text-[11px] font-mono text-zinc-300 tabular-nums">
+            {dateStr} • {timeStr}
           </span>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+        {/* Hero Section with interactive video background */}
+        <section className="relative overflow-hidden">
+          <HeroVideo />
+          <div className="relative z-10 pt-32 sm:pt-36 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight drop-shadow-lg">
             Portal Kurasi & Seleksi Foto Klien
           </h1>
 
-          <p className="mt-4 text-sm sm:text-base text-zinc-400 max-w-xl mx-auto leading-relaxed">
+          <p className="mt-4 text-sm sm:text-base text-zinc-300 max-w-xl mx-auto leading-relaxed drop-shadow">
             Akses galeri pribadi Anda dengan memasukkan kode sesi atau melalui tautan langsung yang dikirimkan oleh fotografer.
           </p>
 
@@ -83,7 +102,7 @@ export const LandingPage: React.FC = () => {
           <div className="mt-8 max-w-lg mx-auto">
             <form
               onSubmit={handleSearchSession}
-              className="p-1.5 rounded-xl bg-zinc-900 border border-zinc-800 shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+              className="p-1.5 rounded-2xl liquid-glass-deep flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
             >
               <div className="relative flex-1">
                 <KeyRound className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -101,10 +120,10 @@ export const LandingPage: React.FC = () => {
 
               <button
                 type="submit"
-                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 shrink-0"
+                className="px-4 py-2 rounded-xl btn-glossy text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 shrink-0"
               >
-                <span>Buka Galeri</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span className="relative z-[2]">Buka Galeri</span>
+                <ArrowRight className="w-3.5 h-3.5 relative z-[2]" />
               </button>
             </form>
 
@@ -115,19 +134,31 @@ export const LandingPage: React.FC = () => {
             )}
 
             {/* Subdued Demo Sesi Helper */}
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-500">
-              <span>Sesi percontohan:</span>
-              {clientProjects.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => openClientByCode(p.projectId)}
-                  className="px-2 py-0.5 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-800/80 font-medium text-[11px] tracking-tight transition-colors inline-flex items-center gap-1"
-                >
-                  {p.password && <Lock className="w-2.5 h-2.5 text-zinc-500" />}
-                  <span>{p.projectId}</span>
-                </button>
-              ))}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-400">
+              {isBooted ? (
+                <>
+                  <span>Sesi percontohan:</span>
+                  {clientProjects.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => openClientByCode(p.projectId)}
+                      className="px-2 py-0.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-zinc-300 hover:text-white border border-white/10 font-medium text-[11px] tracking-tight transition-colors inline-flex items-center gap-1 backdrop-blur-md"
+                    >
+                      {p.password && <Lock className="w-2.5 h-2.5" />}
+                      <span>{p.projectId}</span>
+                    </button>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <span className="skeleton relative inline-block w-24 h-4 rounded-md" />
+                  <span className="skeleton relative inline-block w-28 h-4 rounded-full" />
+                  <span className="skeleton relative inline-block w-24 h-4 rounded-full" />
+                </>
+              )}
             </div>
+
+          </div>
           </div>
         </section>
 
@@ -148,24 +179,30 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {previewShowcase.map((photo) => (
-              <div
-                key={photo.id}
-                className="group relative rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/80 aspect-[4/5]"
-              >
-                <img
-                  src={photo.thumbnailUrl}
-                  alt={photo.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex items-end">
-                  <p className="text-[11px] font-medium text-zinc-300 truncate">
-                    {photo.name}
-                  </p>
-                </div>
-              </div>
-            ))}
+            {!isBooted
+              ? [0, 1, 2, 3].map((i) => (
+                  <div
+                    key={`skeleton-${i}`}
+                    className="skeleton relative rounded-xl aspect-[4/5] shadow-lg shadow-black/40"
+                  />
+                ))
+              : previewShowcase.map((photo) => (
+                  <div
+                    key={photo.id}
+                    className="group relative rounded-xl overflow-hidden bg-zinc-900 border border-white/10 aspect-[4/5] shadow-lg shadow-black/40"
+                  >
+                    <img
+                      src={photo.thumbnailUrl}
+                      alt={photo.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                    {/* Liquid-glass gloss: static top light + hover sweep */}
+                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/[0.14] via-transparent to-transparent opacity-70" />
+                    <div className="absolute inset-0 pointer-events-none rounded-xl ring-1 ring-inset ring-white/15" />
+                    <div className="absolute inset-0 pointer-events-none -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/[0.16] to-transparent" />
+                  </div>
+                ))}
           </div>
 
           {/* Simple Clean Workflow Instructions */}
@@ -195,16 +232,12 @@ export const LandingPage: React.FC = () => {
       {/* Footer */}
       <footer className="border-t border-zinc-900 py-6 px-4 text-xs text-zinc-500 bg-zinc-950">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Camera className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="font-medium text-zinc-300">Aryst Lens Studio</span>
-            <span>• Portal Kurasi Foto Klien</span>
-          </div>
+          <BrandMark iconClassName="w-6 h-6" textClassName="text-[13px]" />
 
           <div className="flex items-center gap-3 text-zinc-500">
-            <span>Privasi Foto Terjaga</span>
+            <span>Privasi Terjaga</span>
             <span>•</span>
-            <span>Aryst Lens Studio &copy; {new Date().getFullYear()}</span>
+            <span>&copy; {new Date().getFullYear()} ARYST</span>
           </div>
         </div>
       </footer>

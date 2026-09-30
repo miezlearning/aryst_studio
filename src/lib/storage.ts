@@ -9,6 +9,7 @@ import {
   ViewMode,
   ShowcaseItem,
   ShowcaseCandidate,
+  GallerySortOrder,
 } from "@/types";
 import { fetchGoogleDriveFolder, extractFolderId } from "./googleDrive";
 import { extractSelectionFromUrl } from "./sync";
@@ -380,6 +381,7 @@ interface ProofingState {
   error: string | null;
   activeFilter: "all" | "selected" | "unselected";
   searchQuery: string;
+  gallerySortOrder: GallerySortOrder;
   lightboxPhotoId: string | null;
   isSubmissionOpen: boolean;
   isStudioOpen: boolean;
@@ -441,6 +443,7 @@ interface ProofingState {
   updateSessionInfo: (info: Partial<ClientSelectionSession>) => void;
   updateConfig: (newConfig: Partial<ProofingConfig>) => void;
   setActiveFilter: (filter: "all" | "selected" | "unselected") => void;
+  setGallerySortOrder: (order: GallerySortOrder) => void;
   setSearchQuery: (query: string) => void;
   setLightboxPhotoId: (id: string | null) => void;
   setIsSubmissionOpen: (open: boolean) => void;
@@ -504,12 +507,26 @@ const DEFAULT_SESSION: ClientSelectionSession = {
   lastModified: Date.now(),
 };
 
+// Natural numeric ordering: "IMG_2.jpg" sorts before "IMG_10.jpg"
+const photoCollator = new Intl.Collator("id", { numeric: true, sensitivity: "base" });
+
+export const sortPhotos = (photos: PhotoMetadata[], order: GallerySortOrder): PhotoMetadata[] => {
+  const list = [...photos];
+  if (order === "date") {
+    list.sort((a, b) => (a.createdAt || "").localeCompare(b.createdAt || ""));
+  } else {
+    list.sort((a, b) => photoCollator.compare(a.name, b.name));
+  }
+  return list;
+};
+
 export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   photos: [],
   isLoading: false,
   error: null,
   activeFilter: "all",
   searchQuery: "",
+  gallerySortOrder: localStorage.getItem("lumina_gallery_sort") === "date" ? "date" : "name",
   lightboxPhotoId: null,
   isSubmissionOpen: false,
   isStudioOpen: false,
@@ -1486,7 +1503,11 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     if (!isOnline && !forceReload) {
       const cached = await get<PhotoMetadata[]>(cacheKey);
       if (cached && cached.length > 0) {
-        setStore({ photos: cached, isLoading: false, isDemoMode: false });
+        setStore({
+          photos: sortPhotos(cached, getStore().gallerySortOrder),
+          isLoading: false,
+          isDemoMode: false,
+        });
         return;
       }
     }
@@ -1496,7 +1517,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     try {
       const fetched = await fetchGoogleDriveFolder(config.folderId, config.apiKey);
       setStore({
-        photos: fetched,
+        photos: sortPhotos(fetched, getStore().gallerySortOrder),
         isDemoMode: false,
         isLoading: false,
         error: null,
@@ -1675,6 +1696,13 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   },
 
   setActiveFilter: (filter) => setStore({ activeFilter: filter }),
+  setGallerySortOrder: (order) => {
+    localStorage.setItem("lumina_gallery_sort", order);
+    setStore({
+      gallerySortOrder: order,
+      photos: sortPhotos(getStore().photos, order),
+    });
+  },
   setSearchQuery: (query) => setStore({ searchQuery: query }),
   setLightboxPhotoId: (id) => setStore({ lightboxPhotoId: id }),
   setIsSubmissionOpen: (open) => setStore({ isSubmissionOpen: open }),

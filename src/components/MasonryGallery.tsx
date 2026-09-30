@@ -12,6 +12,7 @@ import {
   Lock,
   MapPin,
   Layers,
+  ArrowUpDown,
 } from "lucide-react";
 
 export const MasonryGallery: React.FC = () => {
@@ -23,10 +24,12 @@ export const MasonryGallery: React.FC = () => {
     config,
     activeFilter,
     searchQuery,
+    gallerySortOrder,
     clientProjects,
     activeProjectId,
     setActiveFilter,
     setSearchQuery,
+    setGallerySortOrder,
     toggleSelectPhoto,
     isPhotoSelected,
     setLightboxPhotoId,
@@ -206,24 +209,39 @@ export const MasonryGallery: React.FC = () => {
           </button>
         </div>
 
-        {/* Search input */}
-        <div className="relative min-w-[240px] md:w-72">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari nomor, nama, atau lokasi foto..."
-            className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/60 transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-300"
+        {/* Sort & Search */}
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <ArrowUpDown className="w-3.5 h-3.5 text-amber-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <select
+              value={gallerySortOrder}
+              onChange={(e) => setGallerySortOrder(e.target.value as "name" | "date")}
+              aria-label="Urutan foto"
+              className="appearance-none pl-8 pr-7 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/60 transition-all cursor-pointer"
             >
-              ✕
-            </button>
-          )}
+              <option value="name">Nomor nama file</option>
+              <option value="date">Tanggal upload</option>
+            </select>
+          </div>
+
+          <div className="relative min-w-[200px] md:w-64">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari nomor, nama, atau lokasi foto..."
+              className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/60 transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-300"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

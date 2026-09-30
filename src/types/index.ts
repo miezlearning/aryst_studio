@@ -8,7 +8,11 @@ export interface PhotoMetadata {
   sizeBytes?: string;
   section?: string;
   location?: string;
+  // Drive createdTime (ISO) - used by the "upload date" gallery order
+  createdAt?: string;
 }
+
+export type GallerySortOrder = "name" | "date";
 
 export interface ProjectSection {
   id: string;
@@ -119,6 +123,7 @@ export interface GoogleDriveApiFile {
   name: string;
   mimeType: string;
   thumbnailLink?: string;
+  createdTime?: string;
   imageMediaMetadata?: {
     width?: number;
     height?: number;

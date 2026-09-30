@@ -68,7 +68,9 @@ export async function fetchGoogleDriveFolder(
   // Query as defined in PRD Page 2, then follow nextPageToken so folders
   // with more than 1000 photos are not silently truncated
   const query = encodeURIComponent(`'${cleanFolderId}' in parents and trashed = false and mimeType contains 'image/'`);
-  const fields = encodeURIComponent("nextPageToken,files(id,name,mimeType,thumbnailLink,imageMediaMetadata,size)");
+  const fields = encodeURIComponent(
+    "nextPageToken,files(id,name,mimeType,thumbnailLink,imageMediaMetadata,size,createdTime)"
+  );
 
   const collected: GoogleDriveApiFile[] = [];
   let pageToken = "";
@@ -77,7 +79,7 @@ export async function fetchGoogleDriveFolder(
   do {
     const url =
       `https://www.googleapis.com/drive/v3/files?q=${query}` +
-      `&fields=${fields}&pageSize=1000&key=${apiKey}` +
+      `&fields=${fields}&orderBy=createdTime&pageSize=1000&key=${apiKey}` +
       (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : "");
 
     const response = await fetch(url, {
@@ -117,6 +119,7 @@ export async function fetchGoogleDriveFolder(
       width,
       height,
       sizeBytes: file.size,
+      createdAt: file.createdTime,
     };
   });
 }

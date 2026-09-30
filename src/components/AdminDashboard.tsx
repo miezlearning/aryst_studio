@@ -4,6 +4,7 @@ import { ClientProject, SessionMode } from "@/types";
 import { generateClientShareUrl } from "@/lib/sync";
 import { extractFolderId } from "@/lib/googleDrive";
 import { formatDate } from "@/lib/utils";
+import { getR2Config, saveR2Config, parseR2Config } from "@/lib/r2Storage";
 import { ClientSelectionInspectorModal } from "./ClientSelectionInspectorModal";
 import { ShowcaseManager } from "./ShowcaseManager";
 import { HeroVideoManager } from "./HeroVideoManager";
@@ -45,6 +46,7 @@ import {
   Info,
   User,
   Cloud,
+  HardDrive,
 } from "lucide-react";
 import { DeadlineBadge } from "./DeadlineCountdown";
 
@@ -181,6 +183,10 @@ export const AdminDashboard: React.FC = () => {
   const [fbInput, setFbInput] = useState("");
   const [fbSaved, setFbSaved] = useState(false);
   const [fbError, setFbError] = useState<string | null>(null);
+  const [r2Input, setR2Input] = useState("");
+  const [r2Saved, setR2Saved] = useState(false);
+  const [r2Error, setR2Error] = useState<string | null>(null);
+  const [r2Active, setR2Active] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Inspector modal state
@@ -509,6 +515,47 @@ export const AdminDashboard: React.FC = () => {
   const handleClearFirebase = async () => {
     setFbError(null);
     await setFirebaseConfigJson("");
+  };
+
+  useEffect(() => {
+    let alive = true;
+    getR2Config().then((cfg) => {
+      if (!alive || !cfg) return;
+      setR2Active(true);
+      setR2Input(JSON.stringify(cfg, null, 2));
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const handleSaveR2 = async () => {
+    const json = r2Input.trim();
+    if (!json) {
+      setR2Error("Isi dulu konfigurasi R2, atau gunakan tombol Lepas.");
+      return;
+    }
+    const parsed = parseR2Config(json);
+    if (!parsed) {
+      setR2Error(
+        "Format harus JSON valid dan memuat accountId, bucket, accessKeyId, secretAccessKey, publicBaseUrl."
+      );
+      return;
+    }
+    setR2Error(null);
+    await saveR2Config(json);
+    setR2Input(JSON.stringify(parsed, null, 2));
+    setR2Active(true);
+    setR2Saved(true);
+    setTimeout(() => setR2Saved(false), 2000);
+  };
+
+  const handleClearR2 = async () => {
+    setR2Error(null);
+    await saveR2Config("");
+    const remaining = await getR2Config();
+    setR2Active(Boolean(remaining));
+    setR2Input(remaining ? JSON.stringify(remaining, null, 2) : "");
   };
 
   const gasScriptCode = `// Google Apps Script (Code.gs)
@@ -1425,6 +1472,65 @@ function doPost(e) {
                     className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs transition-colors"
                   >
                     Putuskan
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
+              <HardDrive className="w-4 h-4 text-amber-400" />
+              <span>Video Hero (Cloudflare R2)</span>
+            </h2>
+            <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+              Bila dikonfigurasi, file video hero diunggah ke bucket Cloudflare R2
+              (gratis tanpa kartu kredit: 10GB penyimpanan, biaya kirim data $0)
+              alih-alih Firebase Storage. Bila tidak, unggahan memakai Firebase
+              Storage dan perlu paket Blaze.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Konfigurasi R2 (JSON)</span>
+                </label>
+                <textarea
+                  rows={5}
+                  value={r2Input}
+                  onChange={(e) => setR2Input(e.target.value)}
+                  placeholder={
+                    '{"accountId": "...", "bucket": "...", "accessKeyId": "...", "secretAccessKey": "...", "publicBaseUrl": "https://pub-xxxx.r2.dev"}'
+                  }
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-y"
+                />
+                <p className="text-[11px] text-zinc-400 mt-1.5 leading-relaxed">
+                  Cloudflare Console -&gt; R2: buat bucket, lalu Manage R2 API
+                  Tokens (izin Read &amp; Write, scope bucket + prefix studio/)
+                  dan salin Public Development URL dari Settings bucket. Anda juga
+                  dapat mengisi VITE_R2_CONFIG di file .env agar berlaku untuk
+                  semua perangkat.
+                </p>
+                {r2Error ? (
+                  <p className="text-[11px] text-red-400 mt-1.5">{r2Error}</p>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSaveR2}
+                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                >
+                  {r2Saved ? <Check className="w-3.5 h-3.5" /> : null}
+                  <span>{r2Saved ? "Tersimpan!" : "Simpan & Aktifkan"}</span>
+                </button>
+                {r2Active ? (
+                  <button
+                    onClick={handleClearR2}
+                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs transition-colors"
+                  >
+                    Lepas
                   </button>
                 ) : null}
               </div>

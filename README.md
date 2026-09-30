@@ -102,19 +102,56 @@ Tanpa Firebase, data studio hanya tersimpan di IndexedDB peramban masing-masing 
 
 - **Pilihan klien** per sesi (koleksi `selections`)
 - **Sesi & daftar klien**, urutan **gambar showcase beranda**, **URL/unggahan video hero**, **API key Google Drive**, dan **PIN admin** (hanya hash SHA-256, bukan PIN aslinya) di dokumen `studio/state` + dokumen per-slot `studioShowcase/*`
-- **Video hero yang di-upload** disimpan di **Firebase Storage** (`studio/hero-video-*`, maks 30 MB)
+- **Video hero yang di-upload** disimpan di **Cloudflare R2** bila dikonfigurasi (gratis tanpa kartu kredit), selain itu di **Firebase Storage** (`studio/hero-video-*`, maks 30 MB)
 
 1. Buat proyek di [Firebase Console](https://console.firebase.google.com) → tambahkan **Web app** → salin blok konfigurasi (pastikan field `storageBucket` ikut terbawa).
 2. Aktifkan **Cloud Firestore** (mode test dulu cukup untuk pemakaian studio).
-3. Aktifkan **Storage**: menu **Storage** → *Get started* → pilih plan (kuota kecil tetap gratis; bila diminta upgrade ke Blaze, ikuti saja, gratis selama di kuota).
-4. Deploy aturan keamanan Firestore dan Storage dari berkas [`firestore.rules`](./firestore.rules) dan [`storage.rules`](./storage.rules):
-   `firebase deploy --only firestore:rules,storage`
-5. Isi konfigurasi salah satu cara:
+3. Deploy aturan keamanan Firestore dari berkas [`firestore.rules`](./firestore.rules): `firebase deploy --only firestore:rules`. Aturan Storage ([`storage.rules`](./storage.rules)) hanya perlu bila memakai Firebase Storage.
+4. Isi konfigurasi salah satu cara:
    - **Semua perangkat**: salin ke `VITE_FIREBASE_CONFIG` di `.env` (satu baris JSON), lalu push - GitHub Actions membangun ulang otomatis.
    - **Perangkat ini saja**: Dashboard Admin → tab **Pengaturan** → tempel JSON di kartu *Sinkronisasi Cloud (Firestore)* → **Simpan & Aktifkan**.
-6. Kartu status yang sama menunjukkan `Tersambung ke cloud` bila sinkronisasi aktif. Tanpa konfigurasi, perilaku lokal seperti sediakala.
+5. Kartu status yang sama menunjukkan `Tersambung ke cloud` bila sinkronisasi aktif. Tanpa konfigurasi, perilaku lokal seperti sediakala.
 
 > Model berbagi tautan: dokumen boleh dibaca/ditulis siapa pun yang tahu lokasinya. PIN admin hanya disimpan sebagai hash; agar API key Drive tidak disalahkan pihak lain, batasi lewat Google Cloud Console (menu *Credentials* → restrictions by HTTP referrer).
+
+</details>
+
+<details>
+<summary><b>Video hero via Cloudflare R2 (gratis tanpa kartu kredit)</b></summary>
+
+Bila Storage Firebase menuntut paket Blaze, gunakan R2 saja: 10GB penyimpanan, biaya kirim data $0, tanpa kartu kredit.
+
+1. Daftar di [Cloudflare](https://dash.cloudflare.com) → menu **R2** → **Create bucket** (mis. `aryst-media`).
+2. **Manage R2 API Tokens** → **Create API token** → permissions *Object Read & Write* → batasi ke bucket tadi dan object path prefix `studio/` → simpan **Access Key ID** dan **Secret Access Key** (secret hanya tampil sekali).
+3. Bucket → **Settings** → **Public Development URL** → *Connect* → salin URL `https://pub-xxxx.r2.dev`.
+4. Bucket → **Settings** → **CORS policy** → tempel JSON berikut → **Add policy**:
+
+   ```json
+   [
+     {
+       "AllowedOrigins": [
+         "https://miezlearning.github.io",
+         "http://localhost:5173",
+         "http://localhost:4173",
+         "http://localhost:5199"
+       ],
+       "AllowedMethods": ["PUT", "GET", "HEAD"],
+       "AllowedHeaders": ["*"],
+       "ExposeHeaders": ["ETag"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+
+5. Isi konfigurasi salah satu cara:
+   - **Semua perangkat**: `VITE_R2_CONFIG` di `.env` (satu baris JSON), lalu push.
+   - **Perangkat ini saja**: Dashboard Admin → tab **Pengaturan** → kartu *Video Hero (Cloudflare R2)* → tempel JSON:
+
+   ```json
+   {"accountId": "ACCOUNT_ID", "bucket": "aryst-media", "accessKeyId": "...", "secretAccessKey": "...", "publicBaseUrl": "https://pub-xxxx.r2.dev"}
+   ```
+
+6. Unggah video hero dari dashboard akan memakai R2 otomatis; URL `r2.dev` yang sama diputar di semua peramban.
 
 </details>
 

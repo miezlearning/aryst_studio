@@ -41,6 +41,7 @@ import {
   type SyncStatus,
   type SyncSource,
 } from "./firestoreSync";
+import { getR2Config, uploadHeroVideoR2 } from "./r2Storage";
 
 const IDB_PROJECTS_KEY = "lumina_client_projects";
 const IDB_CLIENTS_KEY = "lumina_clients";
@@ -1436,8 +1437,10 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   },
 
   saveHeroVideoUpload: async (blob: Blob) => {
-    // Upload to Firebase Storage so every browser plays the same video
-    const url = await uploadHeroVideo(blob);
+    // Cloudflare R2 (free tier) when configured, otherwise Firebase Storage,
+    // so the same file plays in every browser via its public URL
+    const r2 = await getR2Config();
+    const url = r2 ? await uploadHeroVideoR2(blob, r2) : await uploadHeroVideo(blob);
     await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
     await set(IDB_HERO_VIDEO_URL_KEY, url);
     setStore({ heroVideoUrl: url, hasHeroVideoUpload: false });

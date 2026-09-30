@@ -52,6 +52,8 @@ export function getDriveImageFallbackUrl(fileId: string, width: number = 400): s
 /**
  * Fetches files from Google Drive API v3
  * Requires public folder ("Anyone with the link can view") and Google API Key
+ * Reads the folder plus every subfolder (up to depth 3 / 40 folders); photos
+ * inside a subfolder get its name as their gallery section ("Bab").
  */
 export async function fetchGoogleDriveFolder(
   folderId: string,
@@ -67,48 +69,87 @@ export async function fetchGoogleDriveFolder(
 
   // Query as defined in PRD Page 2, then follow nextPageToken so folders
   // with more than 1000 photos are not silently truncated
-  const query = encodeURIComponent(`'${cleanFolderId}' in parents and trashed = false and mimeType contains 'image/'`);
   const fields = encodeURIComponent(
     "nextPageToken,files(id,name,mimeType,thumbnailLink,imageMediaMetadata,size,createdTime)"
   );
 
-  const collected: GoogleDriveApiFile[] = [];
-  let pageToken = "";
-  let guard = 0;
+  const fetchPage = async (rawQuery: string): Promise<GoogleDriveApiFile[]> => {
+    const query = encodeURIComponent(rawQuery);
+    const collected: GoogleDriveApiFile[] = [];
+    let pageToken = "";
+    let guard = 0;
 
-  do {
-    const url =
-      `https://www.googleapis.com/drive/v3/files?q=${query}` +
-      `&fields=${fields}&orderBy=createdTime&pageSize=1000&key=${apiKey}` +
-      (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : "");
+    do {
+      const url =
+        `https://www.googleapis.com/drive/v3/files?q=${query}` +
+        `&fields=${fields}&orderBy=createdTime&pageSize=1000&key=${apiKey}` +
+        (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : "");
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    });
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
 
-    if (!response.ok) {
-      const errorJson = await response.json().catch(() => null);
-      const msg = errorJson?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
-      throw new Error(`Gagal memuat dari Google Drive: ${msg}`);
+      if (!response.ok) {
+        const errorJson = await response.json().catch(() => null);
+        const msg = errorJson?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(`Gagal memuat dari Google Drive: ${msg}`);
+      }
+
+      const data: GoogleDriveApiResponse = await response.json();
+      if (data.files && data.files.length > 0) {
+        collected.push(...data.files);
+      }
+      pageToken = data.nextPageToken || "";
+      guard += 1;
+    } while (pageToken && guard < 20);
+
+    return collected;
+  };
+
+  // 1. Walk the folder tree (root + subfolders) breadth-first
+  type FolderNode = { id: string; name: string; depth: number };
+  const nodes: FolderNode[] = [{ id: cleanFolderId, name: "", depth: 0 }];
+  const queue: FolderNode[] = [...nodes];
+  while (queue.length > 0 && nodes.length < 40) {
+    const node = queue.shift() as FolderNode;
+    if (node.depth >= 3) continue;
+    try {
+      const subfolders = await fetchPage(
+        `'${node.id}' in parents and trashed = false and mimeType = 'application/vnd.google-apps.folder'`
+      );
+      for (const sub of subfolders) {
+        queue.push({ id: sub.id, name: sanitizeText(sub.name), depth: node.depth + 1 });
+      }
+    } catch {
+      // Unreadable subfolder: keep going with the rest of the tree
     }
+  }
 
-    const data: GoogleDriveApiResponse = await response.json();
-    if (data.files && data.files.length > 0) {
-      collected.push(...data.files);
+  // 2. Fetch photos folder by folder
+  const collected: { file: GoogleDriveApiFile; section?: string }[] = [];
+  for (const node of nodes) {
+    try {
+      const files = await fetchPage(
+        `'${node.id}' in parents and trashed = false and mimeType contains 'image/'`
+      );
+      for (const file of files) {
+        collected.push({ file, section: node.name || undefined });
+      }
+    } catch (err) {
+      if (node.depth === 0) throw err; // Root failure must surface
+      // Unreadable subfolder: skip it
     }
-    pageToken = data.nextPageToken || "";
-    guard += 1;
-  } while (pageToken && guard < 20);
+  }
 
   if (collected.length === 0) {
     return [];
   }
 
   // Normalize into PhotoMetadata
-  return collected.map((file) => {
+  return collected.map(({ file, section }) => {
     const width = file.imageMediaMetadata?.width || 1200;
     const height = file.imageMediaMetadata?.height || 800;
     return {
@@ -120,6 +161,7 @@ export async function fetchGoogleDriveFolder(
       height,
       sizeBytes: file.size,
       createdAt: file.createdTime,
+      section,
     };
   });
 }

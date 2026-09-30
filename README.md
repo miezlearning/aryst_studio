@@ -31,13 +31,13 @@ ARYST menghubungkan folder **Google Drive publik** milik studio dengan klien lew
 
 ## Fitur
 
-- **Galeri masonry responsif** — rasio asli terjaga, CLS < 0.05, filter *Semua / Terpilih / Belum Dipilih* dan pencarian nama file instan.
-- **Lightbox inspeksi** — zoom 100%–600% (klik, scroll, tombol `+`/`−`, cubit di ponsel), geser foto saat zoom, klik area gelap untuk menutup, navigasi keyboard, dan catatan revisi per foto.
-- **Seleksi berkuota** — dock mengambang dengan hitungan & progress, kunci seleksi, batas waktu pilihan.
-- **Proteksi galeri klien** — klik kanan, seret foto keluar, serta `Ctrl+S`/`Ctrl+P` diblokir di tampilan klien.
-- **Serah terima praktis** — unduhan **ZIP** foto pilihan oleh admin, manifest CSV/JSON, salin filter Lightroom, dan kirim via WhatsApp.
-- **PWA *offline-first*** — cache Workbox (thumbnail *stale-while-revalidate*, metadata *network-first*), persistensi IndexedDB, indikator jaringan.
-- **Aman tanpa server** — CSP deklaratif, sanitasi DOMPurify, anti-clickjacking, tanpa penyimpanan data klien di pihak ketiga.
+- **Galeri masonry responsif** - rasio asli terjaga, CLS < 0.05, filter *Semua / Terpilih / Belum Dipilih* dan pencarian nama file instan.
+- **Lightbox inspeksi** - zoom 100%-600% (klik, scroll, tombol `+`/`-`, cubit di ponsel), geser foto saat zoom, klik area gelap untuk menutup, navigasi keyboard, dan catatan revisi per foto.
+- **Seleksi berkuota** - dock mengambang dengan hitungan & progress, kunci seleksi, batas waktu pilihan.
+- **Proteksi galeri klien** - klik kanan, seret foto keluar, serta `Ctrl+S`/`Ctrl+P` diblokir di tampilan klien.
+- **Serah terima praktis** - unduhan **ZIP** foto pilihan oleh admin, manifest CSV/JSON, salin filter Lightroom, dan kirim via WhatsApp.
+- **PWA *offline-first*** - cache Workbox (thumbnail *stale-while-revalidate*, metadata *network-first*), persistensi IndexedDB, indikator jaringan.
+- **Aman tanpa server** - CSP deklaratif, sanitasi DOMPurify, anti-clickjacking, tanpa penyimpanan data klien di pihak ketiga.
 
 ## Alur Kerja
 
@@ -91,23 +91,30 @@ https://miezlearning.github.io/aryst_studio/?folder=1AbC...&quota=25&client=Rian
 1. Buat Spreadsheet baru → menu **Extensions → Apps Script**.
 2. Salin kode `Code.gs` dari tab *Integrasi* di dashboard ARYST, tempel, simpan.
 3. **Deploy → New deployment → Web App**, *Execute as*: Me, *Access*: Anyone.
-4. Tempel URL Web App ke kolom Webhook pada sesi klien — pilihan klien masuk otomatis ke Spreadsheet.
+4. Tempel URL Web App ke kolom Webhook pada sesi klien - pilihan klien masuk otomatis ke Spreadsheet.
 
 </details>
 
 <details>
 <summary><b>Sinkronisasi Cloud Firestore (opsional, disarankan)</b></summary>
 
-Tanpa Firebase, pilihan klien hanya tersimpan di IndexedDB peramban masing-masing. Dengan Firestore, pilihan klien tersimpan di cloud sehingga terlihat dari perangkat mana pun dan tautan sesi tetap membawa data terbaru.
+Tanpa Firebase, data studio hanya tersimpan di IndexedDB peramban masing-masing (private browser tampil data default). Dengan sinkronisasi aktif, halaman beranda dan data studio ikut tersimpan di cloud:
 
-1. Buat proyek di [Firebase Console](https://console.firebase.google.com) → tambahkan **Web app** → salin blok konfigurasi.
+- **Pilihan klien** per sesi (koleksi `selections`)
+- **Sesi & daftar klien**, urutan **gambar showcase beranda**, **URL/unggahan video hero**, **API key Google Drive**, dan **PIN admin** (hanya hash SHA-256, bukan PIN aslinya) di dokumen `studio/state` + dokumen per-slot `studioShowcase/*`
+- **Video hero yang di-upload** disimpan di **Firebase Storage** (`studio/hero-video-*`, maks 30 MB)
+
+1. Buat proyek di [Firebase Console](https://console.firebase.google.com) → tambahkan **Web app** → salin blok konfigurasi (pastikan field `storageBucket` ikut terbawa).
 2. Aktifkan **Cloud Firestore** (mode test dulu cukup untuk pemakaian studio).
-3. Deploy aturan keamanan dari berkas [`firestore.rules`](./firestore.rules):
-   `firebase deploy --only firestore:rules`
-4. Isi konfigurasi salah satu cara:
-   - **Semua perangkat**: salin ke `VITE_FIREBASE_CONFIG` di `.env` (satu baris JSON), lalu push — GitHub Actions membangun ulang otomatis.
+3. Aktifkan **Storage**: menu **Storage** → *Get started* → pilih plan (kuota kecil tetap gratis; bila diminta upgrade ke Blaze, ikuti saja, gratis selama di kuota).
+4. Deploy aturan keamanan Firestore dan Storage dari berkas [`firestore.rules`](./firestore.rules) dan [`storage.rules`](./storage.rules):
+   `firebase deploy --only firestore:rules,storage`
+5. Isi konfigurasi salah satu cara:
+   - **Semua perangkat**: salin ke `VITE_FIREBASE_CONFIG` di `.env` (satu baris JSON), lalu push - GitHub Actions membangun ulang otomatis.
    - **Perangkat ini saja**: Dashboard Admin → tab **Pengaturan** → tempel JSON di kartu *Sinkronisasi Cloud (Firestore)* → **Simpan & Aktifkan**.
-5. Kartu status yang sama menunjukkan `Tersambung ke cloud` bila sinkronisasi aktif. Tanpa konfigurasi, perilaku lokal seperti sediakala.
+6. Kartu status yang sama menunjukkan `Tersambung ke cloud` bila sinkronisasi aktif. Tanpa konfigurasi, perilaku lokal seperti sediakala.
+
+> Model berbagi tautan: dokumen boleh dibaca/ditulis siapa pun yang tahu lokasinya. PIN admin hanya disimpan sebagai hash; agar API key Drive tidak disalahkan pihak lain, batasi lewat Google Cloud Console (menu *Credentials* → restrictions by HTTP referrer).
 
 </details>
 

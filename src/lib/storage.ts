@@ -26,6 +26,18 @@ import {
   attachSelectionStream,
   pushSelection,
   fetchRemoteSelection,
+  fetchStudioState,
+  pushStudioState,
+  subscribeStudioState,
+  fetchShowcaseCloud,
+  pushShowcaseCloud,
+  deleteShowcaseCloud,
+  clearShowcaseCloud,
+  subscribeShowcaseCloud,
+  uploadHeroVideo,
+  isSyncConfigured,
+  type StudioState,
+  type ShowcaseCloudItem,
   type SyncStatus,
   type SyncSource,
 } from "./firestoreSync";
@@ -35,10 +47,12 @@ const IDB_CLIENTS_KEY = "lumina_clients";
 const IDB_ACTIVE_PROJECT_KEY = "lumina_active_project_id";
 const IDB_GLOBAL_KEY = "lumina_global_api_key";
 const IDB_ADMIN_PIN_KEY = "lumina_admin_master_pin";
+const IDB_ADMIN_PIN_HASH_KEY = "lumina_admin_pin_hash";
 const IDB_PHOTOS_CACHE_KEY = "lumina_photos_catalog_";
 const IDB_SHOWCASE_KEY = "lumina_showcase_items";
 const IDB_HERO_VIDEO_URL_KEY = "lumina_hero_video_url";
 const IDB_HERO_VIDEO_BLOB_KEY = "lumina_hero_video_blob";
+const IDB_STATE_MODIFIED_KEY = "lumina_studio_state_modified";
 
 export const MAX_SHOWCASE = 4;
 export const MAX_HERO_VIDEO_BYTES = 30 * 1024 * 1024;
@@ -337,6 +351,28 @@ const persistSession = (projectId: string, session: ClientSelectionSession) => {
   pushSelection(projectId, session);
 };
 
+// ── Studio-wide cloud state helpers ──────────────────────────
+// The whole studio (sessions, clients, showcase, landing video,
+// API key, admin PIN hash) lives in one Firestore document so every
+// browser shows the same content.
+
+const looksLikeHash = (value: string): boolean => /^[0-9a-f]{16}$/.test(value);
+
+/** Reads the admin PIN hash from IDB, migrating a legacy plain-text PIN. */
+const resolvePinHash = async (): Promise<string> => {
+  try {
+    const stored = (await get<string>(IDB_ADMIN_PIN_HASH_KEY)) || "";
+    if (stored) return looksLikeHash(stored) ? stored : await hashPassword(stored);
+    const legacyPlain = (await get<string>(IDB_ADMIN_PIN_KEY)) || "";
+    const hash = await hashPassword(legacyPlain || DEFAULT_ADMIN_PIN);
+    await set(IDB_ADMIN_PIN_HASH_KEY, hash);
+    if (legacyPlain) await del(IDB_ADMIN_PIN_KEY).catch(() => undefined);
+    return hash;
+  } catch {
+    return await hashPassword(DEFAULT_ADMIN_PIN);
+  }
+};
+
 interface ProofingState {
   photos: PhotoMetadata[];
   isLoading: boolean;
@@ -352,6 +388,7 @@ interface ProofingState {
   // View & Authentication
   viewMode: ViewMode;
   isAdminAuthenticated: boolean;
+  // SHA-256 hash of the master PIN (never the raw value)
   adminPin: string;
   clientProjects: ClientProject[];
   clients: Client[];
@@ -384,7 +421,7 @@ interface ProofingState {
   // Actions
   init: () => Promise<void>;
   setViewMode: (view: ViewMode) => void;
-  loginAdmin: (pin: string) => boolean;
+  loginAdmin: (pin: string) => Promise<boolean>;
   logoutAdmin: () => void;
   setAdminPin: (newPin: string) => Promise<void>;
   openClientByCode: (codeOrUrl: string) => Promise<boolean>;
@@ -513,30 +550,84 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const webhookParam = params.get("webhook");
     const apiKeyParam = params.get("key");
 
-    // 2. Load Global API Key & Admin Master PIN from IndexedDB
-    const savedApiKey = (await get<string>(IDB_GLOBAL_KEY)) || apiKeyParam || "";
-    const savedAdminPin = (await get<string>(IDB_ADMIN_PIN_KEY)) || DEFAULT_ADMIN_PIN;
+    // 2. Start cloud sync early so the cloud copy can shape the data below
+    const configuredSource = await configureSync({
+      onStatus: (status, message) =>
+        setStore({ syncStatus: status, syncMessage: message || "" }),
+      onRemote: async (pid, remote) => {
+        const st = getStore();
+        const key = `lumina_session_${pid}`;
+        const current =
+          pid === st.activeProjectId
+            ? st.session
+            : (await get<ClientSelectionSession>(key)) || null;
+        if (current && remote.lastModified <= current.lastModified) return;
+        await set(key, remote);
+        if (pid === getStore().activeProjectId) setStore({ session: remote });
+      },
+    });
+    setStore({ syncSource: configuredSource });
+    const cloudState = await fetchStudioState();
+
+    // 3. Local IndexedDB copy
+    let savedApiKey = (await get<string>(IDB_GLOBAL_KEY)) || apiKeyParam || "";
+    let adminPinHash = await resolvePinHash();
     const isAuth = sessionStorage.getItem("lumina_admin_authenticated") === "true";
 
     let savedProjects = (await get<ClientProject[]>(IDB_PROJECTS_KEY)) || [];
+    let savedClients = (await get<Client[]>(IDB_CLIENTS_KEY)) || [];
+    let savedShowcase = (await get<ShowcaseItem[]>(IDB_SHOWCASE_KEY)) || [];
+    let savedHeroVideoUrl = (await get<string>(IDB_HERO_VIDEO_URL_KEY)) || "";
+    const savedHeroVideoBlob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
+
+    // Adopt the cloud copy when it is newer than the local cache, so a
+    // fresh/private browser shows the same studio as the admin's browser
+    let stateModified = (await get<number>(IDB_STATE_MODIFIED_KEY)) || 0;
+    if (cloudState && cloudState.lastModified > stateModified) {
+      savedProjects = cloudState.projects;
+      savedClients = cloudState.clients;
+      savedHeroVideoUrl = cloudState.heroVideoUrl;
+      if (cloudState.globalApiKey) savedApiKey = cloudState.globalApiKey;
+      if (cloudState.adminPin && looksLikeHash(cloudState.adminPin)) {
+        adminPinHash = cloudState.adminPin;
+      }
+      const cloudDocs = await fetchShowcaseCloud();
+      cloudShowcaseDocs = new Map(cloudDocs.map((item) => [item.id, item]));
+      cloudShowcaseOrder = cloudState.showcaseOrder;
+      savedShowcase = cloudState.showcaseOrder
+        .map((id) => cloudShowcaseDocs.get(id))
+        .filter((item): item is ShowcaseCloudItem => Boolean(item))
+        .slice(0, MAX_SHOWCASE)
+        .map(stripCloudShowcase);
+      await set(IDB_PROJECTS_KEY, savedProjects);
+      await set(IDB_CLIENTS_KEY, savedClients);
+      await set(IDB_SHOWCASE_KEY, savedShowcase);
+      await set(IDB_GLOBAL_KEY, savedApiKey);
+      await set(IDB_ADMIN_PIN_HASH_KEY, adminPinHash);
+      await set(IDB_HERO_VIDEO_URL_KEY, savedHeroVideoUrl);
+      stateModified = cloudState.lastModified;
+      await set(IDB_STATE_MODIFIED_KEY, stateModified);
+    }
+
+    let seeded = false;
     if (savedProjects.length === 0) {
       // First run only, so sessions deleted by the admin stay deleted
       savedProjects = [...DEFAULT_PROJECTS];
-      await set(IDB_PROJECTS_KEY, savedProjects);
+      seeded = true;
     }
 
     // Client registry: attach every session to a client record
-    const savedClients = (await get<Client[]>(IDB_CLIENTS_KEY)) || [];
     const ensured = ensureClients(savedProjects, savedClients);
     savedProjects = ensured.projects;
-    if (ensured.clientsChanged || ensured.projectsChanged) {
-      await set(IDB_CLIENTS_KEY, ensured.clients);
-      await set(IDB_PROJECTS_KEY, savedProjects);
-    }
     const clients = ensured.clients;
+    const registryDirty = ensured.clientsChanged || ensured.projectsChanged;
+    if (seeded || registryDirty) await set(IDB_PROJECTS_KEY, savedProjects);
+    if (registryDirty) await set(IDB_CLIENTS_KEY, clients);
 
-    // 3. If URL specifies a shared project link, import or update it
+    // 4. If URL specifies a shared project link, import or update it
+    let importedFromParams = false;
     if (sessionParam || clientParam || projectParam) {
+      importedFromParams = true;
       const matchIndex = savedProjects.findIndex(
         (p) => p.id === sessionParam || p.projectId === projectParam
       );
@@ -648,17 +739,14 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       if (stored) await reconcileDeadlineLock(stored, proj, otherKey);
     }
 
-    // 9. Load photos cache + landing showcase
+    // 9. Photos cache (showcase/hero were merged from cloud above)
     const cacheKey = IDB_PHOTOS_CACHE_KEY + targetProject.id;
     const cachedPhotos = await get<PhotoMetadata[]>(cacheKey);
-    const savedShowcase = (await get<ShowcaseItem[]>(IDB_SHOWCASE_KEY)) || [];
-    const savedHeroVideoUrl = (await get<string>(IDB_HERO_VIDEO_URL_KEY)) || "";
-    const savedHeroVideoBlob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
 
     setStore({
       viewMode,
       isAdminAuthenticated: isAuth,
-      adminPin: savedAdminPin,
+      adminPin: adminPinHash,
       clientProjects: savedProjects,
       clients,
       activeProjectId: targetProject.id,
@@ -670,7 +758,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       photos: cachedPhotos && cachedPhotos.length > 0 ? cachedPhotos : [],
       showcaseItems: savedShowcase.slice(0, MAX_SHOWCASE),
       heroVideoUrl: savedHeroVideoUrl,
-      hasHeroVideoUpload: Boolean(savedHeroVideoBlob),
+      hasHeroVideoUpload: Boolean(savedHeroVideoBlob) && !savedHeroVideoUrl,
       isBooted: true,
     });
 
@@ -680,23 +768,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     // Gallery password gate: idle timeout + max age + lockout watchdog
     getStore().startAccessWatchdog();
 
-    // 9b. Cloud sync (Firestore): adopt remote state when it is newer
-    const configuredSource = await configureSync({
-      onStatus: (status, message) =>
-        setStore({ syncStatus: status, syncMessage: message || "" }),
-      onRemote: async (pid, remote) => {
-        const st = getStore();
-        const key = `lumina_session_${pid}`;
-        const current =
-          pid === st.activeProjectId
-            ? st.session
-            : (await get<ClientSelectionSession>(key)) || null;
-        if (current && remote.lastModified <= current.lastModified) return;
-        await set(key, remote);
-        if (pid === getStore().activeProjectId) setStore({ session: remote });
-      },
-    });
-    setStore({ syncSource: configuredSource });
+    // 9b. Cloud sync (Firestore): selection stream for the active session
     attachSelectionStream(targetProject.id);
 
     // If the local session holds real selection data that is ahead of the
@@ -712,6 +784,38 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       if (!remote || local.lastModified > remote.lastModified) {
         pushSelection(targetProject.id, local);
       }
+    })();
+
+    // 9c. Studio state: seed the cloud when it is empty or behind, then
+    // follow it live so every browser renders the same studio
+    void (async () => {
+      if (!isSyncConfigured()) return;
+      const cloud = await fetchStudioState();
+      const localMod = (await get<number>(IDB_STATE_MODIFIED_KEY)) || 0;
+      const needsPush =
+        seeded || importedFromParams || registryDirty || !cloud || localMod > cloud.lastModified;
+      if (needsPush) {
+        // Publish the showcase payloads before announcing their order
+        savedShowcase.forEach((item) => pushShowcaseCloud(asCloudShowcase(item)));
+        persistStudioState();
+      }
+      // Seed a cloud showcase that only exists locally (first upgrade)
+      if (cloud && cloud.showcaseOrder.length === 0 && savedShowcase.length > 0) {
+        savedShowcase.forEach((item) => pushShowcaseCloud(asCloudShowcase(item)));
+        persistStudioState();
+      }
+
+      stateSubscription?.();
+      showcaseSubscription?.();
+      stateSubscription = subscribeStudioState(async (remote) => {
+        const stamp = (await get<number>(IDB_STATE_MODIFIED_KEY)) || 0;
+        if (remote.lastModified <= stamp) return;
+        await adoptStudioState(remote);
+      });
+      showcaseSubscription = subscribeShowcaseCloud((docs) => {
+        cloudShowcaseDocs = new Map(docs.map((item) => [item.id, item]));
+        applyCloudShowcase();
+      });
     })();
 
     // 10. Start P2P depending on view
@@ -798,9 +902,14 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     }
   },
 
-  loginAdmin: (pinInput: string) => {
+  loginAdmin: async (pinInput: string) => {
     const { adminPin } = getStore();
-    if (pinInput.trim() === adminPin.trim()) {
+    const trimmed = pinInput.trim();
+    if (!trimmed) return false;
+    const hash = await hashPassword(trimmed);
+    // adminPin is a hash; the plain compare only covers the brief window
+    // before init() has resolved it
+    if (hash === adminPin || trimmed === adminPin.trim()) {
       sessionStorage.setItem("lumina_admin_authenticated", "true");
       setStore({ isAdminAuthenticated: true });
       return true;
@@ -818,8 +927,11 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   setAdminPin: async (newPin: string) => {
     const clean = newPin.trim();
     if (!clean) return;
-    await set(IDB_ADMIN_PIN_KEY, clean);
-    setStore({ adminPin: clean });
+    const hash = await hashPassword(clean);
+    await set(IDB_ADMIN_PIN_HASH_KEY, hash);
+    await del(IDB_ADMIN_PIN_KEY).catch(() => undefined);
+    setStore({ adminPin: hash });
+    persistStudioState();
   },
 
   openClientByCode: async (codeOrUrl: string) => {
@@ -1000,6 +1112,8 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       }
     }
 
+    persistStudioState();
+
     // Deadline may have been set / extended / removed
     getStore().scheduleDeadlineLock();
   },
@@ -1022,6 +1136,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     }
 
     setStore({ clientProjects: filtered, clients: nextClients });
+    persistStudioState();
 
     if (activeProjectId === projectId && filtered.length > 0) {
       await getStore().switchProject(filtered[0].id);
@@ -1035,6 +1150,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     else clients.push(client);
     await set(IDB_CLIENTS_KEY, clients);
     setStore({ clients });
+    persistStudioState();
   },
 
   unlockForPreview: (projectId: string) => {
@@ -1180,6 +1296,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       });
       await getStore().loadPhotos(true);
     }
+    persistStudioState();
   },
 
   setFirebaseConfigJson: async (json: string) => {
@@ -1257,18 +1374,18 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const { showcaseItems } = getStore();
     if (showcaseItems.length >= MAX_SHOWCASE) return false;
     if (showcaseItems.some((item) => item.id === photo.id)) return false;
-    const updated: ShowcaseItem[] = [
-      ...showcaseItems,
-      {
-        id: photo.id,
-        name: photo.name,
-        thumbnailUrl: photo.thumbnailUrl,
-        previewUrl: photo.previewUrl,
-        source: "photo",
-      },
-    ];
+    const item: ShowcaseItem = {
+      id: photo.id,
+      name: photo.name,
+      thumbnailUrl: photo.thumbnailUrl,
+      previewUrl: photo.previewUrl,
+      source: "photo",
+    };
+    const updated: ShowcaseItem[] = [...showcaseItems, item];
     await set(IDB_SHOWCASE_KEY, updated);
     setStore({ showcaseItems: updated });
+    pushShowcaseCloud(asCloudShowcase(item));
+    persistStudioState();
     return true;
   },
 
@@ -1276,9 +1393,12 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const { showcaseItems } = getStore();
     if (showcaseItems.length >= MAX_SHOWCASE) return false;
     if (showcaseItems.some((existing) => existing.id === item.id)) return false;
-    const updated: ShowcaseItem[] = [...showcaseItems, { ...item, source: "upload" }];
+    const stored: ShowcaseItem = { ...item, source: "upload" };
+    const updated: ShowcaseItem[] = [...showcaseItems, stored];
     await set(IDB_SHOWCASE_KEY, updated);
     setStore({ showcaseItems: updated });
+    pushShowcaseCloud(asCloudShowcase(stored));
+    persistStudioState();
     return true;
   },
 
@@ -1286,6 +1406,8 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const updated = getStore().showcaseItems.filter((item) => item.id !== id);
     await set(IDB_SHOWCASE_KEY, updated);
     setStore({ showcaseItems: updated });
+    deleteShowcaseCloud(id);
+    persistStudioState();
   },
 
   moveShowcaseItem: async (id: string, direction: -1 | 1) => {
@@ -1296,39 +1418,51 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     [items[idx], items[target]] = [items[target], items[idx]];
     await set(IDB_SHOWCASE_KEY, items);
     setStore({ showcaseItems: items });
+    persistStudioState();
   },
 
   resetShowcase: async () => {
     await set(IDB_SHOWCASE_KEY, []);
     setStore({ showcaseItems: [] });
+    void clearShowcaseCloud();
+    persistStudioState();
   },
 
   setHeroVideoUrl: async (url: string) => {
     const clean = url.trim();
     await set(IDB_HERO_VIDEO_URL_KEY, clean);
-    setStore({ heroVideoUrl: clean });
+    setStore({ heroVideoUrl: clean, hasHeroVideoUpload: false });
+    persistStudioState();
   },
 
   saveHeroVideoUpload: async (blob: Blob) => {
-    await set(IDB_HERO_VIDEO_BLOB_KEY, blob);
-    setStore({ hasHeroVideoUpload: true });
+    // Upload to Firebase Storage so every browser plays the same video
+    const url = await uploadHeroVideo(blob);
+    await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
+    await set(IDB_HERO_VIDEO_URL_KEY, url);
+    setStore({ heroVideoUrl: url, hasHeroVideoUpload: false });
+    persistStudioState();
   },
 
   clearHeroVideo: async () => {
     await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
     await set(IDB_HERO_VIDEO_URL_KEY, "");
     setStore({ heroVideoUrl: "", hasHeroVideoUpload: false });
+    persistStudioState();
   },
 
   resolveHeroVideoUrl: async () => {
     const { heroVideoUrl } = getStore();
+    // The cloud URL wins so every browser shows the same hero; the local
+    // blob only serves as a fallback for offline leftovers
+    if (heroVideoUrl) return heroVideoUrl;
     try {
       const blob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY);
       if (blob && blob.size > 0) return URL.createObjectURL(blob);
     } catch {
-      // Fall through to URL / default
+      // Fall through to default
     }
-    return heroVideoUrl;
+    return "";
   },
 
   loadPhotos: async (forceReload = false) => {
@@ -1544,3 +1678,88 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   setIsStudioOpen: (open) => setStore({ isStudioOpen: open }),
   setIsOnline: (online) => setStore({ isOnline: online }),
 }));
+
+// ── Studio-wide cloud state helpers (after the store exists) ──
+
+const buildStudioState = (): StudioState => {
+  const s = useProofingStore.getState();
+  return {
+    projects: s.clientProjects,
+    clients: s.clients,
+    showcaseOrder: s.showcaseItems.map((item) => item.id),
+    heroVideoUrl: s.heroVideoUrl,
+    globalApiKey: s.globalApiKey,
+    adminPin: s.adminPin,
+    lastModified: Date.now(),
+  };
+};
+
+/** Cache the current state locally and publish it to the cloud. */
+const persistStudioState = () => {
+  const state = buildStudioState();
+  void set(IDB_STATE_MODIFIED_KEY, state.lastModified);
+  pushStudioState(state);
+};
+
+const stripCloudShowcase = ({ lastModified: _last, ...item }: ShowcaseCloudItem): ShowcaseItem => item;
+
+const asCloudShowcase = (item: ShowcaseItem): ShowcaseCloudItem => ({
+  ...item,
+  lastModified: Date.now(),
+});
+
+// Live cloud showcase pieces: the order lives in the studio state doc,
+// the item payloads live in their own documents.
+let cloudShowcaseOrder: string[] | null = null;
+let cloudShowcaseDocs = new Map<string, ShowcaseCloudItem>();
+
+/** Rebuild landing showcase from the merged cloud pieces (order + docs). */
+const applyCloudShowcase = () => {
+  const order = cloudShowcaseOrder;
+  if (!order) return;
+  // Never wipe a populated local showcase while its docs are still loading
+  if (order.length > 0 && !order.every((id) => cloudShowcaseDocs.has(id))) return;
+  const items = order
+    .map((id) => cloudShowcaseDocs.get(id))
+    .filter((item): item is ShowcaseCloudItem => Boolean(item))
+    .slice(0, MAX_SHOWCASE)
+    .map(stripCloudShowcase);
+  const current = useProofingStore.getState().showcaseItems;
+  const same =
+    items.length === current.length && items.every((item, i) => item.id === current[i]?.id);
+  if (same) return;
+  useProofingStore.setState({ showcaseItems: items });
+  void set(IDB_SHOWCASE_KEY, items);
+};
+
+const orderKey = (ids: string[]) => ids.join("\u0001");
+
+/** Adopt a newer cloud studio state into the store + local cache (no push back). */
+const adoptStudioState = async (remote: StudioState): Promise<void> => {
+  await set(IDB_PROJECTS_KEY, remote.projects);
+  await set(IDB_CLIENTS_KEY, remote.clients);
+  await set(IDB_GLOBAL_KEY, remote.globalApiKey);
+  await set(IDB_HERO_VIDEO_URL_KEY, remote.heroVideoUrl);
+  if (remote.adminPin && looksLikeHash(remote.adminPin)) {
+    await set(IDB_ADMIN_PIN_HASH_KEY, remote.adminPin);
+  }
+  await set(IDB_STATE_MODIFIED_KEY, remote.lastModified);
+  if (orderKey(remote.showcaseOrder) !== orderKey(cloudShowcaseOrder || [])) {
+    cloudShowcaseOrder = remote.showcaseOrder;
+    // A cleared showcase must clear the local one too
+    if (remote.showcaseOrder.length === 0) cloudShowcaseDocs = new Map();
+    applyCloudShowcase();
+  }
+  const st = useProofingStore.getState();
+  useProofingStore.setState({
+    clientProjects: remote.projects,
+    clients: remote.clients,
+    globalApiKey: remote.globalApiKey || st.globalApiKey,
+    heroVideoUrl: remote.heroVideoUrl,
+    adminPin: remote.adminPin && looksLikeHash(remote.adminPin) ? remote.adminPin : st.adminPin,
+    hasHeroVideoUpload: remote.heroVideoUrl ? false : st.hasHeroVideoUpload,
+  });
+};
+
+let stateSubscription: (() => void) | null = null;
+let showcaseSubscription: (() => void) | null = null;

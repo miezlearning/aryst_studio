@@ -25,6 +25,50 @@ service cloud.firestore {
         && request.resource.data.maxQuota <= 500;
     }
 
+    // Data studio (sesi klien, daftar klien, urutan showcase, URL video,
+    // API key, hash PIN) menempel pada satu dokumen. Model berbagi tautan:
+    // siapa pun yang tahu lokasi dokumen boleh membaca/menulis, tetapi
+    // PIN hanya disimpan sebagai hash SHA-256.
+    match /studio/{docId} {
+      allow read: if true;
+      allow delete: if true;
+      allow create, update: if request.resource.data.keys().hasOnly([
+          'projects',
+          'clients',
+          'showcaseOrder',
+          'heroVideoUrl',
+          'globalApiKey',
+          'adminPin',
+          'lastModified'
+        ])
+        && request.resource.data.lastModified is int
+        && request.resource.data.projects is list
+        && request.resource.data.clients is list
+        && request.resource.data.showcaseOrder is list
+        && request.resource.data.showcaseOrder.size() <= 8
+        && request.resource.data.heroVideoUrl is string
+        && request.resource.data.globalApiKey is string
+        && request.resource.data.adminPin is string;
+    }
+
+    // Satu slot showcase per dokumen (data URL base64 bisa > 1 MB)
+    match /studioShowcase/{itemId} {
+      allow read: if true;
+      allow delete: if true;
+      allow create, update: if request.resource.data.keys().hasOnly([
+          'id',
+          'name',
+          'thumbnailUrl',
+          'previewUrl',
+          'source',
+          'lastModified'
+        ])
+        && request.resource.data.id is string
+        && request.resource.data.thumbnailUrl is string
+        && request.resource.data.previewUrl is string
+        && request.resource.data.source in ['photo', 'upload'];
+    }
+
     // Kolom lain tidak boleh disentuh
     match /{document=**} {
       allow read, write: if false;

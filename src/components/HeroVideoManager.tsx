@@ -125,8 +125,11 @@ export const HeroVideoManager: React.FC = () => {
     try {
       await saveHeroVideoUpload(file);
       flashSaved();
-    } catch {
-      setError("Gagal menyimpan video. Coba file yang lebih kecil.");
+    } catch (err) {
+      const detail = err instanceof Error && err.message ? ` (${err.message})` : "";
+      setError(
+        `Gagal mengunggah video ke cloud${detail}. Pastikan Firebase Storage sudah aktif di Firebase Console, atau gunakan URL video.`
+      );
     } finally {
       setIsUploading(false);
     }

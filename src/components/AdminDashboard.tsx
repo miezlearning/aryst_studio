@@ -153,7 +153,6 @@ export const AdminDashboard: React.FC = () => {
     clients,
     activeProjectId,
     globalApiKey,
-    adminPin,
     isP2PConnected,
     switchProject,
     saveProject,
@@ -177,7 +176,7 @@ export const AdminDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState(globalApiKey);
   const [apiKeySaved, setApiKeySaved] = useState(false);
-  const [newPinInput, setNewPinInput] = useState(adminPin);
+  const [newPinInput, setNewPinInput] = useState("");
   const [pinSaved, setPinSaved] = useState(false);
   const [fbInput, setFbInput] = useState("");
   const [fbSaved, setFbSaved] = useState(false);
@@ -479,6 +478,7 @@ export const AdminDashboard: React.FC = () => {
   const handleSavePin = async () => {
     if (!newPinInput.trim()) return;
     await setAdminPin(newPinInput.trim());
+    setNewPinInput("");
     setPinSaved(true);
     setTimeout(() => setPinSaved(false), 2000);
   };
@@ -1284,7 +1284,7 @@ function doPost(e) {
               <div>
                 <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-amber-400" />
-                  <span>PIN Master Saat Ini</span>
+                  <span>PIN Master Baru</span>
                 </label>
                 <input
                   type="text"
@@ -1331,7 +1331,7 @@ function doPost(e) {
                 <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span>
-                    Disimpan dengan aman di perangkat lokal Anda.
+                    Tersimpan di cloud, ikut tampil di semua peramban Anda.
                   </span>
                 </p>
               </div>

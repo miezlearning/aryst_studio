@@ -9,14 +9,14 @@ export const AdminAuthGate: React.FC = () => {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pinInput.trim()) {
       setError("Silakan masukkan PIN Master Admin.");
       return;
     }
 
-    const success = loginAdmin(pinInput);
+    const success = await loginAdmin(pinInput);
     if (!success) {
       setError("PIN Master Admin salah. PIN default adalah studio2026.");
     }

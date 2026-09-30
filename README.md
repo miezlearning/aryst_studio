@@ -95,6 +95,22 @@ https://miezlearning.github.io/aryst_studio/?folder=1AbC...&quota=25&client=Rian
 
 </details>
 
+<details>
+<summary><b>Sinkronisasi Cloud Firestore (opsional, disarankan)</b></summary>
+
+Tanpa Firebase, pilihan klien hanya tersimpan di IndexedDB peramban masing-masing. Dengan Firestore, pilihan klien tersimpan di cloud sehingga terlihat dari perangkat mana pun dan tautan sesi tetap membawa data terbaru.
+
+1. Buat proyek di [Firebase Console](https://console.firebase.google.com) → tambahkan **Web app** → salin blok konfigurasi.
+2. Aktifkan **Cloud Firestore** (mode test dulu cukup untuk pemakaian studio).
+3. Deploy aturan keamanan dari berkas [`firestore.rules`](./firestore.rules):
+   `firebase deploy --only firestore:rules`
+4. Isi konfigurasi salah satu cara:
+   - **Semua perangkat**: salin ke `VITE_FIREBASE_CONFIG` di `.env` (satu baris JSON), lalu push — GitHub Actions membangun ulang otomatis.
+   - **Perangkat ini saja**: Dashboard Admin → tab **Pengaturan** → tempel JSON di kartu *Sinkronisasi Cloud (Firestore)* → **Simpan & Aktifkan**.
+5. Kartu status yang sama menunjukkan `Tersambung ke cloud` bila sinkronisasi aktif. Tanpa konfigurasi, perilaku lokal seperti sediakala.
+
+</details>
+
 ## Deploy
 
 Tidak ada langkah manual: setiap **push ke `master`**, GitHub Actions mengecek tipe, membangun, dan menerbitkan ke

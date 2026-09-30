@@ -44,6 +44,7 @@ import {
   Upload,
   Info,
   User,
+  Cloud,
 } from "lucide-react";
 import { DeadlineBadge } from "./DeadlineCountdown";
 
@@ -165,6 +166,10 @@ export const AdminDashboard: React.FC = () => {
     probeDriveFolder,
     getPhotoCounts,
     loadPhotos,
+    syncStatus,
+    syncMessage,
+    syncSource,
+    setFirebaseConfigJson,
   } = useProofingStore();
 
   const [activeTab, setActiveTab] = useState<AdminTab>("projects");
@@ -174,6 +179,9 @@ export const AdminDashboard: React.FC = () => {
   const [apiKeySaved, setApiKeySaved] = useState(false);
   const [newPinInput, setNewPinInput] = useState(adminPin);
   const [pinSaved, setPinSaved] = useState(false);
+  const [fbInput, setFbInput] = useState("");
+  const [fbSaved, setFbSaved] = useState(false);
+  const [fbError, setFbError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Inspector modal state
@@ -473,6 +481,34 @@ export const AdminDashboard: React.FC = () => {
     await setAdminPin(newPinInput.trim());
     setPinSaved(true);
     setTimeout(() => setPinSaved(false), 2000);
+  };
+
+  const handleSaveFirebase = async () => {
+    const json = fbInput.trim();
+    if (!json) {
+      setFbError("Isi dulu konfigurasi Firebase, atau gunakan tombol Putuskan.");
+      return;
+    }
+    try {
+      const parsed = JSON.parse(json) as Record<string, unknown>;
+      if (typeof parsed.apiKey !== "string" || typeof parsed.projectId !== "string") {
+        setFbError("Konfigurasi harus memuat apiKey dan projectId.");
+        return;
+      }
+    } catch {
+      setFbError("Format JSON tidak valid. Salin apa adanya dari Firebase Console.");
+      return;
+    }
+    setFbError(null);
+    await setFirebaseConfigJson(json);
+    setFbInput("");
+    setFbSaved(true);
+    setTimeout(() => setFbSaved(false), 2000);
+  };
+
+  const handleClearFirebase = async () => {
+    setFbError(null);
+    await setFirebaseConfigJson("");
   };
 
   const gasScriptCode = `// Google Apps Script (Code.gs)
@@ -1307,6 +1343,91 @@ function doPost(e) {
                 {apiKeySaved ? <Check className="w-4 h-4" /> : null}
                 <span>{apiKeySaved ? "Tersimpan!" : "Simpan Kunci API"}</span>
               </button>
+            </div>
+          </div>
+
+          {/* Cloud sync (Firestore) */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
+              <Cloud className="w-4 h-4 text-amber-400" />
+              <span>Sinkronisasi Cloud (Firestore)</span>
+            </h2>
+            <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+              Pilihan klien disimpan di Firebase Firestore, sehingga Anda dapat
+              melihatnya dari perangkat mana pun dan tautan sesi tetap membawa
+              data terbaru walau dibuka di peramban yang berbeda.
+            </p>
+
+            <div className="space-y-4">
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold ${
+                  syncStatus === "live"
+                    ? "bg-emerald-400/10 text-emerald-300 border-emerald-400/30"
+                    : syncStatus === "connecting"
+                      ? "bg-amber-400/10 text-amber-300 border-amber-400/30"
+                      : syncStatus === "error"
+                        ? "bg-red-400/10 text-red-300 border-red-400/30"
+                        : "bg-zinc-800 text-zinc-400 border-zinc-700"
+                }`}
+                data-testid="sync-status"
+              >
+                <Cloud className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {syncStatus === "live"
+                    ? "Tersambung ke cloud"
+                    : syncStatus === "connecting"
+                      ? "Menghubungkan..."
+                      : syncStatus === "error"
+                        ? `Gagal: ${syncMessage || "koneksi error"}`
+                        : "Nonaktif - pilihan hanya tersimpan di perangkat ini"}
+                  {syncStatus !== "off" && syncSource === "env"
+                    ? " (konfigurasi dari build)"
+                    : ""}
+                  {syncStatus !== "off" && syncSource === "manual"
+                    ? " (override perangkat)"
+                    : ""}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Konfigurasi Web App (JSON)</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={fbInput}
+                  onChange={(e) => setFbInput(e.target.value)}
+                  placeholder={'{"apiKey": "AIza...", "authDomain": "...", "projectId": "..."}'}
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-y"
+                />
+                <p className="text-[11px] text-zinc-400 mt-1.5 leading-relaxed">
+                  Firebase Console -&gt; Pengaturan proyek -&gt; Aplikasi saya -&gt;
+                  SDK web -&gt; konfigurasi. Anda juga dapat mengisi
+                  VITE_FIREBASE_CONFIG di file .env agar berlaku untuk semua perangkat.
+                </p>
+                {fbError ? (
+                  <p className="text-[11px] text-red-400 mt-1.5">{fbError}</p>
+                ) : null}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSaveFirebase}
+                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                >
+                  {fbSaved ? <Check className="w-3.5 h-3.5" /> : null}
+                  <span>{fbSaved ? "Tersimpan!" : "Simpan & Aktifkan"}</span>
+                </button>
+                {syncStatus !== "off" ? (
+                  <button
+                    onClick={handleClearFirebase}
+                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs transition-colors"
+                  >
+                    Putuskan
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

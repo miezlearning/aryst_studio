@@ -8,6 +8,7 @@ import {
   extractSelectionFromUrl,
 } from "@/lib/sync";
 import { downloadPhotosZip, ZipProgress } from "@/lib/downloadZip";
+import { subscribeSelection } from "@/lib/firestoreSync";
 import {
   X,
   CheckCircle,
@@ -49,14 +50,28 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
   const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
   const [zipError, setZipError] = useState<string | null>(null);
 
-  // Load project session
+  // Load project session (local cache, superseded by newer cloud data)
   useEffect(() => {
     if (isOpen && project) {
       loadProjectSession(project.id).then((data) => {
-        setSessionData(data);
+        setSessionData((prev) =>
+          prev && data.lastModified < prev.lastModified ? prev : data
+        );
       });
     }
   }, [isOpen, project, loadProjectSession]);
+
+  // Follow the cloud copy while the inspector is open, so selections the
+  // client makes right now appear without reloading the dialog
+  useEffect(() => {
+    if (!isOpen || !project) return;
+    const unsub = subscribeSelection(project.id, (remote) => {
+      setSessionData((prev) =>
+        prev && remote.lastModified <= prev.lastModified ? prev : remote
+      );
+    });
+    return () => unsub();
+  }, [isOpen, project]);
 
   // Resolve names against this session's own photo catalog, not the
   // catalog of whichever session happens to be active

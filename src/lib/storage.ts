@@ -19,6 +19,16 @@ import {
   broadcastSelectionUpdate,
   cleanupP2P,
 } from "./p2p";
+import {
+  configureSync,
+  reconfigureSync,
+  saveFirebaseConfig,
+  attachSelectionStream,
+  pushSelection,
+  fetchRemoteSelection,
+  type SyncStatus,
+  type SyncSource,
+} from "./firestoreSync";
 
 const IDB_PROJECTS_KEY = "lumina_client_projects";
 const IDB_CLIENTS_KEY = "lumina_clients";
@@ -322,6 +332,11 @@ const ensureClients = (
 
 const DEFAULT_CLIENTS: Client[] = ensureClients(DEFAULT_PROJECTS, []).clients;
 
+const persistSession = (projectId: string, session: ClientSelectionSession) => {
+  void set(`lumina_session_${projectId}`, session);
+  pushSelection(projectId, session);
+};
+
 interface ProofingState {
   photos: PhotoMetadata[];
   isLoading: boolean;
@@ -346,6 +361,11 @@ interface ProofingState {
   passwordLockUntil: number;
   globalApiKey: string;
   isP2PConnected: boolean;
+
+  // Cloud sync (Firestore) status for the active session
+  syncStatus: SyncStatus;
+  syncMessage: string;
+  syncSource: SyncSource;
 
   config: ProofingConfig;
   session: ClientSelectionSession;
@@ -407,6 +427,8 @@ interface ProofingState {
   setGlobalApiKey: (key: string) => Promise<void>;
   loadProjectSession: (projectId: string) => Promise<ClientSelectionSession>;
   importClientSelection: (projectId: string, selectedIds: string[], notes: Record<string, string>) => Promise<void>;
+  // Saves the Firebase config override and restarts the cloud sync
+  setFirebaseConfigJson: (json: string) => Promise<void>;
 
   // Showcase actions
   fetchShowcaseCandidates: () => Promise<ShowcaseCandidate[]>;
@@ -455,6 +477,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   isStudioOpen: false,
   isOnline: navigator.onLine,
   isDemoMode: true,
+  syncStatus: "off",
+  syncMessage: "",
+  syncSource: "none",
 
   viewMode: "landing",
   isAdminAuthenticated: false,
@@ -655,6 +680,40 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     // Gallery password gate: idle timeout + max age + lockout watchdog
     getStore().startAccessWatchdog();
 
+    // 9b. Cloud sync (Firestore): adopt remote state when it is newer
+    const configuredSource = await configureSync({
+      onStatus: (status, message) =>
+        setStore({ syncStatus: status, syncMessage: message || "" }),
+      onRemote: async (pid, remote) => {
+        const st = getStore();
+        const key = `lumina_session_${pid}`;
+        const current =
+          pid === st.activeProjectId
+            ? st.session
+            : (await get<ClientSelectionSession>(key)) || null;
+        if (current && remote.lastModified <= current.lastModified) return;
+        await set(key, remote);
+        if (pid === getStore().activeProjectId) setStore({ session: remote });
+      },
+    });
+    setStore({ syncSource: configuredSource });
+    attachSelectionStream(targetProject.id);
+
+    // If the local session holds real selection data that is ahead of the
+    // cloud copy (e.g. a #proof= link import made before sync started),
+    // publish it now. A pristine empty session never overwrites cloud data.
+    void (async () => {
+      const remote = await fetchRemoteSelection(targetProject.id);
+      const local = getStore().session;
+      const hasLocalData =
+        local.selectedPhotoIds.length > 0 ||
+        Object.keys(local.revisionNotes).length > 0;
+      if (!hasLocalData) return;
+      if (!remote || local.lastModified > remote.lastModified) {
+        pushSelection(targetProject.id, local);
+      }
+    })();
+
     // 10. Start P2P depending on view
     if (viewMode === "client") {
       startP2PClient(
@@ -827,6 +886,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
 
     // Re-arm the deadline auto-lock timer for the newly active session
     getStore().scheduleDeadlineLock();
+
+    // Follow the cloud copy of the session that was just activated
+    attachSelectionStream(target.id);
 
     // Re-wire P2P for new project
     if (viewMode === "client") {
@@ -1120,6 +1182,17 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     }
   },
 
+  setFirebaseConfigJson: async (json: string) => {
+    await saveFirebaseConfig(json);
+    const source = await reconfigureSync();
+    setStore({
+      syncSource: source,
+      syncStatus: source === "none" ? "off" : "connecting",
+      syncMessage: "",
+    });
+    attachSelectionStream(getStore().activeProjectId);
+  },
+
   loadProjectSession: async (projectId: string) => {
     const key = `lumina_session_${projectId}`;
     const saved = await get<ClientSelectionSession>(key);
@@ -1323,7 +1396,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       lastModified: Date.now(),
     };
     setStore({ session: newSession });
-    set(`lumina_session_${activeProjectId}`, newSession);
+    persistSession(activeProjectId, newSession);
 
     // Real-time P2P Broadcast to Photographer
     broadcastSelectionUpdate({
@@ -1356,7 +1429,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       lastModified: Date.now(),
     };
     setStore({ session: newSession });
-    set(`lumina_session_${activeProjectId}`, newSession);
+    persistSession(activeProjectId, newSession);
 
     // Real-time P2P Broadcast
     broadcastSelectionUpdate({
@@ -1377,7 +1450,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       lastModified: Date.now(),
     };
     setStore({ session: newSession });
-    set(`lumina_session_${activeProjectId}`, newSession);
+    persistSession(activeProjectId, newSession);
   },
 
   isSelectionLocked: () => {
@@ -1419,7 +1492,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       lastModified: Date.now(),
     };
     setStore({ session: newSession });
-    set(`lumina_session_${activeProjectId}`, newSession);
+    persistSession(activeProjectId, newSession);
   },
 
   updateConfig: (newConfig: Partial<ProofingConfig>) => {
@@ -1440,7 +1513,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       session: updatedSession,
       isDemoMode: !updatedConfig.folderId || !updatedConfig.apiKey,
     });
-    set(`lumina_session_${activeProjectId}`, updatedSession);
+    persistSession(activeProjectId, updatedSession);
   },
 
   clearSelection: () => {
@@ -1453,7 +1526,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       lastModified: Date.now(),
     };
     setStore({ session: newSession });
-    set(`lumina_session_${activeProjectId}`, newSession);
+    persistSession(activeProjectId, newSession);
 
     broadcastSelectionUpdate({
       type: "SELECTION_UPDATE",

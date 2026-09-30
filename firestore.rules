@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Sesi seleksi klien dibaca/ditulis oleh siapa pun yang mengetahui
+    // projectId-nya (model berbagi tautan). Field dibatasi agar dokumen
+    // tidak bisa dipakai sebagai penyimpanan sembarangan.
+    match /selections/{projectId} {
+      allow read: if true;
+      allow delete: if true;
+      allow create, update: if request.resource.data.keys().hasOnly([
+          'projectId',
+          'clientName',
+          'clientContact',
+          'maxQuota',
+          'selectedPhotoIds',
+          'revisionNotes',
+          'isLocked',
+          'autoLocked',
+          'lastModified'
+        ])
+        && request.resource.data.lastModified is int
+        && request.resource.data.selectedPhotoIds is list
+        && request.resource.data.selectedPhotoIds.size() <= 500
+        && request.resource.data.maxQuota is int
+        && request.resource.data.maxQuota <= 500;
+    }
+
+    // Kolom lain tidak boleh disentuh
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -111,10 +111,11 @@ export async function fetchGoogleDriveFolder(
 
   // 1. Walk the folder tree (root + subfolders) breadth-first
   type FolderNode = { id: string; name: string; depth: number };
-  const nodes: FolderNode[] = [{ id: cleanFolderId, name: "", depth: 0 }];
-  const queue: FolderNode[] = [...nodes];
+  const nodes: FolderNode[] = [];
+  const queue: FolderNode[] = [{ id: cleanFolderId, name: "", depth: 0 }];
   while (queue.length > 0 && nodes.length < 40) {
     const node = queue.shift() as FolderNode;
+    nodes.push(node);
     if (node.depth >= 3) continue;
     try {
       const subfolders = await fetchPage(

@@ -13,7 +13,7 @@ import {
 } from "@/types";
 import { fetchGoogleDriveFolder, extractFolderId } from "./googleDrive";
 import { extractSelectionFromUrl } from "./sync";
-import { hashPassword } from "./utils";
+import { hashPassword, verifyPassword, isPasswordHash } from "./utils";
 import {
   startP2PHost,
   startP2PClient,
@@ -35,7 +35,6 @@ import {
   deleteShowcaseCloud,
   clearShowcaseCloud,
   subscribeShowcaseCloud,
-  uploadHeroVideo,
   isSyncConfigured,
   type StudioState,
   type ShowcaseCloudItem,
@@ -100,6 +99,9 @@ let accessActivityAt = Date.now();
 let accessFailedAttempts = 0;
 let accessLockoutUntil = 0;
 let accessWatchdogStarted = false;
+
+// Admin PIN brute-force protection: 5 wrong attempts -> escalating lockout
+let adminFailedAttempts = 0;
 
 const isAccessValid = (projectId: string): boolean => {
   const expiresAt = accessExpiry.get(projectId);
@@ -358,7 +360,7 @@ const persistSession = (projectId: string, session: ClientSelectionSession) => {
 // API key, admin PIN hash) lives in one Firestore document so every
 // browser shows the same content.
 
-const looksLikeHash = (value: string): boolean => /^[0-9a-f]{16}$/.test(value);
+const looksLikeHash = (value: string): boolean => isPasswordHash(value);
 
 /** Reads the admin PIN hash from IDB, migrating a legacy plain-text PIN. */
 const resolvePinHash = async (): Promise<string> => {
@@ -399,6 +401,8 @@ interface ProofingState {
   isPasswordUnlocked: boolean;
   // Timestamp until the password gate is temporarily locked out (0 = none)
   passwordLockUntil: number;
+  // Timestamp until admin login is locked out after failed PIN attempts
+  adminLockUntil: number;
   globalApiKey: string;
   isP2PConnected: boolean;
 
@@ -544,6 +548,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   activeProjectId: DEFAULT_PROJECTS[0].id,
   isPasswordUnlocked: true,
   passwordLockUntil: 0,
+  adminLockUntil: 0,
   globalApiKey: "",
   isP2PConnected: false,
 
@@ -921,16 +926,39 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   },
 
   loginAdmin: async (pinInput: string) => {
-    const { adminPin } = getStore();
+    const { adminPin, adminLockUntil } = getStore();
     const trimmed = pinInput.trim();
     if (!trimmed) return false;
-    const hash = await hashPassword(trimmed);
+    if (Date.now() < adminLockUntil) return false;
+
     // adminPin is a hash; the plain compare only covers the brief window
     // before init() has resolved it
-    if (hash === adminPin || trimmed === adminPin.trim()) {
+    const isMatch =
+      (await verifyPassword(trimmed, adminPin)) || trimmed === adminPin.trim();
+
+    if (isMatch) {
+      adminFailedAttempts = 0;
+      setStore({ adminLockUntil: 0, isAdminAuthenticated: true });
       sessionStorage.setItem("lumina_admin_authenticated", "true");
-      setStore({ isAdminAuthenticated: true });
+      // Upgrade a legacy SHA-256 PIN hash to the salted v2 format
+      if (adminPin && !adminPin.startsWith("v2$")) {
+        try {
+          const upgraded = await hashPassword(trimmed);
+          await set(IDB_ADMIN_PIN_HASH_KEY, upgraded);
+          setStore({ adminPin: upgraded });
+          persistStudioState();
+        } catch {
+          // Keep the legacy hash if the upgrade fails
+        }
+      }
       return true;
+    }
+
+    adminFailedAttempts += 1;
+    if (adminFailedAttempts >= 5) {
+      const lockMs = Math.min(30_000 * 2 ** (adminFailedAttempts - 5), 300_000);
+      adminFailedAttempts = 0;
+      setStore({ adminLockUntil: Date.now() + lockMs });
     }
     return false;
   },
@@ -1248,9 +1276,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     if (current.password && current.password.trim() === trimmedInput) {
       isMatch = true;
     } else if (current.passwordHash) {
-      // Strict comparison only (prefix matching would be a vulnerability)
-      const inputHash = await hashPassword(trimmedInput);
-      isMatch = inputHash === current.passwordHash;
+      isMatch = await verifyPassword(trimmedInput, current.passwordHash);
     }
 
     if (isMatch) {
@@ -1454,10 +1480,15 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   },
 
   saveHeroVideoUpload: async (blob: Blob) => {
-    // Cloudflare R2 (free tier) when configured, otherwise Firebase Storage,
-    // so the same file plays in every browser via its public URL
+    // Cloudflare R2 (free tier) stores the file so its public URL plays
+    // in every browser
     const r2 = await getR2Config();
-    const url = r2 ? await uploadHeroVideoR2(blob, r2) : await uploadHeroVideo(blob);
+    if (!r2) {
+      throw new Error(
+        "Cloudflare R2 belum dikonfigurasi. Buka Pengaturan lalu isi kartu Video Hero (Cloudflare R2)."
+      );
+    }
+    const url = await uploadHeroVideoR2(blob, r2);
     await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
     await set(IDB_HERO_VIDEO_URL_KEY, url);
     setStore({ heroVideoUrl: url, hasHeroVideoUpload: false });

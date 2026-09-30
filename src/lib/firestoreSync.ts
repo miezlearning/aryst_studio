@@ -12,14 +12,6 @@ import {
   connectFirestoreEmulator,
   type Firestore,
 } from "firebase/firestore";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  connectStorageEmulator,
-  type FirebaseStorage,
-} from "firebase/storage";
 import { get, set, del } from "idb-keyval";
 import type {
   Client,
@@ -67,7 +59,6 @@ export interface ShowcaseCloudItem extends ShowcaseItem {
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
-let storage: FirebaseStorage | null = null;
 let handlers: SyncHandlers | null = null;
 let source: SyncSource = "none";
 let activeUnsub: (() => void) | null = null;
@@ -202,7 +193,6 @@ const start = async (next: SyncHandlers): Promise<SyncSource> => {
     }
     app = null;
     db = null;
-    storage = null;
     activeUnsub?.();
     activeUnsub = null;
   }
@@ -215,10 +205,8 @@ const start = async (next: SyncHandlers): Promise<SyncSource> => {
   try {
     app = initializeApp(cfg, APP_NAME);
     db = getFirestore(app);
-    storage = getStorage(app);
     if (import.meta.env.VITE_FIRESTORE_EMULATOR === "1") {
       connectFirestoreEmulator(db, "localhost", 8080);
-      connectStorageEmulator(storage, "localhost", 9199);
     }
     handlers.onStatus("connecting");
   } catch (err) {
@@ -394,16 +382,6 @@ export const subscribeShowcaseCloud = (cb: (items: ShowcaseCloudItem[]) => void)
     },
     () => undefined
   );
-};
-
-// ── Hero video (Firebase Storage: files are far larger than 1 MB) ──
-
-export const uploadHeroVideo = async (blob: Blob): Promise<string> => {
-  if (!storage) throw new Error("Cloud belum aktif. Atur konfigurasi Firebase dulu.");
-  const extFromType = (blob.type.split("/")[1] || "mp4").replace(/[^a-z0-9]/gi, "");
-  const fileRef = ref(storage, `studio/hero-video-${Date.now()}.${extFromType || "mp4"}`);
-  await uploadBytes(fileRef, blob, { contentType: blob.type || "video/mp4" });
-  return await getDownloadURL(fileRef);
 };
 
 export const getActiveSyncProject = (): string | null => activeProjectId;

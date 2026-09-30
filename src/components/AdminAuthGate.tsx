@@ -3,7 +3,7 @@ import { useProofingStore } from "@/lib/storage";
 import { Lock, KeyRound, AlertCircle, ArrowRight, Eye, EyeOff, Home, TriangleAlert } from "lucide-react";
 
 export const AdminAuthGate: React.FC = () => {
-  const { loginAdmin, setViewMode } = useProofingStore();
+  const { loginAdmin, setViewMode, adminLockUntil } = useProofingStore();
   const [pinInput, setPinInput] = useState("");
   const [showPin, setShowPin] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
@@ -11,6 +11,11 @@ export const AdminAuthGate: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (Date.now() < adminLockUntil) {
+      const waitSec = Math.ceil((adminLockUntil - Date.now()) / 1000);
+      setError(`Terlalu banyak percobaan PIN gagal. Coba lagi dalam ${waitSec} detik.`);
+      return;
+    }
     if (!pinInput.trim()) {
       setError("Silakan masukkan PIN Master Admin.");
       return;
@@ -18,7 +23,13 @@ export const AdminAuthGate: React.FC = () => {
 
     const success = await loginAdmin(pinInput);
     if (!success) {
-      setError("PIN Master Admin salah. PIN default adalah studio2026.");
+      const remaining = useProofingStore.getState().adminLockUntil;
+      if (Date.now() < remaining) {
+        const waitSec = Math.ceil((remaining - Date.now()) / 1000);
+        setError(`Terlalu banyak percobaan PIN gagal. Coba lagi dalam ${waitSec} detik.`);
+      } else {
+        setError("PIN Master Admin salah.");
+      }
     }
   };
 

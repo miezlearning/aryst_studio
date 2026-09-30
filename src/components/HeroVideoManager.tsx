@@ -128,7 +128,7 @@ export const HeroVideoManager: React.FC = () => {
     } catch (err) {
       const detail = err instanceof Error && err.message ? ` (${err.message})` : "";
       setError(
-        `Gagal mengunggah video ke cloud${detail}. Periksa konfigurasi Cloudflare R2 di kartu Pengaturan (atau aktifkan Firebase Storage di Firebase Console), atau gunakan URL video.`
+        `Gagal mengunggah video ke cloud${detail}. Periksa konfigurasi Cloudflare R2 di kartu Pengaturan, atau gunakan URL video.`
       );
     } finally {
       setIsUploading(false);

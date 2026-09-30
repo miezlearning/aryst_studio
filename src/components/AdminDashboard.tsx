@@ -1484,10 +1484,11 @@ function doPost(e) {
               <span>Video Hero (Cloudflare R2)</span>
             </h2>
             <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
-              Bila dikonfigurasi, file video hero diunggah ke bucket Cloudflare R2
+              Wajib diisi untuk mengunggah video hero: file disimpan di bucket R2
               (gratis tanpa kartu kredit: 10GB penyimpanan, biaya kirim data $0)
-              alih-alih Firebase Storage. Bila tidak, unggahan memakai Firebase
-              Storage dan perlu paket Blaze.
+              sehingga bisa diputar di semua peramban. Tanpa konfigurasi ini,
+              unggah video hero ditolak (gunakan URL video langsung sebagai
+              gantinya).
             </p>
 
             <div className="space-y-4">
@@ -1508,9 +1509,9 @@ function doPost(e) {
                 <p className="text-[11px] text-zinc-400 mt-1.5 leading-relaxed">
                   Cloudflare Console -&gt; R2: buat bucket, lalu Manage R2 API
                   Tokens (izin Read &amp; Write, scope bucket + prefix studio/)
-                  dan salin Public Development URL dari Settings bucket. Anda juga
-                  dapat mengisi VITE_R2_CONFIG di file .env agar berlaku untuk
-                  semua perangkat.
+                  dan salin Public Development URL dari Settings bucket. Simpan
+                  per perangkat saja; jangan simpan secret di berkas .env karena
+                  variabel VITE_* ikut terpublikasi ke internet.
                 </p>
                 {r2Error ? (
                   <p className="text-[11px] text-red-400 mt-1.5">{r2Error}</p>

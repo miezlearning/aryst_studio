@@ -2,11 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Sesi seleksi klien dibaca/ditulis oleh siapa pun yang mengetahui
-    // projectId-nya (model berbagi tautan). Field dibatasi agar dokumen
-    // tidak bisa dipakai sebagai penyimpanan sembarangan.
+    // projectId-nya (model berbagi tautan). Penghapusan diblokir total dan
+    // seluruh field divalidasi tipenya agar dokumen tidak bisa dipakai
+    // sebagai penyimpanan sembarangan atau memicu crash di klien.
     match /selections/{projectId} {
       allow read: if true;
-      allow delete: if true;
+      allow delete: if false;
       allow create, update: if request.resource.data.keys().hasOnly([
           'projectId',
           'clientName',
@@ -18,20 +19,30 @@ service cloud.firestore {
           'autoLocked',
           'lastModified'
         ])
-        && request.resource.data.lastModified is int
+        && request.resource.data.projectId is string
+        && request.resource.data.clientName is string
+        && request.resource.data.clientContact is string
+        && request.resource.data.maxQuota is int
+        && request.resource.data.maxQuota > 0
+        && request.resource.data.maxQuota <= 500
         && request.resource.data.selectedPhotoIds is list
         && request.resource.data.selectedPhotoIds.size() <= 500
-        && request.resource.data.maxQuota is int
-        && request.resource.data.maxQuota <= 500;
+        && request.resource.data.revisionNotes is map
+        && request.resource.data.isLocked is bool
+        && (!('autoLocked' in request.resource.data) || request.resource.data.autoLocked is bool)
+        && request.resource.data.lastModified is int
+        // Anti-rollback: update tidak boleh menurunkan stempel waktu
+        && (resource == null || request.resource.data.lastModified >= resource.data.lastModified);
     }
 
     // Data studio (sesi klien, daftar klien, urutan showcase, URL video,
     // API key, hash PIN) menempel pada satu dokumen. Model berbagi tautan:
     // siapa pun yang tahu lokasi dokumen boleh membaca/menulis, tetapi
-    // PIN hanya disimpan sebagai hash SHA-256.
+    // penghapusan diblokir, tulisan wajib validasi ketat, dan stempel waktu
+    // tidak boleh mundur (anti-rollback).
     match /studio/{docId} {
       allow read: if true;
-      allow delete: if true;
+      allow delete: if false;
       allow create, update: if request.resource.data.keys().hasOnly([
           'projects',
           'clients',
@@ -42,16 +53,23 @@ service cloud.firestore {
           'lastModified'
         ])
         && request.resource.data.lastModified is int
+        && (resource == null || request.resource.data.lastModified >= resource.data.lastModified)
         && request.resource.data.projects is list
+        && request.resource.data.projects.size() <= 300
         && request.resource.data.clients is list
+        && request.resource.data.clients.size() <= 200
         && request.resource.data.showcaseOrder is list
         && request.resource.data.showcaseOrder.size() <= 8
         && request.resource.data.heroVideoUrl is string
+        && request.resource.data.heroVideoUrl.size() <= 2048
         && request.resource.data.globalApiKey is string
-        && request.resource.data.adminPin is string;
+        && request.resource.data.globalApiKey.size() <= 256
+        && request.resource.data.adminPin is string
+        && request.resource.data.adminPin.size() <= 128;
     }
 
-    // Satu slot showcase per dokumen (data URL base64 bisa > 1 MB)
+    // Satu slot showcase per dokumen (data URL base64 bisa > 1 MB).
+    // Penghapusan tetap dibolehkan karena dipakai fitur kelola showcase.
     match /studioShowcase/{itemId} {
       allow read: if true;
       allow delete: if true;
@@ -64,9 +82,15 @@ service cloud.firestore {
           'lastModified'
         ])
         && request.resource.data.id is string
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 300
         && request.resource.data.thumbnailUrl is string
+        && request.resource.data.thumbnailUrl.size() <= 300000
         && request.resource.data.previewUrl is string
-        && request.resource.data.source in ['photo', 'upload'];
+        && request.resource.data.previewUrl.size() <= 1000000
+        && request.resource.data.source in ['photo', 'upload']
+        && request.resource.data.lastModified is int
+        && (resource == null || request.resource.data.lastModified >= resource.data.lastModified);
     }
 
     // Kolom lain tidak boleh disentuh

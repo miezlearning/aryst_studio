@@ -101,12 +101,12 @@ https://miezlearning.github.io/aryst_studio/?folder=1AbC...&quota=25&client=Rian
 Tanpa Firebase, data studio hanya tersimpan di IndexedDB peramban masing-masing (private browser tampil data default). Dengan sinkronisasi aktif, halaman beranda dan data studio ikut tersimpan di cloud:
 
 - **Pilihan klien** per sesi (koleksi `selections`)
-- **Sesi & daftar klien**, urutan **gambar showcase beranda**, **URL/unggahan video hero**, **API key Google Drive**, dan **PIN admin** (hanya hash SHA-256, bukan PIN aslinya) di dokumen `studio/state` + dokumen per-slot `studioShowcase/*`
-- **Video hero yang di-upload** disimpan di **Cloudflare R2** bila dikonfigurasi (gratis tanpa kartu kredit), selain itu di **Firebase Storage** (`studio/hero-video-*`, maks 30 MB)
+- **Sesi & daftar klien**, urutan **gambar showcase beranda**, **URL/unggahan video hero**, **API key Google Drive**, dan **PIN admin** (hanya hash PBKDF2, bukan PIN aslinya) di dokumen `studio/state` + dokumen per-slot `studioShowcase/*`
+- **Video hero yang di-upload** disimpan di **Cloudflare R2** (gratis tanpa kartu kredit; wajib dikonfigurasi)
 
 1. Buat proyek di [Firebase Console](https://console.firebase.google.com) → tambahkan **Web app** → salin blok konfigurasi (pastikan field `storageBucket` ikut terbawa).
 2. Aktifkan **Cloud Firestore** (mode test dulu cukup untuk pemakaian studio).
-3. Deploy aturan keamanan Firestore dari berkas [`firestore.rules`](./firestore.rules): `firebase deploy --only firestore:rules`. Aturan Storage ([`storage.rules`](./storage.rules)) hanya perlu bila memakai Firebase Storage.
+3. Deploy aturan keamanan Firestore dari berkas [`firestore.rules`](./firestore.rules): `firebase deploy --only firestore:rules --project ID_PROYEK`.
 4. Isi konfigurasi salah satu cara:
    - **Semua perangkat**: salin ke `VITE_FIREBASE_CONFIG` di `.env` (satu baris JSON), lalu push - GitHub Actions membangun ulang otomatis.
    - **Perangkat ini saja**: Dashboard Admin → tab **Pengaturan** → tempel JSON di kartu *Sinkronisasi Cloud (Firestore)* → **Simpan & Aktifkan**.
@@ -119,7 +119,7 @@ Tanpa Firebase, data studio hanya tersimpan di IndexedDB peramban masing-masing 
 <details>
 <summary><b>Video hero via Cloudflare R2 (gratis tanpa kartu kredit)</b></summary>
 
-Bila Storage Firebase menuntut paket Blaze, gunakan R2 saja: 10GB penyimpanan, biaya kirim data $0, tanpa kartu kredit.
+R2 adalah satu-satunya rumah video hero (Firebase Storage tidak dipakai): 10GB penyimpanan, biaya kirim data $0, tanpa kartu kredit.
 
 1. Daftar di [Cloudflare](https://dash.cloudflare.com) → menu **R2** → **Create bucket** (mis. `aryst-media`).
 2. **Manage R2 API Tokens** → **Create API token** → permissions *Object Read & Write* → batasi ke bucket tadi dan object path prefix `studio/` → simpan **Access Key ID** dan **Secret Access Key** (secret hanya tampil sekali).
@@ -143,15 +143,29 @@ Bila Storage Firebase menuntut paket Blaze, gunakan R2 saja: 10GB penyimpanan, b
    ]
    ```
 
-5. Isi konfigurasi salah satu cara:
-   - **Semua perangkat**: `VITE_R2_CONFIG` di `.env` (satu baris JSON), lalu push.
-   - **Perangkat ini saja**: Dashboard Admin → tab **Pengaturan** → kartu *Video Hero (Cloudflare R2)* → tempel JSON:
+5. Isi konfigurasi **hanya lewat kartu pengaturan** (Dashboard Admin → tab **Pengaturan** → kartu *Video Hero (Cloudflare R2)*) → tempel JSON:
 
    ```json
-   {"accountId": "ACCOUNT_ID", "bucket": "aryst-media", "accessKeyId": "...", "secretAccessKey": "...", "publicBaseUrl": "https://pub-xxxx.r2.dev"}
+   {"accountId": "ACCOUNT_ID", "bucket": "aryst-storagge", "accessKeyId": "...", "secretAccessKey": "...", "publicBaseUrl": "https://pub-xxxx.r2.dev"}
    ```
 
+   > **JANGAN** simpan secret R2 di variabel `VITE_*` mana pun (`.env`, `.env.local`, GitHub Actions secret): semua `VITE_*` ikut ter-bundle ke file JavaScript yang dipublikasikan ke internet. Simpan per perangkat lewat kartu di atas. Kalau secret pernah masuk repo, putar (rotate) token R2 sekarang juga.
+
 6. Unggah video hero dari dashboard akan memakai R2 otomatis; URL `r2.dev` yang sama diputar di semua peramban.
+
+</details>
+
+<details>
+<summary><b>Checklist Keamanan</b></summary>
+
+Wajib dilakukan sekali setelah publik:
+
+1. **Ganti PIN default** `studio2026` (Dashboard → Pengaturan → PIN Master). Hash kini PBKDF2 bersalt, tetapi PIN default diketahui publik.
+2. **Batasi API key Google Drive**: Google Cloud Console → *Credentials* → pilih key → *Application restrictions* → *HTTP referrers* → isi `https://miezlearning.github.io/*` dan domain uji kamu.
+3. **Token R2**: buat khusus per bucket + prefix `studio/`, simpan hanya lewat kartu pengaturan, putar berkala.
+4. **Firestore rules** ([`firestore.rules`](./firestore.rules)): penghapusan `studio/state` & `selections/*` diblokir, semua field divalidasi, anti-rollback `lastModified`. Deploy/perbarui: `firebase deploy --only firestore:rules --project ID_PROYEK` (CLI login dulu dengan `firebase login`).
+5. Sadari modelnya: siapa pun yang mengetahui tautan sesi/dokumen **bisa membaca dan menulis data** (bukan menghapus). Ini disengaja agar klien tak perlu login; jangan pernah bagikan lokasi `studio/state` ke luar kalau memungkinkan.
+6. Video hero dari domain lain selain `r2.dev` / Mixkit / Google perlu ditambahkan ke `media-src` di CSP [`index.html`](./index.html).
 
 </details>
 

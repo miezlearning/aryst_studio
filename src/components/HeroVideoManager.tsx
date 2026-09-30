@@ -162,7 +162,7 @@ export const HeroVideoManager: React.FC = () => {
               {activeSource}
             </span>
           </div>
-          <p className="mt-1.5 text-[11px] text-zinc-500">
+          <p className="mt-1.5 text-[11px] text-zinc-400">
             {previewBroken
               ? "Video tidak bisa dimuat di browser ini (host diblokir / bukan file mp4). Coba URL lain atau upload file."
               : "Arahkan kursor ke preview untuk memutar."}
@@ -186,19 +186,19 @@ export const HeroVideoManager: React.FC = () => {
           {saved && !error && (
             <p className="mb-3 text-xs text-emerald-400 font-semibold flex items-center gap-1">
               <Check className="w-3.5 h-3.5" />
-              <span>Tersimpan — buka halaman utama untuk melihat.</span>
+              <span>Tersimpan. Buka halaman utama untuk melihat.</span>
             </p>
           )}
 
           <form onSubmit={handleSaveUrl} className="flex items-center gap-2 mb-3">
             <div className="relative flex-1">
-              <Link2 className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Link2 className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 placeholder="https://.../video.mp4 (opsional)"
-                className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors"
+                className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 transition-colors"
               />
             </div>
             <button

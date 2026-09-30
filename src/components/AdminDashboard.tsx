@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useProofingStore } from "@/lib/storage";
-import { ClientProject } from "@/types";
+import { ClientProject, SessionMode } from "@/types";
 import { generateClientShareUrl } from "@/lib/sync";
 import { extractFolderId } from "@/lib/googleDrive";
 import { formatDate } from "@/lib/utils";
@@ -40,6 +40,10 @@ import {
   Target,
   FolderPlus,
   CalendarClock,
+  RefreshCw,
+  Upload,
+  Info,
+  User,
 } from "lucide-react";
 import { DeadlineBadge } from "./DeadlineCountdown";
 
@@ -60,9 +64,92 @@ const fromDeadlineInput = (value: string): number | null => {
 const defaultDeadlineInput = (days = 7): string =>
   toDeadlineInput(Date.now() + days * 86_400_000);
 
+// Photo source status of one session: no folder yet, folder without API key, or ready
+type SourceState = "unset" | "nokey" | "ready";
+const sourceStateOf = (proj: ClientProject, hasApiKey: boolean): SourceState =>
+  !proj.folderId ? "unset" : !hasApiKey ? "nokey" : "ready";
+
+// One status control per session. Each state carries its own next action,
+// so an unfinished setup is never a dead label.
+const SourceStatus: React.FC<{
+  state: SourceState;
+  count?: number;
+  isActive: boolean;
+  onConfigure: () => void;
+  onOpenSettings: () => void;
+  onReload: () => void;
+}> = ({ state, count, isActive, onConfigure, onOpenSettings, onReload }) => {
+  if (state === "unset") {
+    return (
+      <button
+        type="button"
+        onClick={onConfigure}
+        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md border border-amber-400/40 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 text-[11px] font-semibold transition-colors"
+        title="Pasang tautan folder Google Drive untuk sesi ini"
+      >
+        <Upload className="w-3 h-3" />
+        <span>Tambah Link Folder Drive</span>
+      </button>
+    );
+  }
+
+  if (state === "nokey") {
+    return (
+      <button
+        type="button"
+        onClick={onOpenSettings}
+        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md border border-rose-400/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-[11px] font-semibold transition-colors"
+        title="Folder sudah terpasang, tetapi kunci API belum diisi"
+      >
+        <Key className="w-3 h-3" />
+        <span>Atur Kunci API</span>
+      </button>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium min-w-0">
+      <FolderGit2 className="w-3 h-3 shrink-0" />
+      <span className="truncate max-w-[150px]">
+        {count ? `${count} foto siap` : "Folder terhubung"}
+      </span>
+      {isActive && (
+        <button
+          type="button"
+          onClick={onReload}
+          className="p-0.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-amber-300 transition-colors"
+          title="Muat ulang foto dari Google Drive"
+        >
+          <RefreshCw className="w-3 h-3" />
+        </button>
+      )}
+    </span>
+  );
+};
+
+// Compact label for the session mode chosen by the admin
+const SessionModeBadge: React.FC<{ proj: ClientProject }> = ({ proj }) =>
+  proj.sessionMode === "group" ? (
+    <span
+      className="px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-400/10 text-sky-300 border border-sky-400/25"
+      title={proj.members?.length ? proj.members.join(", ") : "Sesi grup"}
+    >
+      <span className="inline-flex items-center gap-1">
+        <Users className="w-3 h-3" />
+        Grup{proj.members?.length ? ` · ${proj.members.length} anggota` : ""}
+      </span>
+    </span>
+  ) : (
+    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700 inline-flex items-center gap-1">
+      <User className="w-3 h-3" />
+      Perorangan
+    </span>
+  );
+
 export const AdminDashboard: React.FC = () => {
   const {
     clientProjects,
+    clients,
     activeProjectId,
     globalApiKey,
     adminPin,
@@ -74,6 +161,10 @@ export const AdminDashboard: React.FC = () => {
     setAdminPin,
     logoutAdmin,
     setViewMode,
+    unlockForPreview,
+    probeDriveFolder,
+    getPhotoCounts,
+    loadPhotos,
   } = useProofingStore();
 
   const [activeTab, setActiveTab] = useState<AdminTab>("projects");
@@ -107,6 +198,50 @@ export const AdminDashboard: React.FC = () => {
   const [formContact, setFormContact] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [formSections, setFormSections] = useState("");
+  const [formSessionMode, setFormSessionMode] = useState<SessionMode>("individual");
+  const [formMembers, setFormMembers] = useState("");
+  const [formWebhookUrl, setFormWebhookUrl] = useState("");
+  const [formClearPassword, setFormClearPassword] = useState(false);
+  const [focusFolderField, setFocusFolderField] = useState(false);
+  const [probeResult, setProbeResult] = useState<
+    { ok: boolean; count: number; message: string } | null
+  >(null);
+  const [isProbing, setIsProbing] = useState(false);
+  const folderInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Cached photo count per session, so source status shows a real number
+  const [photoCounts, setPhotoCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let alive = true;
+    getPhotoCounts().then((counts) => {
+      if (alive) setPhotoCounts(counts);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [clientProjects, globalApiKey, getPhotoCounts]);
+
+  // The session form is a dialog: focus lands on it, Escape closes it
+  useEffect(() => {
+    if (!isModalOpen) return;
+    modalRef.current?.focus();
+    modalRef.current?.scrollTo(0, 0);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsModalOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isModalOpen]);
+
+  // Jump to the Drive field when the form is opened from a "add photos" CTA
+  useEffect(() => {
+    if (isModalOpen && focusFolderField) {
+      folderInputRef.current?.focus();
+      folderInputRef.current?.scrollIntoView({ block: "center" });
+      setFocusFolderField(false);
+    }
+  }, [isModalOpen, focusFolderField]);
 
   const filteredProjects = clientProjects.filter((p) => {
     const query = searchQuery.toLowerCase().trim();
@@ -121,16 +256,21 @@ export const AdminDashboard: React.FC = () => {
     );
   });
 
-  // Group projects by client name
+  // Group sessions by their owning client, so a renamed session stays grouped
   const groupedClients = useMemo(() => {
-    const map = new Map<string, { clientName: string; clientContact: string; projects: ClientProject[] }>();
+    const map = new Map<
+      string,
+      { key: string; clientName: string; clientContact: string; projects: ClientProject[] }
+    >();
 
     filteredProjects.forEach((proj) => {
-      const key = proj.clientName.trim().toLowerCase();
+      const key = proj.clientId || proj.clientName.trim().toLowerCase();
       if (!map.has(key)) {
+        const record = clients.find((c) => c.id === proj.clientId);
         map.set(key, {
-          clientName: proj.clientName.trim(),
-          clientContact: proj.clientContact || "",
+          key,
+          clientName: record?.name || proj.clientName.trim(),
+          clientContact: record?.contact || "",
           projects: [],
         });
       }
@@ -142,28 +282,46 @@ export const AdminDashboard: React.FC = () => {
     });
 
     return Array.from(map.values());
-  }, [filteredProjects]);
+  }, [filteredProjects, clients]);
 
-  const openCreateModal = () => {
+  // Sessions that still need a photo source, driving the setup banner
+  const sourceGaps = useMemo(() => {
+    const hasKey = Boolean(globalApiKey);
+    return {
+      unset: filteredProjects.filter((p) => sourceStateOf(p, hasKey) === "unset"),
+      noKey: filteredProjects.filter((p) => sourceStateOf(p, hasKey) === "nokey"),
+    };
+  }, [filteredProjects, globalApiKey]);
+
+  const openCreateModal = (opts?: { focusFolder?: boolean }) => {
     setEditingProject(null);
     setFormClientName("");
-    setFormProjectId(`WED-${Date.now().toString().slice(-4)}`);
+    setFormProjectId(`SESI-${Date.now().toString().slice(-4)}`);
     setFormSessionType("Pernikahan");
-    setFormSessionTitle("The Holy Matrimony & Grand Reception");
-    setFormLocation("Hotel Mulia Senayan, Jakarta");
-    setFormSessionPurpose("Dokumentasi Sakral Akad Nikah & Resepsi");
+    setFormSessionTitle("");
+    setFormLocation("");
+    setFormSessionPurpose("");
     setFormSessionDate("");
     setFormFolderId("");
     setFormQuota(20);
     setFormPassword("");
     setFormContact("");
     setFormNotes("");
-    setFormSections("Persiapan (Suite Hotel), Akad Nikah (Masjid Raya), Resepsi (Grand Ballroom)");
+    setFormSections("");
     setFormDeadline(defaultDeadlineInput(7));
+    setFormSessionMode("individual");
+    setFormMembers("");
+    setFormWebhookUrl("");
+    setFormClearPassword(false);
+    setProbeResult(null);
+    setFocusFolderField(Boolean(opts?.focusFolder));
     setIsModalOpen(true);
   };
 
   const openCreateModalForClient = (clientName: string, clientContact?: string) => {
+    const record = clients.find(
+      (c) => c.name.trim().toLowerCase() === clientName.trim().toLowerCase()
+    );
     setEditingProject(null);
     setFormClientName(clientName);
     setFormProjectId(`SESI-${Date.now().toString().slice(-4)}`);
@@ -174,15 +332,22 @@ export const AdminDashboard: React.FC = () => {
     setFormSessionDate("");
     setFormFolderId("");
     setFormQuota(15);
-    setFormPassword("");
-    setFormContact(clientContact || "");
+    // A new session of an existing client starts from that client's defaults
+    setFormPassword(record?.password || "");
+    setFormContact(record?.contact || clientContact || "");
     setFormNotes("");
     setFormSections("");
     setFormDeadline(defaultDeadlineInput(7));
+    setFormSessionMode("individual");
+    setFormMembers("");
+    setFormWebhookUrl("");
+    setFormClearPassword(false);
+    setProbeResult(null);
+    setFocusFolderField(false);
     setIsModalOpen(true);
   };
 
-  const openEditModal = (proj: ClientProject) => {
+  const openEditModal = (proj: ClientProject, opts?: { focusFolder?: boolean }) => {
     setEditingProject(proj);
     setFormClientName(proj.clientName);
     setFormProjectId(proj.projectId);
@@ -200,6 +365,12 @@ export const AdminDashboard: React.FC = () => {
       proj.sections?.map((s) => (s.location ? `${s.name} (${s.location})` : s.name)).join(", ") || ""
     );
     setFormDeadline(toDeadlineInput(proj.selectionDeadline));
+    setFormSessionMode(proj.sessionMode || "individual");
+    setFormMembers(proj.members?.join(", ") || "");
+    setFormWebhookUrl(proj.webhookUrl || "");
+    setFormClearPassword(false);
+    setProbeResult(null);
+    setFocusFolderField(Boolean(opts?.focusFolder));
     setIsModalOpen(true);
   };
 
@@ -229,6 +400,7 @@ export const AdminDashboard: React.FC = () => {
       });
 
     const newProject: ClientProject = {
+      ...(editingProject || {}),
       id: editingProject ? editingProject.id : `proj-${Date.now()}`,
       clientName: formClientName.trim(),
       projectId: formProjectId.trim() || `PRJ-${Date.now().toString().slice(-4)}`,
@@ -237,19 +409,30 @@ export const AdminDashboard: React.FC = () => {
       location: formLocation.trim() || undefined,
       sessionPurpose: formSessionPurpose.trim() || undefined,
       sessionDate: formSessionDate.trim() || undefined,
+      sessionMode: formSessionMode,
+      members:
+        formSessionMode === "group"
+          ? formMembers
+              .split(",")
+              .map((m) => m.trim())
+              .filter(Boolean)
+          : undefined,
       folderId: cleanFolder,
       maxQuota: Number(formQuota) || 20,
       password: formPassword.trim() || undefined,
+      clearPassword: formClearPassword,
       clientContact: formContact.trim(),
+      webhookUrl: formWebhookUrl.trim() || undefined,
       notes: formNotes.trim(),
       sections: parsedSections.length > 0 ? parsedSections : undefined,
       selectionDeadline: fromDeadlineInput(formDeadline),
-      webhookUrl: editingProject?.webhookUrl,
       createdAt: editingProject ? editingProject.createdAt : Date.now(),
     };
 
     await saveProject(newProject);
     setIsModalOpen(false);
+    setProbeResult(null);
+    getPhotoCounts().then(setPhotoCounts);
   };
 
   const handleCopyClientLink = async (proj: ClientProject) => {
@@ -261,7 +444,22 @@ export const AdminDashboard: React.FC = () => {
 
   const handlePreviewAsClient = async (projId: string) => {
     await switchProject(projId);
+    // The admin already authenticated, so the preview skips the password gate
+    unlockForPreview(projId);
     setViewMode("client");
+  };
+
+  const handleProbeFolder = async () => {
+    setIsProbing(true);
+    const result = await probeDriveFolder(formFolderId);
+    setProbeResult(result);
+    setIsProbing(false);
+    if (result.ok) getPhotoCounts().then(setPhotoCounts);
+  };
+
+  const handleReloadActivePhotos = async () => {
+    await loadPhotos(true);
+    getPhotoCounts().then(setPhotoCounts);
   };
 
   const handleSaveApiKey = async () => {
@@ -322,8 +520,8 @@ function doPost(e) {
                 Sinkron Realtime
               </span>
             ) : (
-              <span className="text-zinc-500 flex items-center gap-1.5 text-[11px]">
-                <Radio className="w-3 h-3 text-zinc-500" />
+              <span className="text-zinc-400 flex items-center gap-1.5 text-[11px]">
+                <Radio className="w-3 h-3 text-zinc-400" />
                 Siap Menerima Pilihan
               </span>
             )}
@@ -339,17 +537,20 @@ function doPost(e) {
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setViewMode("client")}
+            onClick={() => {
+              unlockForPreview(activeProjectId);
+              setViewMode("client");
+            }}
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-200 transition-colors"
           >
             <Eye className="w-4 h-4 text-amber-400" />
             <span>Lihat Galeri Klien</span>
-            <ArrowRight className="w-3.5 h-3.5 text-zinc-500" />
+            <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />
           </button>
 
           <button
             id="admin-add-session-btn"
-            onClick={openCreateModal}
+            onClick={() => openCreateModal()}
             className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-semibold transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -394,13 +595,13 @@ function doPost(e) {
           {/* Search Bar & View Mode Switcher */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari sesi berdasarkan nama klien atau kode project..."
-                className="w-full pl-9 pr-3.5 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                className="w-full pl-9 pr-3.5 py-1.5 text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
               />
             </div>
 
@@ -446,15 +647,68 @@ function doPost(e) {
             </div>
           </div>
 
+          {/* Photo source setup banner: unfinished sessions are never silent */}
+          {(sourceGaps.unset.length > 0 || sourceGaps.noKey.length > 0) && (
+            <div className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-semibold text-amber-200">
+                    {sourceGaps.unset.length > 0
+                      ? `${sourceGaps.unset.length} sesi belum punya sumber foto`
+                      : "Folder sudah terpasang, kunci API belum diisi"}
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                    {sourceGaps.unset.length > 0
+                      ? "Galeri klien tetap kosong sampai tautan folder Google Drive dipasang pada sesi tersebut."
+                      : "Foto belum bisa dimuat sampai kunci API Google Drive diisi pada tab Pengaturan."}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {sourceGaps.unset.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(sourceGaps.unset[0], { focusFolder: true })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-semibold transition-colors"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Tambah Link Folder Drive</span>
+                  </button>
+                )}
+                {sourceGaps.noKey.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("settings")}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-rose-300 text-xs font-semibold transition-colors"
+                  >
+                    <Key className="w-3.5 h-3.5" />
+                    <span>Atur Kunci API</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {filteredProjects.length === 0 ? (
             <div className="p-12 text-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs">
               <Users className="w-8 h-8 mx-auto mb-2 text-zinc-600" />
               <p className="font-semibold text-zinc-200 mb-1">Tidak Ada Sesi Ditemukan</p>
-              <p className="text-zinc-500 max-w-sm mx-auto">
+              <p className="text-zinc-400 max-w-sm mx-auto">
                 {searchQuery
                   ? "Coba ubah kata kunci pencarian Anda."
-                  : "Belum ada sesi klien yang dibuat. Klik tombol 'Tambah Sesi Klien' di atas."}
+                  : "Belum ada sesi klien yang dibuat. Buat sesi pertama untuk mulai mengumpulkan foto."}
               </p>
+              {!searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => openCreateModal()}
+                  className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-semibold transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tambah Sesi Klien</span>
+                </button>
+              )}
             </div>
           ) : viewLayout === "by_client" ? (
             /* GROUPED BY CLIENT: Multi-session relationship view */
@@ -462,7 +716,7 @@ function doPost(e) {
               {groupedClients.map((group) => {
                 return (
                   <div
-                    key={group.clientName}
+                    key={group.key}
                     className="rounded-xl border border-zinc-800 bg-zinc-900/90 overflow-hidden shadow-sm"
                   >
                     {/* Client Group Header */}
@@ -482,7 +736,7 @@ function doPost(e) {
                           </div>
                           {group.clientContact && (
                             <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1.5">
-                              <Phone className="w-3 h-3 text-zinc-500" />
+                              <Phone className="w-3 h-3 text-zinc-400" />
                               <span>{group.clientContact}</span>
                             </p>
                           )}
@@ -518,10 +772,11 @@ function doPost(e) {
                                 <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">
                                   {proj.sessionType || "Sesi Foto"}
                                 </span>
+                                <SessionModeBadge proj={proj} />
                                 <h4 className="text-sm sm:text-base font-semibold text-white truncate">
                                   {proj.sessionTitle || proj.projectId}
                                 </h4>
-                                <span className="text-[11px] font-mono text-zinc-500">
+                                <span className="text-[11px] font-mono text-zinc-400">
                                   ({proj.projectId})
                                 </span>
                                 {isActive && (
@@ -537,14 +792,14 @@ function doPost(e) {
                                 {proj.location && (
                                   <div className="flex items-center gap-1.5 text-zinc-300">
                                     <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                    <span className="text-zinc-500 font-medium">Tempat:</span>
+                                    <span className="text-zinc-400 font-medium">Tempat:</span>
                                     <span className="font-medium truncate">{proj.location}</span>
                                   </div>
                                 )}
                                 {(proj.sessionPurpose || proj.notes) && (
                                   <div className="flex items-center gap-1.5 text-zinc-300">
                                     <Target className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                    <span className="text-zinc-500 font-medium">Tujuan / Esensi:</span>
+                                    <span className="text-zinc-400 font-medium">Tujuan / Esensi:</span>
                                     <span className="font-medium truncate">{proj.sessionPurpose || proj.notes}</span>
                                   </div>
                                 )}
@@ -553,12 +808,12 @@ function doPost(e) {
                               {/* Meta info tags */}
                               <div className="flex flex-wrap items-center gap-3 text-[11px] text-zinc-400 pt-1">
                                 <span className="flex items-center gap-1">
-                                  <Camera className="w-3 h-3 text-zinc-500" />
+                                  <Camera className="w-3 h-3 text-zinc-400" />
                                   <span>Kuota: <strong className="text-zinc-200">{proj.maxQuota} foto</strong></span>
                                 </span>
                                 {proj.sessionDate && (
                                   <span className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3 text-zinc-500" />
+                                    <Calendar className="w-3 h-3 text-zinc-400" />
                                     <span>{proj.sessionDate}</span>
                                   </span>
                                 )}
@@ -569,7 +824,7 @@ function doPost(e) {
                                     <span>Dilindungi Sandi</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-zinc-500">
+                                  <span className="inline-flex items-center gap-1 text-zinc-400">
                                     <Unlock className="w-3 h-3" />
                                     <span>Publik</span>
                                   </span>
@@ -582,6 +837,15 @@ function doPost(e) {
                                     </span>
                                   </>
                                 )}
+                                <span>•</span>
+                                <SourceStatus
+                                  state={sourceStateOf(proj, Boolean(globalApiKey))}
+                                  count={photoCounts[proj.id]}
+                                  isActive={isActive}
+                                  onConfigure={() => openEditModal(proj, { focusFolder: true })}
+                                  onOpenSettings={() => setActiveTab("settings")}
+                                  onReload={handleReloadActivePhotos}
+                                />
                               </div>
                             </div>
 
@@ -685,6 +949,7 @@ function doPost(e) {
                                 {proj.sessionType}
                               </span>
                             )}
+                            <SessionModeBadge proj={proj} />
                             {isActive && (
                               <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
                                 Aktif
@@ -695,7 +960,7 @@ function doPost(e) {
                             <span className="text-zinc-300 font-medium text-xs">
                               {proj.sessionTitle || proj.projectId}
                             </span>
-                            <span className="text-zinc-500 font-mono text-[11px]">
+                            <span className="text-zinc-400 font-mono text-[11px]">
                               ({proj.projectId})
                             </span>
                             <DeadlineBadge deadline={proj.selectionDeadline} />
@@ -712,7 +977,7 @@ function doPost(e) {
                           )}
                           {(proj.sessionPurpose || proj.notes) && (
                             <div className="flex items-center gap-1 text-zinc-400 truncate mt-0.5 text-[11px]">
-                              <Target className="w-3 h-3 text-zinc-500 shrink-0" />
+                              <Target className="w-3 h-3 text-zinc-400 shrink-0" />
                               <span className="truncate">{proj.sessionPurpose || proj.notes}</span>
                             </div>
                           )}
@@ -720,17 +985,14 @@ function doPost(e) {
 
                         {/* Sumber Foto */}
                         <td className="py-3 px-4">
-                          {proj.folderId ? (
-                            <span className="text-emerald-400 flex items-center gap-1.5 font-medium">
-                              <FolderGit2 className="w-3.5 h-3.5" />
-                              <span className="truncate max-w-[140px]">{proj.folderId}</span>
-                            </span>
-                          ) : (
-                            <span className="text-zinc-400 flex items-center gap-1.5">
-                              <Camera className="w-3.5 h-3.5 text-zinc-500" />
-                              <span>Sampel Demo</span>
-                            </span>
-                          )}
+                          <SourceStatus
+                            state={sourceStateOf(proj, Boolean(globalApiKey))}
+                            count={photoCounts[proj.id]}
+                            isActive={isActive}
+                            onConfigure={() => openEditModal(proj, { focusFolder: true })}
+                            onOpenSettings={() => setActiveTab("settings")}
+                            onReload={handleReloadActivePhotos}
+                          />
                         </td>
 
                         {/* Kuota */}
@@ -836,6 +1098,7 @@ function doPost(e) {
                         <span className="font-bold text-[11px] px-2 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/20">
                           {proj.sessionType || "Sesi Foto"}
                         </span>
+                        <SessionModeBadge proj={proj} />
 
                         {hasPassword ? (
                           <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/20 font-medium">
@@ -863,14 +1126,14 @@ function doPost(e) {
                         {proj.location && (
                           <div className="flex items-center gap-1.5 text-zinc-300">
                             <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <span className="text-zinc-500">Tempat:</span>
+                            <span className="text-zinc-400">Tempat:</span>
                             <span className="truncate font-medium">{proj.location}</span>
                           </div>
                         )}
                         {(proj.sessionPurpose || proj.notes) && (
                           <div className="flex items-center gap-1.5 text-zinc-300">
                             <Target className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <span className="text-zinc-500">Tujuan:</span>
+                            <span className="text-zinc-400">Tujuan:</span>
                             <span className="truncate font-medium">{proj.sessionPurpose || proj.notes}</span>
                           </div>
                         )}
@@ -882,23 +1145,20 @@ function doPost(e) {
                           <strong className="text-zinc-200">{proj.maxQuota} foto</strong>
                           <DeadlineBadge deadline={proj.selectionDeadline} />
                         </div>
-                        <span className="text-[11px] text-zinc-500 shrink-0">
+                        <span className="text-[11px] text-zinc-400 shrink-0">
                           {proj.sessionDate || formatDate(proj.createdAt)}
                         </span>
                       </div>
 
-                      <div className="mt-2 text-[11px] flex items-center gap-1.5 text-zinc-500">
-                        {proj.folderId ? (
-                          <span className="text-emerald-400 flex items-center gap-1 font-medium">
-                            <FolderGit2 className="w-3 h-3" />
-                            <span className="truncate max-w-[180px]">Folder: {proj.folderId}</span>
-                          </span>
-                        ) : (
-                          <span className="text-zinc-400 flex items-center gap-1">
-                            <Camera className="w-3 h-3 text-zinc-500" />
-                            <span>Foto Sampel Demo</span>
-                          </span>
-                        )}
+                      <div className="mt-2 text-[11px] flex items-center gap-1.5 text-zinc-400">
+                        <SourceStatus
+                          state={sourceStateOf(proj, Boolean(globalApiKey))}
+                          count={photoCounts[proj.id]}
+                          isActive={isActive}
+                          onConfigure={() => openEditModal(proj, { focusFolder: true })}
+                          onOpenSettings={() => setActiveTab("settings")}
+                          onReload={handleReloadActivePhotos}
+                        />
                       </div>
                     </div>
 
@@ -986,7 +1246,7 @@ function doPost(e) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-amber-400" />
                   <span>PIN Master Saat Ini</span>
                 </label>
@@ -995,7 +1255,7 @@ function doPost(e) {
                   value={newPinInput}
                   onChange={(e) => setNewPinInput(e.target.value)}
                   placeholder="Contoh: studio2026"
-                  className="w-full px-3.5 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3.5 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 />
               </div>
 
@@ -1021,7 +1281,7 @@ function doPost(e) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-amber-400" />
                   <span>Google Drive API Key v3</span>
                 </label>
@@ -1030,9 +1290,9 @@ function doPost(e) {
                   value={apiKeyInput}
                   onChange={(e) => setApiKeyInput(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full px-3.5 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3.5 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 />
-                <p className="text-[11px] text-zinc-500 mt-1.5 flex items-center gap-1">
+                <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span>
                     Disimpan dengan aman di perangkat lokal Anda.
@@ -1086,7 +1346,10 @@ function doPost(e) {
               <li>Klik tombol <b>Deploy &gt; New deployment</b>.</li>
               <li>Pilih tipe <b>Web App</b>.</li>
               <li>Atur <b>Execute as: Me</b> dan <b>Who has access: Anyone</b>.</li>
-              <li>Salin URL Web App yang dihasilkan dan tempelkan ke kolom Webhook di sesi klien Anda.</li>
+              <li>
+                Salin URL Web App yang dihasilkan dan tempelkan ke kolom{" "}
+                <b>URL Webhook Spreadsheet</b> pada form sesi klien.
+              </li>
             </ol>
           </div>
         </div>
@@ -1095,18 +1358,23 @@ function doPost(e) {
       {/* CREATE / EDIT SESSION MODAL */}
       {isModalOpen && (
         <div
+          ref={modalRef}
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto animate-fade-in"
+          tabIndex={-1}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
         >
-          <div className="relative w-full max-w-lg bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
+          <div className="relative w-full max-w-3xl my-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
+            <div className="sticky top-0 z-10 -mx-6 -mt-6 px-6 pt-5 pb-3 mb-3 bg-zinc-900 border-b border-zinc-800 rounded-t-xl flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-white">
                   {editingProject ? "Edit Sesi Klien" : "Buat Sesi Galeri Klien Baru"}
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Atur informasi klien, kuota foto, dan kata sandi opsional.
+                  Atur mode sesi, sumber foto, kuota, dan akses galeri klien.
                 </p>
               </div>
               <button
@@ -1117,10 +1385,10 @@ function doPost(e) {
               </button>
             </div>
 
-            <form onSubmit={handleSaveProjectForm} className="space-y-3.5">
+            <form onSubmit={handleSaveProjectForm} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-amber-400" />
                     <span>Nama Klien / Pasangan</span>
                   </label>
@@ -1130,12 +1398,12 @@ function doPost(e) {
                     value={formClientName}
                     onChange={(e) => setFormClientName(e.target.value)}
                     placeholder="Contoh: Rian & Amanda"
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5 text-amber-400" />
                     <span>ID / Kode Project</span>
                   </label>
@@ -1145,22 +1413,155 @@ function doPost(e) {
                     value={formProjectId}
                     onChange={(e) => setFormProjectId(e.target.value)}
                     placeholder="WED-2026-RIAN"
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
+              </div>
+
+              {/* Mode Sesi: perorangan atau grup */}
+              <div>
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Mode Sesi</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormSessionMode("individual")}
+                    className={`text-left px-3 py-2 rounded-lg border transition-colors ${
+                      formSessionMode === "individual"
+                        ? "bg-amber-400/10 border-amber-400/50 text-white"
+                        : "bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                    }`}
+                  >
+                    <span className="text-xs font-semibold flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5" />
+                      Perorangan
+                    </span>
+                    <span className="text-[11px] text-zinc-400 block mt-0.5">
+                      Satu penerima, kuota pilihannya sendiri
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormSessionMode("group")}
+                    className={`text-left px-3 py-2 rounded-lg border transition-colors ${
+                      formSessionMode === "group"
+                        ? "bg-amber-400/10 border-amber-400/50 text-white"
+                        : "bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                    }`}
+                  >
+                    <span className="text-xs font-semibold flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      Grup
+                    </span>
+                    <span className="text-[11px] text-zinc-400 block mt-0.5">
+                      Beberapa anggota, satu daftar bersama
+                    </span>
+                  </button>
+                </div>
+                {formSessionMode === "group" ? (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      value={formMembers}
+                      onChange={(e) => setFormMembers(e.target.value)}
+                      placeholder="Nama anggota, pisahkan koma: Rina, Budi, Citra"
+                      className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    />
+                    <p className="text-[11px] text-zinc-400 mt-1">
+                      Kuota dan daftar pilihan dipakai bersama oleh seluruh anggota sesi ini.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-zinc-400 mt-1.5">
+                    Sesi untuk satu penerima dengan kuota pilihannya sendiri.
+                  </p>
+                )}
+              </div>
+
+              {/* Sumber Foto: tautan folder Drive, tervalidasi sebelum disimpan */}
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
+                    <FolderGit2 className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Sumber Foto (Google Drive)</span>
+                  </label>
+                  {formFolderId.trim() !== "" && Boolean(globalApiKey) && (
+                    <span className="text-[11px] text-emerald-400 font-medium">
+                      {editingProject && photoCounts[editingProject.id]
+                        ? `${photoCounts[editingProject.id]} foto siap`
+                        : "Terhubung"}
+                    </span>
+                  )}
+                </div>
+
+                {!formFolderId.trim() ? (
+                  <p className="text-[11px] text-amber-200/90 bg-amber-400/10 border border-amber-400/25 rounded-md px-2.5 py-2">
+                    Belum ada foto. Tempel tautan folder Google Drive di bawah agar galeri
+                    klien terisi.
+                  </p>
+                ) : !globalApiKey ? (
+                  <p className="text-[11px] text-rose-200/90 bg-rose-500/10 border border-rose-400/25 rounded-md px-2.5 py-2 flex items-center justify-between gap-2">
+                    <span>Kunci API Google Drive belum diisi.</span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("settings")}
+                      className="shrink-0 underline font-semibold hover:text-rose-100"
+                    >
+                      Buka Pengaturan
+                    </button>
+                  </p>
+                ) : null}
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    ref={folderInputRef}
+                    type="text"
+                    value={formFolderId}
+                    onChange={(e) => setFormFolderId(e.target.value)}
+                    placeholder="https://drive.google.com/drive/folders/..."
+                    className="flex-1 px-3 py-1 text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleProbeFolder}
+                    disabled={isProbing}
+                    className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-60 border border-zinc-700 text-zinc-200 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isProbing ? "animate-spin" : ""}`} />
+                    <span>{isProbing ? "Memeriksa..." : "Periksa Folder"}</span>
+                  </button>
+                </div>
+
+                {probeResult && (
+                  <p
+                    className={`text-[11px] flex items-start gap-1.5 ${
+                      probeResult.ok ? "text-emerald-300" : "text-rose-300"
+                    }`}
+                  >
+                    <span>{probeResult.message}</span>
+                  </p>
+                )}
+
+                <p className="text-[11px] text-zinc-400">
+                  Izin folder harus{" "}
+                  <span className="text-zinc-400">Anyone with the link can view</span>. Bisa
+                  ditempel tautan maupun ID folder.
+                </p>
               </div>
 
               {/* Tipe Sesi & Tanggal Pelaksanaan */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Camera className="w-3.5 h-3.5 text-amber-400" />
                     <span>Tipe / Kategori Sesi Foto</span>
                   </label>
                   <select
                     value={formSessionType}
                     onChange={(e) => setFormSessionType(e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   >
                     <option value="Pernikahan">Pernikahan (Wedding Day)</option>
                     <option value="Prewedding">Prewedding</option>
@@ -1174,7 +1575,7 @@ function doPost(e) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-amber-400" />
                     <span>Tanggal Sesi (Opsional)</span>
                   </label>
@@ -1183,23 +1584,23 @@ function doPost(e) {
                     value={formSessionDate}
                     onChange={(e) => setFormSessionDate(e.target.value)}
                     placeholder="Contoh: 14 Maret 2026"
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
               </div>
 
               {/* Batas Waktu Pilihan Foto (Deadline) */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                   <CalendarClock className="w-3.5 h-3.5 text-amber-400" />
                   <span>Batas Waktu Pilihan Foto</span>
                 </label>
-                <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
                   <input
                     type="datetime-local"
                     value={formDeadline}
                     onChange={(e) => setFormDeadline(e.target.value)}
-                    className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="flex-1 min-w-[190px] px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                   <div className="flex flex-wrap gap-1.5">
                     {[3, 7, 14].map((days) => (
@@ -1215,13 +1616,13 @@ function doPost(e) {
                     <button
                       type="button"
                       onClick={() => setFormDeadline("")}
-                      className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-500 text-[11px] font-medium transition-colors"
+                      className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 text-[11px] font-medium transition-colors"
                     >
                       Tanpa batas
                     </button>
                   </div>
                 </div>
-                <p className="text-[11px] text-zinc-500 mt-1">
+                <p className="text-[11px] text-zinc-400 mt-1">
                   Setelah lewat waktu, sesi terkunci otomatis untuk klien (pilihan tetap
                   tersimpan). Perpanjang tanggal untuk membuka kembali.
                 </p>
@@ -1230,7 +1631,7 @@ function doPost(e) {
               {/* Judul Sesi & Tempat / Lokasi */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1">
                     Tema / Judul Sesi
                   </label>
                   <input
@@ -1238,12 +1639,12 @@ function doPost(e) {
                     value={formSessionTitle}
                     onChange={(e) => setFormSessionTitle(e.target.value)}
                     placeholder="Contoh: Prewedding Alam & Sunset"
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-amber-400" />
                     <span>Tempat / Lokasi Utama</span>
                   </label>
@@ -1252,14 +1653,14 @@ function doPost(e) {
                     value={formLocation}
                     onChange={(e) => setFormLocation(e.target.value)}
                     placeholder="Contoh: Kintamani & Pantai Melasti, Bali"
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
               </div>
 
               {/* Tujuan & Esensi Sesi Foto */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                   <Target className="w-3.5 h-3.5 text-amber-400" />
                   <span>Tujuan Foto / Esensi Sesi</span>
                 </label>
@@ -1268,33 +1669,16 @@ function doPost(e) {
                   value={formSessionPurpose}
                   onChange={(e) => setFormSessionPurpose(e.target.value)}
                   placeholder="Contoh: Foto Cetak Kanvas Resepsi & Video Undangan Digital"
-                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 />
-                <p className="text-[11px] text-zinc-500 mt-1">
+                <p className="text-[11px] text-zinc-400 mt-1">
                   Menjelaskan esensi foto bagi klien (misal: album cetak, kanvas dekorasi, dokumentasi sakral).
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                  <FolderGit2 className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Tautan / ID Folder Google Drive</span>
-                </label>
-                <input
-                  type="text"
-                  value={formFolderId}
-                  onChange={(e) => setFormFolderId(e.target.value)}
-                  placeholder="https://drive.google.com/drive/folders/... (Kosongkan untuk demo)"
-                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                />
-                <p className="text-[11px] text-zinc-500 mt-1">
-                  Folder harus diatur izin: <span className="text-zinc-400">"Anyone with the link can view"</span>.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5 text-amber-400" />
                     <span>Kuota Maksimal Pilihan</span>
                   </label>
@@ -1304,28 +1688,57 @@ function doPost(e) {
                     max="1000"
                     value={formQuota}
                     onChange={(e) => setFormQuota(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-amber-400" />
                     <span>Kata Sandi Galeri (Opsional)</span>
                   </label>
                   <input
                     type="text"
                     value={formPassword}
-                    onChange={(e) => setFormPassword(e.target.value)}
-                    placeholder="Kosongkan jika publik"
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    onChange={(e) => {
+                      setFormPassword(e.target.value);
+                      if (e.target.value.trim()) setFormClearPassword(false);
+                    }}
+                    placeholder={
+                      editingProject && (editingProject.password || editingProject.passwordHash)
+                        ? "Biarkan kosong untuk mempertahankan sandi lama"
+                        : "Kosongkan jika publik"
+                    }
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
+                  {editingProject &&
+                    !editingProject.password &&
+                    Boolean(editingProject.passwordHash) && (
+                      <p className="text-[11px] text-zinc-400 mt-1">
+                        Sandi tersimpan ter-hash dan tidak bisa ditampilkan kembali.
+                      </p>
+                    )}
+                  {editingProject &&
+                    (editingProject.password || editingProject.passwordHash) &&
+                    !formPassword.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => setFormClearPassword((prev) => !prev)}
+                        className={`mt-1.5 text-[11px] font-semibold transition-colors ${
+                          formClearPassword ? "text-rose-300" : "text-zinc-400 hover:text-rose-300"
+                        }`}
+                      >
+                        {formClearPassword
+                          ? "Sandi akan dihapus saat disimpan. Klik untuk batal."
+                          : "Hapus sandi galeri ini"}
+                      </button>
+                    )}
                 </div>
               </div>
 
               {/* Bab Acara & Lokasi */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-amber-400" />
                   <span>Bab Acara & Lokasi Foto (Pisahkan koma)</span>
                 </label>
@@ -1334,16 +1747,16 @@ function doPost(e) {
                   value={formSections}
                   onChange={(e) => setFormSections(e.target.value)}
                   placeholder="Contoh: Persiapan (Hotel), Akad Nikah (Masjid), Resepsi (Ballroom)"
-                  className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                 />
-                <p className="text-[11px] text-zinc-500 mt-1">
+                <p className="text-[11px] text-zinc-400 mt-1">
                   Format: <span className="text-zinc-400 font-mono">Nama Bab (Nama Lokasi)</span>, pisahkan dengan koma.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-amber-400" />
                     <span>WhatsApp Klien/Fotografer</span>
                   </label>
@@ -1352,12 +1765,12 @@ function doPost(e) {
                     value={formContact}
                     onChange={(e) => setFormContact(e.target.value)}
                     placeholder="08123456789"
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1">
                     Catatan Sesi (Opsional)
                   </label>
                   <input
@@ -1365,12 +1778,31 @@ function doPost(e) {
                     value={formNotes}
                     onChange={(e) => setFormNotes(e.target.value)}
                     placeholder="Paket Album Premium 2026"
-                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-zinc-800 mt-4">
+              {/* Webhook Spreadsheet */}
+              <div>
+                <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
+                  <Code2 className="w-3.5 h-3.5 text-amber-400" />
+                  <span>URL Webhook Spreadsheet (Opsional)</span>
+                </label>
+                <input
+                  type="url"
+                  value={formWebhookUrl}
+                  onChange={(e) => setFormWebhookUrl(e.target.value)}
+                  placeholder="https://script.google.com/macros/s/.../exec"
+                  className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                />
+                <p className="text-[11px] text-zinc-400 mt-1">
+                  Diambil dari tab <span className="text-zinc-400">Integrasi</span>. Pilihan
+                  klien akan terkirim ke Google Sheets studio Anda.
+                </p>
+              </div>
+
+              <div className="sticky bottom-0 z-10 -mx-6 px-6 pb-5 pt-3 bg-zinc-900 border-t border-zinc-800 rounded-b-xl mt-4 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

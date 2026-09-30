@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useProofingStore } from "@/lib/storage";
-import { Lock, KeyRound, AlertCircle, ArrowRight, Eye, EyeOff, Home } from "lucide-react";
+import { Lock, KeyRound, AlertCircle, ArrowRight, Eye, EyeOff, Home, TriangleAlert } from "lucide-react";
 
 export const AdminAuthGate: React.FC = () => {
   const { loginAdmin, setViewMode } = useProofingStore();
   const [pinInput, setPinInput] = useState("");
   const [showPin, setShowPin] = useState(false);
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,9 +57,11 @@ export const AdminAuthGate: React.FC = () => {
                   setPinInput(e.target.value);
                   if (error) setError(null);
                 }}
+                onKeyDown={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
+                onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                 autoFocus
                 placeholder="PIN Master (Default: studio2026)"
-                className="w-full pl-3.5 pr-10 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                className="w-full pl-3.5 pr-10 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
               />
               <button
                 type="button"
@@ -69,7 +72,16 @@ export const AdminAuthGate: React.FC = () => {
                 {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            <p className="text-[11px] text-zinc-500 mt-1.5">
+            {capsLockOn && (
+              <p
+                role="status"
+                className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-400 mt-1.5"
+              >
+                <TriangleAlert className="w-3.5 h-3.5 shrink-0" />
+                <span>Caps Lock menyala. Periksa huruf besar/kecil sebelum mengirim PIN.</span>
+              </p>
+            )}
+            <p className="text-[11px] text-zinc-400 mt-1.5">
               Petunjuk: PIN bawaan adalah <span className="text-amber-400 font-semibold px-1 py-0.5 rounded bg-zinc-950 border border-zinc-800">studio2026</span>
             </p>
           </div>

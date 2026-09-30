@@ -10,7 +10,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ type, onReset }) => {
   if (type === "search") {
     return (
       <div className="py-20 text-center flex flex-col items-center justify-center text-zinc-400">
-        <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 text-zinc-500">
+        <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 text-zinc-400">
           <ImageOff className="w-6 h-6" />
         </div>
         <h3 className="text-lg font-medium text-zinc-200 mb-1">Foto Tidak Ditemukan</h3>
@@ -53,7 +53,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ type, onReset }) => {
 
   return (
     <div className="py-20 text-center flex flex-col items-center justify-center text-zinc-400">
-      <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 text-zinc-500">
+      <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 text-zinc-400">
         <Camera className="w-6 h-6" />
       </div>
       <h3 className="text-lg font-medium text-zinc-200 mb-1">Belum Ada Foto</h3>

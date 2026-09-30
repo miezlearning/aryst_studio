@@ -17,6 +17,19 @@ export interface ProjectSection {
   description?: string;
 }
 
+export interface Client {
+  id: string;
+  name: string;
+  contact?: string;
+  // Default gallery password, prefilled when this client gets a new session
+  password?: string;
+  passwordHash?: string;
+  notes?: string;
+  createdAt: number;
+}
+
+export type SessionMode = "individual" | "group";
+
 export interface ClientSelectionSession {
   projectId: string;
   clientName: string;
@@ -43,6 +56,8 @@ export interface ProofingConfig {
 
 export interface ClientProject {
   id: string;
+  // Owning client (one client can hold many sessions with different purposes)
+  clientId?: string;
   clientName: string;
   projectId: string;
   folderId: string;
@@ -53,6 +68,15 @@ export interface ClientProject {
   notes?: string;
   webhookUrl?: string;
   sections?: ProjectSection[];
+
+  // "individual" = one recipient, "group" = members pick from one shared list
+  sessionMode?: SessionMode;
+  members?: string[];
+  // Seeded example session: only these are listed on the landing page
+  isSample?: boolean;
+
+  // Transient form flag: strip before persisting (saveProject handles it)
+  clearPassword?: boolean;
 
   // Different session attributes for the same client
   sessionType?: string; // e.g. "Prewedding", "Pernikahan", "Maternity", "Lamaran", "Wisuda", "Family"

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Clock, AlertTriangle, CalendarClock } from "lucide-react";
+import { Hourglass, AlertTriangle } from "lucide-react";
 import { formatDeadlineRemaining } from "@/lib/storage";
 
 const DAY_MS = 86_400_000;
+const RING_R = 21;
+const RING_C = 2 * Math.PI * RING_R;
 
 export const deadlineUrgency = (
   remainingMs: number
@@ -13,20 +15,51 @@ export const deadlineUrgency = (
   return "normal";
 };
 
+const toneFor = (urgency: ReturnType<typeof deadlineUrgency>) => {
+  switch (urgency) {
+    case "expired":
+    case "soon":
+      return {
+        box: "border-rose-500/35 bg-rose-500/10",
+        stroke: "stroke-rose-400",
+        text: "text-rose-300",
+        icon: "text-rose-400",
+      };
+    case "near":
+      return {
+        box: "border-amber-500/35 bg-amber-500/10",
+        stroke: "stroke-amber-400",
+        text: "text-amber-300",
+        icon: "text-amber-400",
+      };
+    default:
+      return {
+        box: "border-zinc-800 bg-zinc-950/70",
+        stroke: "stroke-amber-400",
+        text: "text-white",
+        icon: "text-amber-400",
+      };
+  }
+};
+
 interface Props {
   deadline: number;
   createdAt?: number;
   className?: string;
+  variant?: "panel" | "inline";
 }
 
 /**
- * Live selection-decountdown (ticks every second).
- * variant "panel"  -> dashboard card with progress bar + states
- * variant "inline" -> compact label for the floating dock
+ * Live selection countdown.
+ * panel  -> ring + flipping hourglass + big mono digits
+ * inline -> compact label for the floating dock
  */
-export const DeadlineCountdown: React.FC<
-  Props & { variant?: "panel" | "inline" }
-> = ({ deadline, createdAt, className = "", variant = "panel" }) => {
+export const DeadlineCountdown: React.FC<Props> = ({
+  deadline,
+  createdAt,
+  className = "",
+  variant = "panel",
+}) => {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -37,22 +70,15 @@ export const DeadlineCountdown: React.FC<
   const remaining = deadline - now;
   const urgency = deadlineUrgency(remaining);
   const expired = urgency === "expired";
+  const tone = toneFor(urgency);
 
   if (variant === "inline") {
     return (
       <span
-        className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold tabular-nums ${
-          expired
-            ? "text-rose-400"
-            : urgency === "soon"
-              ? "text-rose-300"
-              : urgency === "near"
-                ? "text-amber-400"
-                : "text-zinc-400"
-        } ${className}`}
+        className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold tabular-nums ${tone.text} ${className}`}
         title="Batas waktu pilihan foto"
       >
-        <Clock className="w-3 h-3" />
+        <Hourglass className={`w-3 h-3 animate-hourglass ${tone.icon}`} />
         {expired ? "Deadline lewat" : `Sisa ${formatDeadlineRemaining(remaining)}`}
       </span>
     );
@@ -60,93 +86,89 @@ export const DeadlineCountdown: React.FC<
 
   const hasWindow = typeof createdAt === "number" && createdAt < deadline;
   const total = hasWindow ? deadline - (createdAt as number) : 0;
-  const progress = hasWindow
-    ? Math.min(100, Math.max(0, ((now - (createdAt as number)) / total) * 100))
-    : 0;
+  const ratio = expired
+    ? 0
+    : hasWindow
+      ? Math.min(1, Math.max(0, remaining / total))
+      : 1;
+  const offset = RING_C * (1 - ratio);
 
-  const tone = expired
-    ? {
-        border: "border-rose-500/35",
-        bg: "bg-rose-500/10",
-        text: "text-rose-300",
-        bar: "bg-rose-500",
-        icon: "text-rose-400",
-      }
-    : urgency === "soon"
-      ? {
-          border: "border-rose-500/30",
-          bg: "bg-rose-500/5",
-          text: "text-rose-300",
-          bar: "bg-rose-400",
-          icon: "text-rose-400",
-        }
-      : urgency === "near"
-        ? {
-            border: "border-amber-500/35",
-            bg: "bg-amber-500/10",
-            text: "text-amber-300",
-            bar: "bg-amber-400",
-            icon: "text-amber-400",
-          }
-        : {
-            border: "border-zinc-800",
-            bg: "bg-zinc-900/60",
-            text: "text-zinc-200",
-            bar: "bg-amber-400",
-            icon: "text-amber-400",
-          };
+  const deadlineLabel = new Date(deadline).toLocaleString("id-ID", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
     <div
-      className={`rounded-xl border p-3 ${tone.border} ${tone.bg} backdrop-blur-sm ${className}`}
+      className={`flex items-center gap-3.5 rounded-2xl border p-3.5 backdrop-blur-sm ${tone.box} ${className}`}
     >
-      <div className="flex items-center justify-between gap-3 mb-1.5">
-        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-          <CalendarClock className={`w-3.5 h-3.5 ${tone.icon}`} />
-          Batas Waktu Pilihan
-        </span>
-        <span
-          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${tone.border} ${tone.text} bg-black/20`}
+      {/* Progress ring + hourglass */}
+      <div className="relative w-12 h-12 shrink-0">
+        <svg
+          viewBox="0 0 48 48"
+          className="w-12 h-12 -rotate-90"
+          aria-hidden="true"
         >
-          {expired ? "TERKUNCI" : "HITUNG MUNDUR"}
-        </span>
+          <circle
+            cx="24"
+            cy="24"
+            r={RING_R}
+            fill="none"
+            strokeWidth="3"
+            className="text-zinc-800"
+            stroke="currentColor"
+          />
+          <circle
+            cx="24"
+            cy="24"
+            r={RING_R}
+            fill="none"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={RING_C}
+            strokeDashoffset={offset}
+            className={`${tone.stroke} transition-[stroke-dashoffset] duration-1000 ease-linear`}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          {expired ? (
+            <AlertTriangle className={`w-5 h-5 ${tone.icon}`} />
+          ) : (
+            <Hourglass className={`w-5 h-5 animate-hourglass ${tone.icon}`} />
+          )}
+        </div>
       </div>
 
-      {expired ? (
-        <div className="flex items-start gap-2">
-          <AlertTriangle className={`w-4 h-4 mt-0.5 shrink-0 ${tone.icon}`} />
-          <div>
-            <p className={`text-sm font-bold ${tone.text}`}>
+      {/* Digits */}
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-zinc-400">
+          Batas Waktu Pilihan
+        </p>
+        {expired ? (
+          <>
+            <p className="text-sm font-bold text-rose-300 leading-tight mt-0.5">
               Waktu pemilihan berakhir
             </p>
-            <p className="text-[11px] text-zinc-400 leading-relaxed mt-0.5">
-              Pilihan Anda tersimpan dan sesi terkunci otomatis. Hubungi
-              fotografer untuk perpanjangan waktu.
+            <p className="text-[11px] text-zinc-400 leading-snug mt-0.5">
+              Pilihan tersimpan & sesi terkunci. Hubungi fotografer untuk
+              perpanjangan.
             </p>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div
-            className={`font-mono text-xl font-bold tabular-nums tracking-tight ${tone.text}`}
-          >
-            {formatDeadlineRemaining(remaining)}
-          </div>
-          {hasWindow && (
-            <>
-              <div className="w-full bg-zinc-800/80 rounded-full h-1.5 overflow-hidden mt-2">
-                <div
-                  className={`h-full transition-all duration-1000 rounded-full ${tone.bar}`}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-[10px] text-zinc-500 mt-1">
-                {Math.round(progress)}% dari jendela pemilihan terpakai
-              </p>
-            </>
-          )}
-        </>
-      )}
+          </>
+        ) : (
+          <>
+            <p
+              className={`font-mono text-lg font-bold tabular-nums leading-tight tracking-tight mt-0.5 ${tone.text}`}
+            >
+              {formatDeadlineRemaining(remaining)}
+            </p>
+            <p className="text-[11px] text-zinc-400 truncate mt-0.5">
+              s/d {deadlineLabel}
+            </p>
+          </>
+        )}
+      </div>
     </div>
   );
 };
@@ -194,8 +216,8 @@ export const DeadlineBadge: React.FC<{
       } ${className}`}
       title={`Batas pilihan: ${new Date(deadline).toLocaleString("id-ID")}`}
     >
-      <Clock className="w-3 h-3" />
-      {expired ? "Deadline lewat" : label}
+      <Hourglass className="w-3 h-3" />
+      {label}
     </span>
   );
 };

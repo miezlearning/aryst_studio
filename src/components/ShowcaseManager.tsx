@@ -133,14 +133,14 @@ export const ShowcaseManager: React.FC = () => {
             <p className="text-xs text-zinc-400 mt-1">
               Maks {MAX_SHOWCASE} foto • tersimpan otomatis & langsung tampil di landing.{" "}
               {showcaseItems.length === 0 && (
-                <span className="text-zinc-500">
+                <span className="text-zinc-400">
                   Saat kosong, landing memakai 4 foto pertama otomatis.
                 </span>
               )}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[11px] font-mono text-zinc-500 tabular-nums">
+            <span className="text-[11px] font-mono text-zinc-400 tabular-nums">
               {showcaseItems.length}/{MAX_SHOWCASE}
             </span>
             <button
@@ -263,29 +263,29 @@ export const ShowcaseManager: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
             <h3 className="text-sm font-bold text-white">Pilih dari Semua Foto Sesi</h3>
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <p className="text-xs text-zinc-400 mt-0.5">
               Klik foto untuk menambahkannya ke showcase halaman utama.
             </p>
           </div>
           <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari nama / sesi..."
-              className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors"
+              className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 transition-colors"
             />
           </div>
         </div>
 
         {isLoading ? (
-          <div className="py-10 text-center text-xs text-zinc-500 flex items-center justify-center gap-2">
+          <div className="py-10 text-center text-xs text-zinc-400 flex items-center justify-center gap-2">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Memuat foto dari semua sesi...</span>
           </div>
         ) : grouped.length === 0 ? (
-          <p className="py-10 text-center text-xs text-zinc-500">
+          <p className="py-10 text-center text-xs text-zinc-400">
             {search ? `Tidak ada foto yang cocok dengan "${search}".` : "Belum ada foto sesi."}
           </p>
         ) : (
@@ -293,7 +293,7 @@ export const ShowcaseManager: React.FC = () => {
             {grouped.map(([group, list]) => (
               <div key={group}>
                 <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-2">
-                  {group} <span className="text-zinc-600">• {list.length}</span>
+                  {group} <span className="text-zinc-400">• {list.length}</span>
                 </p>
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
                   {list.map((photo) => {

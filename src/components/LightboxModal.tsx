@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useProofingStore } from "@/lib/storage";
 import { formatBytes } from "@/lib/utils";
+import { getDriveImageFallbackUrl } from "@/lib/googleDrive";
 import {
   X,
   ChevronLeft,
@@ -9,10 +10,33 @@ import {
   Circle,
   ZoomIn,
   ZoomOut,
+  Minimize2,
   MessageSquare,
   Lock,
   MapPin,
+  Loader2,
+  ImageOff,
 } from "lucide-react";
+
+const MIN_SCALE = 1;
+const MAX_SCALE = 6;
+const CLICK_ZOOM = 3;
+
+interface View {
+  scale: number;
+  tx: number;
+  ty: number;
+}
+
+interface Gesture {
+  kind: "none" | "drag" | "pinch";
+  startX: number;
+  startY: number;
+  startView: View;
+  startDist: number;
+  startMidX: number;
+  startMidY: number;
+}
 
 export const LightboxModal: React.FC = () => {
   const {
@@ -25,22 +49,247 @@ export const LightboxModal: React.FC = () => {
     setRevisionNote,
   } = useProofingStore();
 
-  const [isZoomed, setIsZoomed] = useState(false);
+  const [view, setView] = useState<View>({ scale: 1, tx: 0, ty: 0 });
+  const [smooth, setSmooth] = useState(false);
   const [localNote, setLocalNote] = useState("");
   const touchStartX = useRef<number | null>(null);
+
+  const [imgSrc, setImgSrc] = useState("");
+  const [imgStatus, setImgStatus] = useState<"loading" | "loaded" | "error">("loading");
 
   const currentIndex = photos.findIndex((p) => p.id === lightboxPhotoId);
   const currentPhoto = currentIndex !== -1 ? photos[currentIndex] : null;
 
-  // Sync current photo's note to local state
-  useEffect(() => {
-    if (currentPhoto) {
-      setLocalNote(session.revisionNotes[currentPhoto.id] || "");
-      setIsZoomed(false);
-    }
-  }, [currentPhoto, session.revisionNotes]);
+  const viewRef = useRef<View>(view);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const movedRef = useRef(false);
+  const gestureRef = useRef<Gesture>({
+    kind: "none",
+    startX: 0,
+    startY: 0,
+    startView: { scale: 1, tx: 0, ty: 0 },
+    startDist: 0,
+    startMidX: 0,
+    startMidY: 0,
+  });
 
-  // Handle note change with immediate persistence
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+
+  // Note + loading + zoom all reset only when the photo changes
+  useEffect(() => {
+    if (!currentPhoto) return;
+    setLocalNote(session.revisionNotes[currentPhoto.id] || "");
+    setSmooth(false);
+    setView({ scale: 1, tx: 0, ty: 0 });
+    setImgSrc(currentPhoto.previewUrl);
+    setImgStatus("loading");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPhoto?.id]);
+
+  // Preload neighbours so prev/next feels instant
+  useEffect(() => {
+    if (currentIndex === -1) return;
+    [currentIndex - 1, currentIndex + 1].forEach((i) => {
+      const neighbour = photos[(i + photos.length) % photos.length];
+      if (neighbour && neighbour.id !== lightboxPhotoId) {
+        const pre = new Image();
+        pre.src = neighbour.previewUrl;
+      }
+    });
+  }, [currentIndex, photos, lightboxPhotoId]);
+
+  const clampView = useCallback((v: View): View => {
+    const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.scale));
+    const stage = stageRef.current;
+    const img = imageRef.current;
+    let tx = v.tx;
+    let ty = v.ty;
+    if (stage && img) {
+      const maxX = Math.abs(stage.clientWidth - img.clientWidth * scale) / 2;
+      const maxY = Math.abs(stage.clientHeight - img.clientHeight * scale) / 2;
+      tx = Math.min(maxX, Math.max(-maxX, tx));
+      ty = Math.min(maxY, Math.max(-maxY, ty));
+    }
+    return { scale, tx, ty };
+  }, []);
+
+  const zoomAround = useCallback(
+    (factor: number, px = 0, py = 0, animate = false) => {
+      setSmooth(animate);
+      setView((v) => {
+        const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.scale * factor));
+        const k = scale / (v.scale || 1);
+        return clampView({
+          scale,
+          tx: px * (1 - k) + v.tx * k,
+          ty: py * (1 - k) + v.ty * k,
+        });
+      });
+    },
+    [clampView]
+  );
+
+  const resetView = useCallback(() => {
+    setSmooth(true);
+    setView({ scale: 1, tx: 0, ty: 0 });
+  }, []);
+
+  // Wheel zoom (non-passive so the page behind never scrolls)
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || !lightboxPhotoId) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = stage.getBoundingClientRect();
+      const px = e.clientX - rect.left - rect.width / 2;
+      const py = e.clientY - rect.top - rect.height / 2;
+      zoomAround(e.deltaY < 0 ? 1.15 : 1 / 1.15, px, py, false);
+    };
+    stage.addEventListener("wheel", onWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", onWheel);
+  }, [lightboxPhotoId, zoomAround]);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    const pointers = pointersRef.current;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    movedRef.current = false;
+    setSmooth(false);
+
+    const img = imageRef.current;
+    const onImage = !!img && (e.target === img || img.contains(e.target as Node));
+    const base: Gesture = {
+      kind: "none",
+      startX: e.clientX,
+      startY: e.clientY,
+      startView: { ...viewRef.current },
+      startDist: 0,
+      startMidX: 0,
+      startMidY: 0,
+    };
+
+    if (pointers.size === 2) {
+      const pts = [...pointers.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      gestureRef.current = {
+        ...base,
+        kind: "pinch",
+        startDist: dist || 1,
+        startMidX: (pts[0].x + pts[1].x) / 2,
+        startMidY: (pts[0].y + pts[1].y) / 2,
+      };
+      movedRef.current = true;
+      try {
+        img?.setPointerCapture(e.pointerId);
+      } catch {
+        // synthetic pointers (tests) cannot be captured
+      }
+    } else if (onImage) {
+      gestureRef.current = { ...base, kind: "drag" };
+      try {
+        img?.setPointerCapture(e.pointerId);
+      } catch {
+        // synthetic pointers (tests) cannot be captured
+      }
+    } else {
+      gestureRef.current = base;
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    const pointers = pointersRef.current;
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const g = gestureRef.current;
+
+    if (g.kind === "drag") {
+      const dx = e.clientX - g.startX;
+      const dy = e.clientY - g.startY;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) movedRef.current = true;
+      setView(clampView({ ...g.startView, tx: g.startView.tx + dx, ty: g.startView.ty + dy }));
+    } else if (g.kind === "pinch" && pointers.size >= 2) {
+      const pts = [...pointers.values()];
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const midX = (pts[0].x + pts[1].x) / 2;
+      const midY = (pts[0].y + pts[1].y) / 2;
+      movedRef.current = true;
+
+      const stage = stageRef.current;
+      const cx = stage ? stage.getBoundingClientRect().left + stage.clientWidth / 2 : 0;
+      const cy = stage ? stage.getBoundingClientRect().top + stage.clientHeight / 2 : 0;
+      const scale = Math.min(
+        MAX_SCALE,
+        Math.max(MIN_SCALE, g.startView.scale * (dist / (g.startDist || 1)))
+      );
+      const k = scale / (g.startView.scale || 1);
+      setView(
+        clampView({
+          scale,
+          tx: midX - cx - k * (g.startMidX - cx - g.startView.tx),
+          ty: midY - cy - k * (g.startMidY - cy - g.startView.ty),
+        })
+      );
+    } else {
+      if (Math.abs(e.clientX - g.startX) > 5 || Math.abs(e.clientY - g.startY) > 5) {
+        movedRef.current = true;
+      }
+    }
+  };
+
+  const handlePointerEnd = (e: React.PointerEvent) => {
+    const pointers = pointersRef.current;
+    pointers.delete(e.pointerId);
+    const g = gestureRef.current;
+
+    if (g.kind === "pinch" && pointers.size === 1) {
+      const [pt] = [...pointers.values()];
+      gestureRef.current = {
+        kind: "drag",
+        startX: pt.x,
+        startY: pt.y,
+        startView: { ...viewRef.current },
+        startDist: 0,
+        startMidX: 0,
+        startMidY: 0,
+      };
+      setSmooth(false);
+    } else if (g.kind !== "none" && pointers.size === 0) {
+      gestureRef.current = { ...g, kind: "none" };
+      setSmooth(true);
+    }
+  };
+
+  const handleStageClick = (e: React.MouseEvent) => {
+    if (movedRef.current) {
+      movedRef.current = false;
+      return;
+    }
+    const target = e.target as HTMLElement;
+    if (target === e.currentTarget) {
+      setLightboxPhotoId(null);
+      return;
+    }
+    const img = imageRef.current;
+    if (!img || (target !== img && !img.contains(target))) return;
+    if (imgStatus !== "loaded") return;
+
+    if (viewRef.current.scale > 1.01) {
+      resetView();
+    } else {
+      const rect = stageRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      zoomAround(
+        CLICK_ZOOM,
+        e.clientX - rect.left - rect.width / 2,
+        e.clientY - rect.top - rect.height / 2,
+        true
+      );
+    }
+  };
+
   const handleNoteChange = (text: string) => {
     setLocalNote(text);
     if (currentPhoto) {
@@ -86,15 +335,28 @@ export const LightboxModal: React.FC = () => {
       } else if (e.key === " " && currentPhoto) {
         e.preventDefault();
         toggleSelectPhoto(currentPhoto.id);
+      } else if (e.key === "+" || e.key === "=") {
+        e.preventDefault();
+        zoomAround(1.25, 0, 0, true);
+      } else if (e.key === "-") {
+        e.preventDefault();
+        zoomAround(1 / 1.25, 0, 0, true);
+      } else if (e.key === "0") {
+        e.preventDefault();
+        resetView();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [lightboxPhotoId, currentPhoto, handlePrev, handleNext, setLightboxPhotoId, toggleSelectPhoto]);
+  }, [lightboxPhotoId, currentPhoto, handlePrev, handleNext, setLightboxPhotoId, toggleSelectPhoto, zoomAround, resetView]);
 
-  // Touch gesture swipe for mobile
+  // Touch gesture swipe for mobile (only at fit zoom, one finger)
   const handleTouchStart = (e: React.TouchEvent) => {
+    if (viewRef.current.scale > 1.01 || e.touches.length !== 1) {
+      touchStartX.current = null;
+      return;
+    }
     touchStartX.current = e.touches[0].clientX;
   };
 
@@ -114,6 +376,8 @@ export const LightboxModal: React.FC = () => {
 
   const isSelected = isPhotoSelected(currentPhoto.id);
   const isFull = session.selectedPhotoIds.length >= session.maxQuota;
+  const isZoomed = view.scale > 1.01;
+  const zoomPercent = Math.round(view.scale * 100);
 
   return (
     <div
@@ -155,14 +419,37 @@ export const LightboxModal: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Zoom toggle */}
-          <button
-            onClick={() => setIsZoomed(!isZoomed)}
-            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 transition-colors"
-            title={isZoomed ? "Perkecil (1x)" : "Perbesar (2x)"}
-          >
-            {isZoomed ? <ZoomOut className="w-4 h-4" /> : <ZoomIn className="w-4 h-4" />}
-          </button>
+          {/* Zoom controls */}
+          <div className="flex items-center gap-0.5 rounded-xl bg-zinc-900 border border-zinc-800 p-1">
+            <button
+              onClick={() => zoomAround(1 / 1.25, 0, 0, true)}
+              disabled={!isZoomed}
+              className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-300 transition-colors disabled:opacity-35 disabled:hover:bg-transparent"
+              title="Perkecil (-)"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <span className="min-w-[2.75rem] text-center text-[11px] font-semibold text-zinc-300 tabular-nums">
+              {zoomPercent}%
+            </span>
+            <button
+              onClick={() => zoomAround(1.25, 0, 0, true)}
+              disabled={view.scale >= MAX_SCALE}
+              className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-300 transition-colors disabled:opacity-35 disabled:hover:bg-transparent"
+              title="Perbesar (+)"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            {isZoomed && (
+              <button
+                onClick={resetView}
+                className="p-1.5 rounded-lg hover:bg-zinc-800 text-amber-400 transition-colors"
+                title="Kembali ke ukuran asli (0)"
+              >
+                <Minimize2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
           {/* Quick select in lightbox */}
           <button
@@ -172,7 +459,7 @@ export const LightboxModal: React.FC = () => {
               isSelected
                 ? "bg-amber-500 text-zinc-950"
                 : session.isLocked || isFull
-                ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                ? "bg-zinc-800 text-zinc-400 cursor-not-allowed"
                 : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
             }`}
           >
@@ -206,7 +493,17 @@ export const LightboxModal: React.FC = () => {
       </div>
 
       {/* Main Image Stage */}
-      <div className="flex-1 relative flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+      <div
+        ref={stageRef}
+        data-testid="lb-stage"
+        className="flex-1 relative flex items-center justify-center p-2 sm:p-4 overflow-hidden"
+        style={{ touchAction: "none" }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
+        onClick={handleStageClick}
+      >
         {/* Previous Button */}
         <button
           onClick={handlePrev}
@@ -218,16 +515,55 @@ export const LightboxModal: React.FC = () => {
 
         {/* The Image */}
         <div
-          className={`relative max-w-full max-h-full flex items-center justify-center transition-transform duration-200 ${
-            isZoomed ? "scale-150 cursor-grab" : "cursor-zoom-in"
+          ref={imageRef}
+          data-testid="lb-image"
+          className={`relative max-w-full max-h-full flex items-center justify-center ${
+            isZoomed ? "cursor-grab active:cursor-grabbing" : "cursor-zoom-in"
           }`}
-          onClick={() => setIsZoomed(!isZoomed)}
+          style={{
+            transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`,
+            transition: smooth ? "transform 200ms ease" : undefined,
+            willChange: "transform",
+          }}
         >
-          <img
-            src={currentPhoto.previewUrl}
-            alt={currentPhoto.name}
-            className="max-h-[calc(100vh-180px)] max-w-full object-contain select-none rounded-lg shadow-2xl transition-opacity duration-150"
-          />
+          {imgStatus === "error" ? (
+            <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
+              <ImageOff className="w-8 h-8 text-zinc-500" />
+              <p className="text-sm text-zinc-300">Foto gagal dimuat</p>
+              <p className="text-xs text-zinc-400 truncate max-w-xs">{currentPhoto.name}</p>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setImgSrc(currentPhoto.previewUrl);
+                  setImgStatus("loading");
+                }}
+                className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 transition-colors"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          ) : (
+            <img
+              src={imgSrc || currentPhoto.previewUrl}
+              alt={currentPhoto.name}
+              decoding="async"
+              onLoad={() => setImgStatus("loaded")}
+              onError={() => {
+                // Drive previews fail occasionally: retry once via thumbnail endpoint
+                const canFallback = imgSrc.includes("lh3.googleusercontent.com");
+                const fallback = getDriveImageFallbackUrl(currentPhoto.id, 1600);
+                if (canFallback && fallback !== imgSrc) {
+                  setImgSrc(fallback);
+                  setImgStatus("loading");
+                } else {
+                  setImgStatus("error");
+                }
+              }}
+              className={`max-h-[calc(100vh-180px)] max-w-full object-contain select-none rounded-lg shadow-2xl transition-opacity duration-300 ${
+                imgStatus === "loaded" ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          )}
         </div>
 
         {/* Next Button */}
@@ -238,6 +574,25 @@ export const LightboxModal: React.FC = () => {
         >
           <ChevronRight className="w-6 h-6" />
         </button>
+
+        {/* Loading layer: ambient blurred thumbnail + spinner, sized by the stage */}
+        {imgStatus === "loading" && (
+          <>
+            <div className="absolute inset-0 z-10" aria-hidden="true" />
+            {currentPhoto.thumbnailUrl && (
+              <img
+                src={currentPhoto.thumbnailUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-25 scale-110 pointer-events-none select-none"
+              />
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
+              <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+              <span className="text-xs text-zinc-400 whitespace-nowrap">Memuat foto...</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Bottom Control Bar & Revision Notes Editor */}
@@ -254,7 +609,7 @@ export const LightboxModal: React.FC = () => {
               value={localNote}
               onChange={(e) => handleNoteChange(e.target.value)}
               placeholder="Contoh: Tolong hilangkan orang di background, ratakan warna kulit..."
-              className="w-full px-3.5 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500/80 focus:ring-1 focus:ring-amber-500/80 transition-all"
+              className="w-full px-3.5 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500/80 focus:ring-1 focus:ring-amber-500/80 transition-all"
             />
           </div>
 
@@ -264,6 +619,10 @@ export const LightboxModal: React.FC = () => {
             </span>
           )}
         </div>
+
+        <p className="mt-2 text-center text-[11px] text-zinc-500">
+          Klik foto untuk perbesar, geser untuk menggeser, klik area gelap untuk menutup
+        </p>
       </div>
     </div>
   );

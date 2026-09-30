@@ -37,7 +37,7 @@ export const FloatingDock: React.FC = () => {
                 )}
                 <span>Kuota Seleksi:</span>
                 <span className="text-white font-bold">{selectedCount}</span>
-                <span className="text-zinc-500">/</span>
+                <span className="text-zinc-400">/</span>
                 <span className="text-zinc-400">{maxQuota} Foto</span>
               </span>
             </div>
@@ -70,7 +70,7 @@ export const FloatingDock: React.FC = () => {
           {deadline ? (
             <div className="mt-1.5 flex items-center justify-between gap-2">
               <DeadlineCountdown variant="inline" deadline={deadline} />
-              <span className="text-[10px] text-zinc-600 hidden sm:inline">
+              <span className="text-[10px] text-zinc-400 hidden sm:inline">
                 Batas pilihan foto
               </span>
             </div>

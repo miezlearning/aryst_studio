@@ -6,6 +6,7 @@ import {
   KeyRound,
   ArrowRight,
   Lock,
+  Images,
 } from "lucide-react";
 
 export const LandingPage: React.FC = () => {
@@ -69,6 +70,10 @@ export const LandingPage: React.FC = () => {
         }))
       : photos.slice(0, 4);
 
+  // Only seeded example sessions are offered here, real client sessions
+  // stay private behind their own code
+  const sampleProjects = clientProjects.filter((p) => p.isSample);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-amber-500/20 selection:text-amber-300">
       {/* Floating Liquid-Glass Navbar */}
@@ -105,7 +110,7 @@ export const LandingPage: React.FC = () => {
               className="p-1.5 rounded-2xl liquid-glass-deep flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
             >
               <div className="relative flex-1">
-                <KeyRound className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <KeyRound className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={sessionCodeInput}
@@ -114,7 +119,7 @@ export const LandingPage: React.FC = () => {
                     if (errorMsg) setErrorMsg(null);
                   }}
                   placeholder="Ketik kode sesi (cth: WED-2026-RIAN)..."
-                  className="w-full pl-10 pr-3 py-2 bg-transparent text-xs sm:text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none"
+                  className="w-full pl-10 pr-3 py-2 bg-transparent text-xs sm:text-sm text-zinc-100 placeholder-zinc-400 focus:outline-none"
                 />
               </div>
 
@@ -133,30 +138,32 @@ export const LandingPage: React.FC = () => {
               </p>
             )}
 
-            {/* Subdued Demo Sesi Helper */}
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-400">
-              {isBooted ? (
-                <>
-                  <span>Sesi percontohan:</span>
-                  {clientProjects.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => openClientByCode(p.projectId)}
-                      className="px-2 py-0.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-zinc-300 hover:text-white border border-white/10 font-medium text-[11px] tracking-tight transition-colors inline-flex items-center gap-1 backdrop-blur-md"
-                    >
-                      {p.password && <Lock className="w-2.5 h-2.5" />}
-                      <span>{p.projectId}</span>
-                    </button>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <span className="skeleton relative inline-block w-24 h-4 rounded-md" />
-                  <span className="skeleton relative inline-block w-28 h-4 rounded-full" />
-                  <span className="skeleton relative inline-block w-24 h-4 rounded-full" />
-                </>
-              )}
-            </div>
+            {/* Subdued sample helper */}
+            {(!isBooted || sampleProjects.length > 0) && (
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-zinc-400">
+                {isBooted ? (
+                  <>
+                    <span>Sesi contoh:</span>
+                    {sampleProjects.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => openClientByCode(p.projectId)}
+                        className="px-2 py-0.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] text-zinc-300 hover:text-white border border-white/10 font-medium text-[11px] tracking-tight transition-colors inline-flex items-center gap-1 backdrop-blur-md"
+                      >
+                        {(p.password || p.passwordHash) && <Lock className="w-2.5 h-2.5" />}
+                        <span>{p.projectId}</span>
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <span className="skeleton relative inline-block w-24 h-4 rounded-md" />
+                    <span className="skeleton relative inline-block w-28 h-4 rounded-full" />
+                    <span className="skeleton relative inline-block w-24 h-4 rounded-full" />
+                  </>
+                )}
+              </div>
+            )}
 
           </div>
           </div>
@@ -173,20 +180,31 @@ export const LandingPage: React.FC = () => {
                 Setiap foto disajikan dalam resolusi tinggi untuk mempermudah pemilihan detail dan ekspresi terbaik.
               </p>
             </div>
-            <span className="hidden sm:inline text-xs text-zinc-500 font-medium">
+            <span className="hidden sm:inline text-xs text-zinc-400 font-medium">
               Resolusi Penuh • Inspeksi 2x
             </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {!isBooted
-              ? [0, 1, 2, 3].map((i) => (
-                  <div
-                    key={`skeleton-${i}`}
-                    className="skeleton relative rounded-xl aspect-[4/5] shadow-lg shadow-black/40"
-                  />
-                ))
-              : previewShowcase.map((photo) => (
+            {!isBooted ? (
+              [0, 1, 2, 3].map((i) => (
+                <div
+                  key={`skeleton-${i}`}
+                  className="skeleton relative rounded-xl aspect-[4/5] shadow-lg shadow-black/40"
+                />
+              ))
+            ) : previewShowcase.length === 0 ? (
+              <div className="col-span-2 sm:col-span-4 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/40 p-8 sm:p-10 text-center">
+                <Images className="w-6 h-6 text-zinc-600 mx-auto mb-3" />
+                <p className="text-sm font-semibold text-zinc-300">
+                  Belum ada foto untuk ditampilkan
+                </p>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Foto akan muncul otomatis setelah galeri sesi diisi.
+                </p>
+              </div>
+            ) : (
+              previewShowcase.map((photo) => (
                   <div
                     key={photo.id}
                     className="group relative rounded-xl overflow-hidden bg-zinc-900 border border-white/10 aspect-[4/5] shadow-lg shadow-black/40"
@@ -202,26 +220,27 @@ export const LandingPage: React.FC = () => {
                     <div className="absolute inset-0 pointer-events-none rounded-xl ring-1 ring-inset ring-white/15" />
                     <div className="absolute inset-0 pointer-events-none -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out bg-gradient-to-r from-transparent via-white/[0.16] to-transparent" />
                   </div>
-                ))}
+                ))
+            )}
           </div>
 
           {/* Simple Clean Workflow Instructions */}
           <div className="mt-12 pt-8 border-t border-zinc-900 grid grid-cols-1 sm:grid-cols-3 gap-6 text-xs text-zinc-400">
             <div>
               <p className="font-semibold text-zinc-200 mb-1">1. Buka Galeri Privat</p>
-              <p className="text-zinc-500 leading-relaxed">
+              <p className="text-zinc-400 leading-relaxed">
                 Gunakan tautan langsung atau ketikkan kode sesi yang diberikan. Masukkan kata sandi jika sesi Anda diproteksi.
               </p>
             </div>
             <div>
               <p className="font-semibold text-zinc-200 mb-1">2. Tandai & Beri Catatan</p>
-              <p className="text-zinc-500 leading-relaxed">
+              <p className="text-zinc-400 leading-relaxed">
                 Pilih foto favorit hingga batas kuota paket. Perbesar foto dan sematkan catatan retouching pada berkas yang diinginkan.
               </p>
             </div>
             <div>
               <p className="font-semibold text-zinc-200 mb-1">3. Kirim Pilihan Foto</p>
-              <p className="text-zinc-500 leading-relaxed">
+              <p className="text-zinc-400 leading-relaxed">
                 Kirim daftar foto pilihan dan catatan revisi Anda langsung ke fotografer melalui WhatsApp dengan sekali klik.
               </p>
             </div>
@@ -230,11 +249,11 @@ export const LandingPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-900 py-6 px-4 text-xs text-zinc-500 bg-zinc-950">
+      <footer className="border-t border-zinc-900 py-6 px-4 text-xs text-zinc-400 bg-zinc-950">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <BrandMark iconClassName="w-6 h-6" textClassName="text-[13px]" />
 
-          <div className="flex items-center gap-3 text-zinc-500">
+          <div className="flex items-center gap-3 text-zinc-400">
             <span>Privasi Terjaga</span>
             <span>•</span>
             <span>&copy; {new Date().getFullYear()} ARYST</span>

@@ -31,9 +31,11 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const {
     clientProjects,
+    activeProjectId,
     setViewMode,
     logoutAdmin,
     isP2PConnected,
+    unlockForPreview,
   } = useProofingStore();
 
   return (
@@ -47,7 +49,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </span>
         </div>
 
-        <p className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-600">
+        <p className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400">
           Menu Utama
         </p>
 
@@ -71,7 +73,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 )}
                 <Icon
                   className={`w-[18px] h-[18px] shrink-0 ${
-                    isActive ? "text-amber-400" : "text-zinc-500"
+                    isActive ? "text-amber-400" : "text-zinc-400"
                   }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
@@ -86,7 +88,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </nav>
 
         <div className="mt-auto pt-3 border-t border-zinc-800/80 space-y-2">
-          <div className="flex items-center gap-2 px-2 text-[11px] text-zinc-500">
+          <div className="flex items-center gap-2 px-2 text-[11px] text-zinc-400">
             <span
               className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                 isP2PConnected ? "bg-emerald-400" : "bg-zinc-600"
@@ -96,7 +98,10 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => setViewMode("client")}
+            onClick={() => {
+              unlockForPreview(activeProjectId);
+              setViewMode("client");
+            }}
             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-bold transition-colors"
           >
             <Eye className="w-4 h-4" />
@@ -136,7 +141,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               type="button"
               onClick={() => onTabChange(item.id)}
               className={`relative flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-semibold transition-colors ${
-                isActive ? "text-amber-400" : "text-zinc-500 hover:text-zinc-300"
+                isActive ? "text-amber-400" : "text-zinc-400 hover:text-zinc-300"
               }`}
             >
               <Icon className="w-5 h-5" />

@@ -5,11 +5,12 @@ import {
   ClientSelectionSession,
   ProofingConfig,
   ClientProject,
+  Client,
   ViewMode,
   ShowcaseItem,
   ShowcaseCandidate,
 } from "@/types";
-import { DEMO_PHOTOS, PREWED_PHOTOS, MATERNITY_PHOTOS, ENGAGEMENT_PHOTOS, getDemoPhotosForProject, fetchGoogleDriveFolder } from "./googleDrive";
+import { fetchGoogleDriveFolder, extractFolderId } from "./googleDrive";
 import { extractSelectionFromUrl } from "./sync";
 import { hashPassword } from "./utils";
 import {
@@ -20,6 +21,7 @@ import {
 } from "./p2p";
 
 const IDB_PROJECTS_KEY = "lumina_client_projects";
+const IDB_CLIENTS_KEY = "lumina_clients";
 const IDB_ACTIVE_PROJECT_KEY = "lumina_active_project_id";
 const IDB_GLOBAL_KEY = "lumina_global_api_key";
 const IDB_ADMIN_PIN_KEY = "lumina_admin_master_pin";
@@ -56,6 +58,33 @@ export const formatDeadlineRemaining = (ms: number): string => {
 // Applied lock automatically when the deadline crosses while the app is open
 let deadlineTimer: number | null = null;
 
+// ── Gallery access policy (password gate) ─────────────────────
+// Professional session rules:
+//  · access lives in memory only -> reload / new tab asks for the password again
+//  · auto re-lock after 30 minutes of inactivity
+//  · forced re-authentication every 12 hours
+//  · 5 wrong attempts -> 30 second lockout (brute-force protection)
+export const ACCESS_IDLE_TIMEOUT_MS = 30 * 60_000;
+export const ACCESS_MAX_AGE_MS = 12 * 3_600_000;
+export const ACCESS_MAX_ATTEMPTS = 5;
+export const ACCESS_LOCKOUT_MS = 30_000;
+
+const accessExpiry = new Map<string, number>(); // projectId -> expiresAt
+let accessActivityAt = Date.now();
+let accessFailedAttempts = 0;
+let accessLockoutUntil = 0;
+let accessWatchdogStarted = false;
+
+const isAccessValid = (projectId: string): boolean => {
+  const expiresAt = accessExpiry.get(projectId);
+  if (!expiresAt) return false;
+  if (Date.now() > expiresAt) {
+    accessExpiry.delete(projectId);
+    return false;
+  }
+  return true;
+};
+
 // Keeps a project session in sync with its selection deadline:
 // past deadline -> auto-lock, deadline removed/extended -> clear auto-lock
 const reconcileDeadlineLock = async (
@@ -91,8 +120,11 @@ const DEFAULT_PROJECTS: ClientProject[] = [
   // Client 1: Rian & Amanda - Session 1: Prewedding Bali
   {
     id: "prewed-rian-amanda",
+    clientId: "cli-rian-amanda",
     clientName: "Rian & Amanda",
     projectId: "PREWED-RIAN-AMANDA",
+    sessionMode: "individual",
+    isSample: true,
     sessionType: "Prewedding",
     sessionTitle: "Prewedding Sinematik Alam & Sunset",
     sessionPurpose: "Foto Cetak Kanvas Resepsi & Video Undangan Digital",
@@ -116,8 +148,11 @@ const DEFAULT_PROJECTS: ClientProject[] = [
   // Client 1: Rian & Amanda - Session 2: Wedding Day Jakarta
   {
     id: "wed-rian-amanda",
+    clientId: "cli-rian-amanda",
     clientName: "Rian & Amanda",
     projectId: "WED-2026-RIAN",
+    sessionMode: "individual",
+    isSample: true,
     sessionType: "Pernikahan",
     sessionTitle: "The Holy Matrimony & Grand Reception",
     sessionPurpose: "Dokumentasi Sakral Akad Nikah & Pesta Resepsi Keluarga Besar",
@@ -140,8 +175,11 @@ const DEFAULT_PROJECTS: ClientProject[] = [
   // Client 1: Rian & Amanda - Session 3: Maternity Studio
   {
     id: "maternity-rian-amanda",
+    clientId: "cli-rian-amanda",
     clientName: "Rian & Amanda",
     projectId: "MATERNITY-RIAN-AMANDA",
+    sessionMode: "individual",
+    isSample: true,
     sessionType: "Maternity",
     sessionTitle: "Warm Editorial Maternity Portrait",
     sessionPurpose: "Koleksi Intim Kehamilan 32 Minggu & Album Keluarga Eksklusif",
@@ -162,8 +200,11 @@ const DEFAULT_PROJECTS: ClientProject[] = [
   // Client 2: Dimas & Sarah - Session 1: Lamaran Bandung
   {
     id: "engagement-dimas-sarah",
+    clientId: "cli-dimas-sarah",
     clientName: "Dimas & Sarah",
     projectId: "ENG-DIMAS-SARAH",
+    sessionMode: "individual",
+    isSample: true,
     sessionType: "Lamaran",
     sessionTitle: "Intimate Engagement Gathering",
     sessionPurpose: "Dokumentasi Pertunangan & Pertemuan Keluarga Inti",
@@ -184,8 +225,11 @@ const DEFAULT_PROJECTS: ClientProject[] = [
   // Client 2: Dimas & Sarah - Session 2: Prewedding Bromo
   {
     id: "prewed-dimas-sarah",
+    clientId: "cli-dimas-sarah",
     clientName: "Dimas & Sarah",
     projectId: "PREWED-DIMAS-SARAH",
+    sessionMode: "individual",
+    isSample: true,
     sessionType: "Prewedding",
     sessionTitle: "Sunrise Bromo Adventure",
     sessionPurpose: "Buku Kenangan Pra-Nikah & Galeri Dekorasi Resepsi",
@@ -205,6 +249,79 @@ const DEFAULT_PROJECTS: ClientProject[] = [
   },
 ];
 
+// ── Client registry (one client, many sessions) ─────────────
+const normalizeClientKey = (name: string): string =>
+  name.trim().toLowerCase().replace(/\s+/g, " ");
+
+const slugify = (name: string): string => {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "klien";
+};
+
+// Attaches every session to a client record, creating one when the name
+// is new. Also migrates older data: missing clientId, sessionMode and
+// the sample flag used by the landing page.
+const ensureClients = (
+  projects: ClientProject[],
+  existing: Client[]
+): { clients: Client[]; projects: ClientProject[]; clientsChanged: boolean; projectsChanged: boolean } => {
+  const clients = [...existing];
+  const sampleIds = new Set(DEFAULT_PROJECTS.map((p) => p.id));
+  let clientsChanged = clients.length !== existing.length;
+  let projectsChanged = false;
+
+  const keyOf = (name: string) => normalizeClientKey(name);
+  const byKey = new Map(clients.map((c) => [keyOf(c.name), c]));
+
+  const nextProjects = projects.map((p) => {
+    const next: ClientProject = { ...p };
+    let dirty = false;
+
+    if (sampleIds.has(p.id) && !p.isSample) {
+      next.isSample = true;
+      dirty = true;
+    }
+    if (!p.sessionMode) {
+      next.sessionMode = "individual";
+      dirty = true;
+    }
+
+    const key = keyOf(next.clientName || "");
+    let client = next.clientId ? clients.find((c) => c.id === next.clientId) : byKey.get(key);
+    if (!client) {
+      const base = `cli-${slugify(next.clientName)}`;
+      let id = base;
+      let suffix = 2;
+      while (clients.some((c) => c.id === id)) id = `${base}-${suffix++}`;
+      client = {
+        id,
+        name: next.clientName,
+        contact: next.clientContact || "",
+        password: next.password || "",
+        passwordHash: next.passwordHash || "",
+        createdAt: next.createdAt || Date.now(),
+      };
+      clients.push(client);
+      byKey.set(key, client);
+      clientsChanged = true;
+    }
+    if (next.clientId !== client.id) {
+      next.clientId = client.id;
+      dirty = true;
+    }
+    if (dirty) projectsChanged = true;
+    return next;
+  });
+
+  return { clients, projects: nextProjects, clientsChanged, projectsChanged };
+};
+
+const DEFAULT_CLIENTS: Client[] = ensureClients(DEFAULT_PROJECTS, []).clients;
+
 interface ProofingState {
   photos: PhotoMetadata[];
   isLoading: boolean;
@@ -222,8 +339,11 @@ interface ProofingState {
   isAdminAuthenticated: boolean;
   adminPin: string;
   clientProjects: ClientProject[];
+  clients: Client[];
   activeProjectId: string;
   isPasswordUnlocked: boolean;
+  // Timestamp until the password gate is temporarily locked out (0 = none)
+  passwordLockUntil: number;
   globalApiKey: string;
   isP2PConnected: boolean;
 
@@ -258,6 +378,8 @@ interface ProofingState {
   isSelectionLocked: () => boolean;
   // (Re)arm the timer that auto-locks the active session at its deadline
   scheduleDeadlineLock: () => void;
+  // Start the idle/expiry watchdog for the gallery password gate (idempotent)
+  startAccessWatchdog: () => void;
   updateSessionInfo: (info: Partial<ClientSelectionSession>) => void;
   updateConfig: (newConfig: Partial<ProofingConfig>) => void;
   setActiveFilter: (filter: "all" | "selected" | "unselected") => void;
@@ -272,6 +394,15 @@ interface ProofingState {
   switchProject: (projectId: string) => Promise<void>;
   saveProject: (project: ClientProject) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
+  saveClient: (client: Client) => Promise<void>;
+  // Grants the admin an unlocked preview of a protected session
+  unlockForPreview: (projectId: string) => void;
+  // Tests a pasted Drive folder against the global API key, saves nothing
+  probeDriveFolder: (folderInput: string) => Promise<{ ok: boolean; count: number; message: string }>;
+  // Photo count per session, read from each session's local cache
+  getPhotoCounts: () => Promise<Record<string, number>>;
+  // Photo catalog of one session (uses the live list for the active one)
+  getProjectPhotos: (projectId: string) => Promise<PhotoMetadata[]>;
   verifyPassword: (passwordInput: string) => Promise<boolean>;
   setGlobalApiKey: (key: string) => Promise<void>;
   loadProjectSession: (projectId: string) => Promise<ClientSelectionSession>;
@@ -314,7 +445,7 @@ const DEFAULT_SESSION: ClientSelectionSession = {
 };
 
 export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
-  photos: DEMO_PHOTOS,
+  photos: [],
   isLoading: false,
   error: null,
   activeFilter: "all",
@@ -329,8 +460,10 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   isAdminAuthenticated: false,
   adminPin: DEFAULT_ADMIN_PIN,
   clientProjects: DEFAULT_PROJECTS,
+  clients: DEFAULT_CLIENTS,
   activeProjectId: DEFAULT_PROJECTS[0].id,
   isPasswordUnlocked: true,
+  passwordLockUntil: 0,
   globalApiKey: "",
   isP2PConnected: false,
 
@@ -361,19 +494,21 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const isAuth = sessionStorage.getItem("lumina_admin_authenticated") === "true";
 
     let savedProjects = (await get<ClientProject[]>(IDB_PROJECTS_KEY)) || [];
-    if (
-      !savedProjects ||
-      savedProjects.length === 0 ||
-      savedProjects.length < DEFAULT_PROJECTS.length ||
-      !savedProjects.some((p) => p.id === "prewed-rian-amanda") ||
-      !savedProjects[0]?.sessionType
-    ) {
-      const existingCustom = (savedProjects || []).filter(
-        (p) => !DEFAULT_PROJECTS.some((dp) => dp.id === p.id)
-      );
-      savedProjects = [...DEFAULT_PROJECTS, ...existingCustom];
+    if (savedProjects.length === 0) {
+      // First run only, so sessions deleted by the admin stay deleted
+      savedProjects = [...DEFAULT_PROJECTS];
       await set(IDB_PROJECTS_KEY, savedProjects);
     }
+
+    // Client registry: attach every session to a client record
+    const savedClients = (await get<Client[]>(IDB_CLIENTS_KEY)) || [];
+    const ensured = ensureClients(savedProjects, savedClients);
+    savedProjects = ensured.projects;
+    if (ensured.clientsChanged || ensured.projectsChanged) {
+      await set(IDB_CLIENTS_KEY, ensured.clients);
+      await set(IDB_PROJECTS_KEY, savedProjects);
+    }
+    const clients = ensured.clients;
 
     // 3. If URL specifies a shared project link, import or update it
     if (sessionParam || clientParam || projectParam) {
@@ -428,13 +563,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     }
 
     // 6. Check Password Lock Status for target project
+    // (in-memory access only: a page reload asks for the password again)
     const hasPassword = Boolean(targetProject.password || targetProject.passwordHash);
-    let isUnlocked = true;
-    if (hasPassword) {
-      const isSessionUnlocked =
-        sessionStorage.getItem(`lumina_unlocked_${targetProject.id}`) === "true";
-      isUnlocked = isSessionUnlocked;
-    }
+    const isUnlocked = hasPassword ? isAccessValid(targetProject.id) : true;
 
     // 7. Assemble active config
     const activeConfig: ProofingConfig = {
@@ -483,6 +614,15 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       projectSessionKey
     );
 
+    // Same reconciliation for every other session, so a deadline that
+    // passes while another session is open still locks that session
+    for (const proj of savedProjects) {
+      if (!proj.selectionDeadline || proj.id === targetProject.id) continue;
+      const otherKey = `lumina_session_${proj.id}`;
+      const stored = await get<ClientSelectionSession>(otherKey);
+      if (stored) await reconcileDeadlineLock(stored, proj, otherKey);
+    }
+
     // 9. Load photos cache + landing showcase
     const cacheKey = IDB_PHOTOS_CACHE_KEY + targetProject.id;
     const cachedPhotos = await get<PhotoMetadata[]>(cacheKey);
@@ -495,13 +635,14 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       isAdminAuthenticated: isAuth,
       adminPin: savedAdminPin,
       clientProjects: savedProjects,
+      clients,
       activeProjectId: targetProject.id,
       globalApiKey: savedApiKey,
       isPasswordUnlocked: isUnlocked,
       config: activeConfig,
       session: projectSession,
       isDemoMode: !targetProject.folderId || !savedApiKey,
-      photos: cachedPhotos && cachedPhotos.length > 0 ? cachedPhotos : getDemoPhotosForProject(targetProject.sessionType),
+      photos: cachedPhotos && cachedPhotos.length > 0 ? cachedPhotos : [],
       showcaseItems: savedShowcase.slice(0, MAX_SHOWCASE),
       heroVideoUrl: savedHeroVideoUrl,
       hasHeroVideoUpload: Boolean(savedHeroVideoBlob),
@@ -510,6 +651,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
 
     // Arm the deadline auto-lock timer for the active session
     getStore().scheduleDeadlineLock();
+
+    // Gallery password gate: idle timeout + max age + lockout watchdog
+    getStore().startAccessWatchdog();
 
     // 10. Start P2P depending on view
     if (viewMode === "client") {
@@ -642,9 +786,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     await set(IDB_ACTIVE_PROJECT_KEY, target.id);
 
     const hasPassword = Boolean(target.password || target.passwordHash);
-    const isUnlocked = hasPassword
-      ? sessionStorage.getItem(`lumina_unlocked_${target.id}`) === "true"
-      : true;
+    const isUnlocked = hasPassword ? isAccessValid(target.id) : true;
 
     const newConfig: ProofingConfig = {
       folderId: target.folderId,
@@ -680,7 +822,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       config: newConfig,
       session: projectSession,
       isDemoMode: !target.folderId || !globalApiKey,
-      photos: cachedPhotos && cachedPhotos.length > 0 ? cachedPhotos : getDemoPhotosForProject(target.sessionType),
+      photos: cachedPhotos && cachedPhotos.length > 0 ? cachedPhotos : [],
     });
 
     // Re-arm the deadline auto-lock timer for the newly active session
@@ -715,25 +857,60 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   },
 
   saveProject: async (project: ClientProject) => {
-    const { clientProjects, globalApiKey } = getStore();
+    const { clientProjects, clients, globalApiKey } = getStore();
     const updated = [...clientProjects];
+    const nextClients = [...clients];
 
-    if (project.password && project.password.trim()) {
-      project.passwordHash = await hashPassword(project.password.trim());
+    const toSave: ClientProject = { ...project };
+    const clearPassword = Boolean(toSave.clearPassword);
+    delete toSave.clearPassword;
+
+    const previous = clientProjects.find((p) => p.id === project.id);
+    if (toSave.password && toSave.password.trim()) {
+      toSave.passwordHash = await hashPassword(toSave.password.trim());
+    } else if (clearPassword) {
+      toSave.password = "";
+      toSave.passwordHash = "";
     } else {
-      project.password = "";
-      project.passwordHash = "";
+      // Empty field means "unchanged", so a stored credential survives an edit
+      toSave.password = previous?.password || "";
+      toSave.passwordHash = previous?.passwordHash || "";
     }
+
+    // Every session belongs to a client, so a renamed session still groups
+    const key = normalizeClientKey(toSave.clientName || "");
+    let client = toSave.clientId
+      ? nextClients.find((c) => c.id === toSave.clientId)
+      : nextClients.find((c) => normalizeClientKey(c.name) === key);
+    if (!client) {
+      const base = `cli-${slugify(toSave.clientName || "klien")}`;
+      let id = base;
+      let suffix = 2;
+      while (nextClients.some((c) => c.id === id)) id = `${base}-${suffix++}`;
+      client = { id, name: toSave.clientName, createdAt: Date.now() };
+      nextClients.push(client);
+    }
+    // The session edits below fill in the client's shared defaults
+    client = {
+      ...client,
+      name: toSave.clientName || client.name,
+      contact: toSave.clientContact || client.contact || "",
+      password: toSave.password || client.password || "",
+      passwordHash: toSave.passwordHash || client.passwordHash || "",
+    };
+    nextClients[nextClients.findIndex((c) => c.id === client.id)] = client;
+    toSave.clientId = client.id;
 
     const index = updated.findIndex((p) => p.id === project.id);
     if (index >= 0) {
-      updated[index] = project;
+      updated[index] = toSave;
     } else {
-      updated.unshift(project);
+      updated.unshift(toSave);
     }
 
     await set(IDB_PROJECTS_KEY, updated);
-    setStore({ clientProjects: updated });
+    await set(IDB_CLIENTS_KEY, nextClients);
+    setStore({ clientProjects: updated, clients: nextClients });
 
     if (getStore().activeProjectId === project.id) {
       const updatedConfig: ProofingConfig = {
@@ -766,13 +943,96 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   },
 
   deleteProject: async (projectId: string) => {
-    const { clientProjects, activeProjectId } = getStore();
+    const { clientProjects, clients, activeProjectId } = getStore();
+    const removed = clientProjects.find((p) => p.id === projectId);
     const filtered = clientProjects.filter((p) => p.id !== projectId);
     await set(IDB_PROJECTS_KEY, filtered);
-    setStore({ clientProjects: filtered });
+
+    // Drop everything stored for that session
+    await del(`lumina_session_${projectId}`).catch(() => undefined);
+    await del(IDB_PHOTOS_CACHE_KEY + projectId).catch(() => undefined);
+
+    // Keep the client list clean when its last session disappears
+    let nextClients = clients;
+    if (removed?.clientId && !filtered.some((p) => p.clientId === removed.clientId)) {
+      nextClients = clients.filter((c) => c.id !== removed.clientId);
+      await set(IDB_CLIENTS_KEY, nextClients);
+    }
+
+    setStore({ clientProjects: filtered, clients: nextClients });
 
     if (activeProjectId === projectId && filtered.length > 0) {
       await getStore().switchProject(filtered[0].id);
+    }
+  },
+
+  saveClient: async (client: Client) => {
+    const clients = [...getStore().clients];
+    const index = clients.findIndex((c) => c.id === client.id);
+    if (index >= 0) clients[index] = client;
+    else clients.push(client);
+    await set(IDB_CLIENTS_KEY, clients);
+    setStore({ clients });
+  },
+
+  unlockForPreview: (projectId: string) => {
+    accessExpiry.set(projectId, Date.now() + ACCESS_MAX_AGE_MS);
+    accessActivityAt = Date.now();
+    accessFailedAttempts = 0;
+    setStore({ isPasswordUnlocked: true, passwordLockUntil: 0 });
+  },
+
+  probeDriveFolder: async (folderInput: string) => {
+    const { globalApiKey } = getStore();
+    const folderId = extractFolderId(folderInput);
+    if (!folderId.trim()) {
+      return { ok: false, count: 0, message: "Tautan folder belum diisi." };
+    }
+    if (!globalApiKey) {
+      return {
+        ok: false,
+        count: 0,
+        message: "Kunci API Google Drive belum diatur. Buka tab Pengaturan untuk mengisinya.",
+      };
+    }
+    try {
+      const files = await fetchGoogleDriveFolder(folderId, globalApiKey);
+      if (files.length === 0) {
+        return {
+          ok: true,
+          count: 0,
+          message: "Folder terbaca, tetapi belum ada foto di dalamnya.",
+        };
+      }
+      return { ok: true, count: files.length, message: `${files.length} foto terbaca dari folder ini.` };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Folder gagal dibaca.";
+      return { ok: false, count: 0, message };
+    }
+  },
+
+  getPhotoCounts: async () => {
+    const counts: Record<string, number> = {};
+    for (const proj of getStore().clientProjects) {
+      try {
+        const cached = await get<PhotoMetadata[]>(IDB_PHOTOS_CACHE_KEY + proj.id);
+        if (cached && cached.length > 0) counts[proj.id] = cached.length;
+      } catch {
+        // Ignore unreadable caches
+      }
+    }
+    return counts;
+  },
+
+  getProjectPhotos: async (projectId: string) => {
+    if (projectId === getStore().activeProjectId && getStore().photos.length > 0) {
+      return getStore().photos;
+    }
+    try {
+      const cached = await get<PhotoMetadata[]>(IDB_PHOTOS_CACHE_KEY + projectId);
+      return cached || [];
+    } catch {
+      return [];
     }
   },
 
@@ -781,28 +1041,68 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const current = clientProjects.find((p) => p.id === activeProjectId);
     if (!current) return false;
 
-    const trimmedInput = passwordInput.trim();
+    const now = Date.now();
+    // Brute-force protection: reject while the lockout window is active
+    if (now < accessLockoutUntil) return false;
 
+    const trimmedInput = passwordInput.trim();
+    if (!trimmedInput) return false;
+
+    let isMatch = false;
     if (current.password && current.password.trim() === trimmedInput) {
-      sessionStorage.setItem(`lumina_unlocked_${current.id}`, "true");
-      setStore({ isPasswordUnlocked: true });
+      isMatch = true;
+    } else if (current.passwordHash) {
+      // Strict comparison only (prefix matching would be a vulnerability)
+      const inputHash = await hashPassword(trimmedInput);
+      isMatch = inputHash === current.passwordHash;
+    }
+
+    if (isMatch) {
+      accessFailedAttempts = 0;
+      accessLockoutUntil = 0;
+      accessExpiry.set(current.id, now + ACCESS_MAX_AGE_MS);
+      accessActivityAt = now;
+      setStore({
+        isPasswordUnlocked: true,
+        passwordLockUntil: 0,
+      });
       return true;
     }
 
-    if (current.passwordHash) {
-      const inputHash = await hashPassword(trimmedInput);
-      if (
-        inputHash === current.passwordHash ||
-        current.passwordHash.startsWith(inputHash) ||
-        inputHash.startsWith(current.passwordHash)
-      ) {
-        sessionStorage.setItem(`lumina_unlocked_${current.id}`, "true");
-        setStore({ isPasswordUnlocked: true });
-        return true;
-      }
+    accessFailedAttempts += 1;
+    if (accessFailedAttempts >= ACCESS_MAX_ATTEMPTS) {
+      accessFailedAttempts = 0;
+      accessLockoutUntil = now + ACCESS_LOCKOUT_MS;
+      setStore({ passwordLockUntil: accessLockoutUntil });
     }
-
     return false;
+  },
+
+  startAccessWatchdog: () => {
+    if (accessWatchdogStarted) return;
+    accessWatchdogStarted = true;
+
+    const touch = () => {
+      accessActivityAt = Date.now();
+    };
+    ["pointerdown", "keydown", "scroll", "touchstart"].forEach((evt) =>
+      window.addEventListener(evt, touch, { passive: true })
+    );
+
+    window.setInterval(() => {
+      const { activeProjectId, clientProjects, isPasswordUnlocked } = getStore();
+      if (!isPasswordUnlocked) return;
+
+      const project = clientProjects.find((p) => p.id === activeProjectId);
+      if (!project?.password && !project?.passwordHash) return; // no gate
+
+      const now = Date.now();
+      const idle = now - accessActivityAt > ACCESS_IDLE_TIMEOUT_MS;
+      if (!isAccessValid(activeProjectId) || idle) {
+        accessExpiry.delete(activeProjectId);
+        setStore({ isPasswordUnlocked: false });
+      }
+    }, 15_000);
   },
 
   setGlobalApiKey: async (key: string) => {
@@ -864,13 +1164,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       if (!seen.has(p.id)) seen.set(p.id, { ...p, groupLabel });
     };
 
-    // All session catalogs (demo)
-    DEMO_PHOTOS.forEach((p) => push(p, "Pernikahan"));
-    PREWED_PHOTOS.forEach((p) => push(p, "Prewedding"));
-    MATERNITY_PHOTOS.forEach((p) => push(p, "Maternity"));
-    ENGAGEMENT_PHOTOS.forEach((p) => push(p, "Lamaran"));
-
-    // Currently loaded catalog (may include Google Drive photos)
+    // Currently loaded catalog (Google Drive photos)
     photos.forEach((p) => push(p, "Sesi Aktif"));
 
     // Cached Google Drive photos from every project
@@ -968,8 +1262,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const { config, isOnline, activeProjectId } = getStore();
 
     if (!config.folderId || !config.apiKey) {
+      // No Drive source configured: gallery stays empty (no dummy photos)
       setStore({
-        photos: DEMO_PHOTOS,
+        photos: [],
         isDemoMode: true,
         isLoading: false,
         error: null,

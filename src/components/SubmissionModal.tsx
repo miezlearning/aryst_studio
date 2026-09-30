@@ -38,6 +38,16 @@ export const SubmissionModal: React.FC = () => {
   const [transmitStatus, setTransmitStatus] = useState<"idle" | "success" | "error">("idle");
   const [transmitMessage, setTransmitMessage] = useState("");
 
+  // Dialog behaviour: Escape closes it
+  React.useEffect(() => {
+    if (!isSubmissionOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsSubmissionOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isSubmissionOpen, setIsSubmissionOpen]);
+
   if (!isSubmissionOpen) return null;
 
   const selectedPhotos = photos.filter((p) => session.selectedPhotoIds.includes(p.id));
@@ -162,11 +172,14 @@ export const SubmissionModal: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="submission-modal-title"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) setIsSubmissionOpen(false);
+      }}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl my-8">
+      <div className="relative w-full max-w-2xl my-auto bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-800/80 mb-6">
+        <div className="sticky top-0 z-10 -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 px-6 sm:px-8 pt-5 sm:pt-6 pb-4 mb-6 bg-zinc-950 border-b border-zinc-800/80 rounded-t-3xl flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
               <CheckCircle className="w-5 h-5" />
@@ -223,7 +236,7 @@ export const SubmissionModal: React.FC = () => {
             Pratinjau Foto Terpilih ({selectedCount})
           </h3>
           {selectedPhotos.length === 0 ? (
-            <div className="p-6 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/80 text-zinc-500 text-xs">
+            <div className="p-6 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/80 text-zinc-400 text-xs">
               Belum ada foto yang dipilih. Silakan kembali ke galeri untuk menandai foto.
             </div>
           ) : (
@@ -245,7 +258,7 @@ export const SubmissionModal: React.FC = () => {
                         <p className="text-[10px] text-amber-400 truncate flex items-center gap-1 mt-0.5">
                           <span>{photo.section}</span>
                           {photo.location && (
-                            <span className="text-zinc-500">• {photo.location}</span>
+                            <span className="text-zinc-400">• {photo.location}</span>
                           )}
                         </p>
                       )}
@@ -254,11 +267,11 @@ export const SubmissionModal: React.FC = () => {
                           Catatan: {session.revisionNotes[photo.id]}
                         </p>
                       ) : (
-                        <p className="text-[11px] text-zinc-500 mt-0.5">Tanpa instruksi khusus</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">Tanpa instruksi khusus</p>
                       )}
                     </div>
                   </div>
-                  <span className="text-zinc-500 font-medium text-[11px] ml-2 shrink-0">
+                  <span className="text-zinc-400 font-medium text-[11px] ml-2 shrink-0">
                     #{i + 1}
                   </span>
                 </div>
@@ -375,7 +388,7 @@ export const SubmissionModal: React.FC = () => {
         <div className="text-center pt-2">
           <button
             onClick={() => setIsSubmissionOpen(false)}
-            className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors"
           >
             Kembali ke Kurasi Foto
           </button>

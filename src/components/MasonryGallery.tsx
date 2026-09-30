@@ -20,6 +20,7 @@ export const MasonryGallery: React.FC = () => {
     session,
     isLoading,
     error,
+    config,
     activeFilter,
     searchQuery,
     clientProjects,
@@ -207,18 +208,18 @@ export const MasonryGallery: React.FC = () => {
 
         {/* Search input */}
         <div className="relative min-w-[240px] md:w-72">
-          <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Cari nomor, nama, atau lokasi foto..."
-            className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/60 transition-all"
+            className="w-full pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500/60 focus:ring-1 focus:ring-amber-500/60 transition-all"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 hover:text-zinc-300"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-300"
             >
               ✕
             </button>
@@ -270,7 +271,45 @@ export const MasonryGallery: React.FC = () => {
       )}
 
       {/* Storyline Grouped Sections Grid */}
-      {groupedSections.length === 0 ? (
+      {photos.length === 0 && !searchQuery && activeFilter === "all" ? (
+        <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-900/40 p-8 sm:p-12 text-center">
+          <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-zinc-900 border border-zinc-800 mb-4">
+            <Layers className="w-5 h-5 text-zinc-600" />
+          </div>
+          {!config.folderId ? (
+            <>
+              <p className="text-sm font-semibold text-zinc-300">
+                Galeri ini belum dihubungkan ke folder foto
+              </p>
+              <p className="text-xs text-zinc-400 mt-1.5 max-w-md mx-auto">
+                Fotografer belum memasukkan tautan folder Google Drive untuk sesi ini. Foto akan
+                muncul otomatis begitu sumber foto diatur.
+              </p>
+            </>
+          ) : !config.apiKey ? (
+            <>
+              <p className="text-sm font-semibold text-zinc-300">
+                Kunci API Drive belum diatur
+              </p>
+              <p className="text-xs text-zinc-400 mt-1.5 max-w-md mx-auto">
+                Folder sudah terhubung, tetapi aplikasi belum bisa membaca isinya karena kunci API
+                Google Drive belum diisi.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-zinc-300">
+                Belum ada foto di folder sesi ini
+              </p>
+              <p className="text-xs text-zinc-400 mt-1.5 max-w-md mx-auto">
+                Folder sudah terhubung namun belum berisi foto yang bisa dimuat. Pastikan foto sudah
+                diunggah ke folder dan izinnya disetel ke{" "}
+                <span className="text-zinc-400 font-medium">Siapa saja yang memiliki tautan</span>.
+              </p>
+            </>
+          )}
+        </div>
+      ) : groupedSections.length === 0 ? (
         <EmptyState
           type={searchQuery ? "search" : activeFilter === "selected" ? "selected" : "general"}
           onReset={() => {
@@ -372,9 +411,14 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
   const [isLoaded, setIsLoaded] = React.useState(false);
   const [hasError, setHasError] = React.useState(false);
 
+  const preloadPreview = React.useCallback(() => {
+    const pre = new Image();
+    pre.src = photo.previewUrl;
+  }, [photo.previewUrl]);
+
   return (
     <div
-      className={`masonry-item group relative rounded-2xl overflow-hidden bg-zinc-900/60 border transition-all duration-300 ${
+      className={`masonry-item group relative rounded-2xl overflow-hidden bg-zinc-900/60 border select-none transition-all duration-300 ${
         isSelected
           ? "border-amber-500/80 shadow-lg shadow-amber-500/10 ring-2 ring-amber-500/40"
           : "border-zinc-800/80 hover:border-zinc-700"
@@ -387,6 +431,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
           aspectRatio: photo.width && photo.height ? `${photo.width} / ${photo.height}` : "4 / 3",
         }}
         onClick={onInspect}
+        onMouseEnter={preloadPreview}
       >
         {!isLoaded && !hasError && (
           <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center text-zinc-700 text-xs font-medium">
@@ -395,9 +440,9 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
         )}
 
         {hasError ? (
-          <div className="absolute inset-0 bg-zinc-900 flex flex-col items-center justify-center p-4 text-center text-zinc-500">
+          <div className="absolute inset-0 bg-zinc-900 flex flex-col items-center justify-center p-4 text-center text-zinc-400">
             <span className="text-xs mb-1">Gagal memuat gambar</span>
-            <span className="text-[10px] text-zinc-600 font-medium truncate max-w-full">
+            <span className="text-[10px] text-zinc-400 font-medium truncate max-w-full">
               {photo.name}
             </span>
           </div>
@@ -448,7 +493,7 @@ const PhotoCard: React.FC<PhotoCardProps> = ({
             {isSelected ? (
               <Check className="w-5 h-5 stroke-[2.5]" />
             ) : isLocked || (!isSelected && isFull) ? (
-              <Lock className="w-4 h-4 text-zinc-500" />
+              <Lock className="w-4 h-4 text-zinc-400" />
             ) : (
               <Circle className="w-4 h-4 text-zinc-400 group-hover:text-amber-400" />
             )}

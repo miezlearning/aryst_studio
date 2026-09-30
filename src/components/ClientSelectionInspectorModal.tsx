@@ -7,6 +7,7 @@ import {
   generateManifestJSON,
   extractSelectionFromUrl,
 } from "@/lib/sync";
+import { downloadPhotosZip, ZipProgress } from "@/lib/downloadZip";
 import {
   X,
   CheckCircle,
@@ -18,6 +19,7 @@ import {
   Check,
   AlertCircle,
   MessageSquare,
+  Download,
 } from "lucide-react";
 
 interface ClientSelectionInspectorModalProps {
@@ -31,12 +33,21 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
   isOpen,
   onClose,
 }) => {
-  const { photos, loadProjectSession, importClientSelection, isP2PConnected } = useProofingStore();
+  const {
+    loadProjectSession,
+    importClientSelection,
+    isP2PConnected,
+    getProjectPhotos,
+    globalApiKey,
+  } = useProofingStore();
   const [sessionData, setSessionData] = useState<ClientSelectionSession | null>(null);
+  const [catalog, setCatalog] = useState<PhotoMetadata[]>([]);
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [importInput, setImportInput] = useState("");
   const [importSuccess, setImportSuccess] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [zipProgress, setZipProgress] = useState<ZipProgress | null>(null);
+  const [zipError, setZipError] = useState<string | null>(null);
 
   // Load project session
   useEffect(() => {
@@ -47,20 +58,49 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
     }
   }, [isOpen, project, loadProjectSession]);
 
+  // Resolve names against this session's own photo catalog, not the
+  // catalog of whichever session happens to be active
+  useEffect(() => {
+    if (isOpen && project) {
+      let alive = true;
+      getProjectPhotos(project.id).then((photos) => {
+        if (alive) setCatalog(photos);
+      });
+      return () => {
+        alive = false;
+      };
+    }
+  }, [isOpen, project, getProjectPhotos]);
+
+  // Dialog behaviour: focus the panel at the top, Escape closes it
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    panelRef.current?.focus();
+    panelRef.current?.parentElement?.scrollTo(0, 0);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const selectedIds = sessionData ? sessionData.selectedPhotoIds : [];
   const revisionNotes = sessionData ? sessionData.revisionNotes : {};
 
-  // Find matching photo metadata from photos array
+  // Find matching photo metadata from that session's catalog
   const selectedPhotos: PhotoMetadata[] = selectedIds.map((id) => {
-    const found = photos.find((p) => p.id === id);
+    const found = catalog.find((p) => p.id === id);
     if (found) return found;
+    // Photo missing from the catalog: render a neutral placeholder
+    // instead of a dummy image
     return {
       id,
       name: `Foto-${id}`,
-      thumbnailUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=300&q=80",
-      previewUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80",
+      thumbnailUrl: "",
+      previewUrl: "",
     };
   });
 
@@ -97,6 +137,27 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadZip = async () => {
+    if (!sessionData || selectedPhotos.length === 0 || zipProgress) return;
+    setZipError(null);
+    setZipProgress({ phase: "download", current: 0, total: selectedPhotos.length });
+    try {
+      const result = await downloadPhotosZip(
+        selectedPhotos,
+        globalApiKey,
+        `Pilihan_${project.projectId || project.id}`,
+        setZipProgress
+      );
+      if (result.failed > 0) {
+        setZipError(`${result.failed} dari ${result.ok + result.failed} foto gagal diunduh.`);
+      }
+    } catch (err) {
+      setZipError(err instanceof Error ? err.message : "Gagal membuat file ZIP.");
+    } finally {
+      setZipProgress(null);
+    }
   };
 
   const handleManualImport = async (e: React.FormEvent) => {
@@ -159,11 +220,18 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 overflow-y-auto animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl my-8">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative w-full max-w-2xl my-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-zinc-800 mb-5">
+        <div className="sticky top-0 z-10 -mx-6 -mt-6 px-6 pt-5 pb-4 mb-5 bg-zinc-900 border-b border-zinc-800 rounded-t-xl flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-amber-400">
               <CheckCircle className="w-4 h-4" />
@@ -264,6 +332,43 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
 
         {/* Quick Studio Export Tools */}
         <div className="pt-4 border-t border-zinc-800/80 space-y-4">
+          {/* One-click ZIP of every photo the client picked */}
+          <div>
+            <button
+              onClick={handleDownloadZip}
+              disabled={selectedPhotos.length === 0 || zipProgress !== null}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              <span>
+                {zipProgress
+                  ? zipProgress.phase === "download"
+                    ? `Mengunduh foto ${zipProgress.current}/${zipProgress.total}...`
+                    : "Membuat file ZIP..."
+                  : `Unduh ZIP Foto Terpilih (${selectedPhotos.length})`}
+              </span>
+            </button>
+            {zipProgress && (
+              <div className="mt-1.5 h-1 rounded-full bg-zinc-800 overflow-hidden">
+                <div
+                  className="h-full bg-amber-400 transition-all duration-300"
+                  style={{
+                    width:
+                      zipProgress.phase === "zip"
+                        ? "100%"
+                        : `${Math.round((zipProgress.current / Math.max(1, zipProgress.total)) * 100)}%`,
+                  }}
+                />
+              </div>
+            )}
+            {zipError && (
+              <p className="mt-1.5 text-[11px] text-rose-400 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{zipError}</span>
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleCopyLightroom}

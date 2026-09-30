@@ -1,145 +1,126 @@
-# Lumina Proof Studio
+<div align="center">
 
-Platform kurasi dan seleksi foto (*photo proofing*) profesional untuk fotografer dan studio foto, dirancang berdasarkan spesifikasi arsitektur **Serverless Client-Side Google Drive Photo Proofing PWA**.
+# ARYST
 
-Aplikasi ini dapat di-host secara gratis di **GitHub Pages** (biaya server $0), terhubung langsung ke **Google Drive publik** milik fotografer via REST API v3 dan edge CDN Google User Content (`lh3.googleusercontent.com`), serta mendukung mode luring (*offline-first* PWA) dan persistensi lokal dengan IndexedDB.
+### Galeri kurasi foto klien, tanpa server
 
----
+[![Deploy](https://github.com/miezlearning/aryst_studio/actions/workflows/deploy.yml/badge.svg)](https://github.com/miezlearning/aryst_studio/actions)
+[![Demo](https://img.shields.io/website?url=https%3A%2F%2Fmiezlearning.github.io%2Faryst_studio&label=demo&color=brightgreen)](https://miezlearning.github.io/aryst_studio/)
+![Node](https://img.shields.io/badge/Node-20.x-339933?logo=nodedotjs&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-3.4-06B6D4?logo=tailwindcss&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-Workbox-5A0FC8?logo=pwa&logoColor=white)
 
-## Fitur Utama
+**[Demo Langsung](https://miezlearning.github.io/aryst_studio/)** · **[PRD](./PRD%20Web%20Proofing%20Foto%20GDrive%20%281%29.pdf)** · **[Riwayat Deploy](https://github.com/miezlearning/aryst_studio/actions)**
 
-1. **Integrasi Google Drive API v3 & Edge CDN**:
-   - Memuat berkas gambar langsung dari folder Google Drive publik (*Anyone with the link can view*).
-   - Menggunakan CDN `https://lh3.googleusercontent.com/d/{FILE_ID}=w{WIDTH}` dengan parameter lebar dinamis (`w400` untuk galeri grid, `w1600` untuk inspeksi *lightbox* resolusi tinggi), terbebas dari isu *error 403 Forbidden* tautan lama dan bebas kendala CORS.
-   - Dilengkapi *Mode Demo* kurasi foto pernikahan siap pakai bagi pengujian instan tanpa perlu API key awal.
+</div>
 
-2. **Galeri Kisi Masonry Responsif**:
-   - Menjaga rasio aspek asli foto tanpa pemotongan paksa (*no forced cropping*).
-   - Optimasi CLS (*Cumulative Layout Shift* < 0.05) dengan placeholder aspek rasio sebelum gambar termuat sempurna.
-   - Filter tab instan: **Semua Foto**, **Terpilih (X/Kuota)**, dan **Belum Dipilih**.
-   - Kolom pencarian berkas (*instant filename search*).
+ARYST menghubungkan folder **Google Drive publik** milik studio dengan klien lewat satu tautan: klien memilih foto dan menulis catatan revisi langsung di peramban, studio menerima pilihan siap diproses. Tidak ada backend, biaya hosting **$0** di GitHub Pages, dan data tersimpan lokal (IndexedDB).
 
-3. **Floating Selection Dock**:
-   - Panel kendali mengambang di bawah layar dengan penghitung kuota foto *real-time*.
-   - *Progress bar* dinamis yang berubah warna hijau (*emerald*) saat kuota paket terpenuhi.
-   - Peringatan dan penguncian seleksi otomatis saat batas kuota paket tercapai.
+<div align="center">
 
-4. **Lightbox Inspeksi Layar Penuh**:
-   - Tampilan resolusi tinggi dengan latensi transisi cepat.
-   - Tombol *zoom* (1x / 2x) untuk memeriksa ketajaman dan detail wajah.
-   - Navigasi keyboard (Panah Kiri, Panah Kanan, Spasi untuk memilih, Esc untuk keluar) serta gestur sentuh *swipe* untuk ponsel.
-   - Kolom catatan revisi per-foto (misal: "Tolong hilangkan orang di latar belakang", "Retouch warna kulit").
+![GitHub Streak](https://streak-stats.demolab.com/?user=miezlearning&hide_border=true&ring_color=EAB308&currStreakNum=A1A1AA&sideNums=A1A1AA&sideLabels=71717A&dates=71717A&background=0A0A0A)
+![Last Commit](https://img.shields.io/github/last-commit/miezlearning/aryst_studio?color=EAB308&label=commit)
+![Repo Size](https://img.shields.io/github/repo-size/miezlearning/aryst_studio?color=EAB308&label=repo)
+![Code Size](https://img.shields.io/github/languages/code-size/miezlearning/aryst_studio?color=EAB308)
+![Visitors](https://komarev.com/ghpvc/?username=miezlearning%2Faryst_studio&color=brightgreen)
 
-5. **Multi-Channel Submission & Ekspor Pasca-Produksi**:
-   - **Salin Filter Adobe Lightroom / Capture One**: Salin daftar nama file terpilih dipisahkan tanda koma (`IMG_1024.JPG, IMG_1028.JPG`) dengan 1 klik untuk langsung ditempel ke pencarian pustaka Lightroom.
-   - **Kirim via WhatsApp**: Format pesan terstruktur rapi beserta tautan hash `#proof=` terkompresi LZW (`lz-string`) untuk verifikasi seleksi.
-   - **Transmisi Otomatis ke Google Sheets via Google Apps Script (GAS)**: Menggunakan permintaan `POST text/plain;charset=utf-8` untuk meniadakan pemblokiran *CORS preflight OPTIONS* peramban.
-   - **Unduh Manifest Terstruktur**: Berkas `.csv` dan `.json` memuat ID file, nama file, ukuran, dimensi, catatan revisi, dan stempel waktu.
-   - Fitur kunci seleksi (*lock selection*) untuk mencegah perubahan yang tidak disengaja.
+</div>
 
-6. **PWA & Offline-First**:
-   - Service worker via Workbox (`vite-plugin-pwa`) dengan strategi `StaleWhileRevalidate` untuk thumbnail Google CDN dan `NetworkFirst` untuk metadata API.
-   - Persistensi status seleksi dan katalog foto secara lokal pada *IndexedDB* menggunakan `idb-keyval`.
-   - Indikator status jaringan (Online / Offline).
+## Fitur
 
-7. **Keamanan Siber Tanpa Server**:
-   - *Declarative Content Security Policy (CSP)* pada tag `<meta>` di `index.html`.
-   - Sanitasi input string dengan `DOMPurify` untuk mencegah serangan Stored XSS.
-   - Skrip *Anti-Clickjacking Frame-Busting*.
+- **Galeri masonry responsif** — rasio asli terjaga, CLS < 0.05, filter *Semua / Terpilih / Belum Dipilih* dan pencarian nama file instan.
+- **Lightbox inspeksi** — zoom 100%–600% (klik, scroll, tombol `+`/`−`, cubit di ponsel), geser foto saat zoom, klik area gelap untuk menutup, navigasi keyboard, dan catatan revisi per foto.
+- **Seleksi berkuota** — dock mengambang dengan hitungan & progress, kunci seleksi, batas waktu pilihan.
+- **Proteksi galeri klien** — klik kanan, seret foto keluar, serta `Ctrl+S`/`Ctrl+P` diblokir di tampilan klien.
+- **Serah terima praktis** — unduhan **ZIP** foto pilihan oleh admin, manifest CSV/JSON, salin filter Lightroom, dan kirim via WhatsApp.
+- **PWA *offline-first*** — cache Workbox (thumbnail *stale-while-revalidate*, metadata *network-first*), persistensi IndexedDB, indikator jaringan.
+- **Aman tanpa server** — CSP deklaratif, sanitasi DOMPurify, anti-clickjacking, tanpa penyimpanan data klien di pihak ketiga.
 
----
+## Alur Kerja
 
-## Panduan Penggunaan
+```mermaid
+flowchart LR
+    A["Studio unggah foto<br/>ke Google Drive publik"] --> B["Bagikan tautan ARYST<br/>ke klien"]
+    B --> C["Klien kurasi &<br/>tulis catatan revisi"]
+    C --> D["Studio menerima pilihan:<br/>ZIP · CSV/JSON · Filter Lightroom"]
+```
 
-### 1. Menjalankan di Komputer Lokal
+## Dibangun Dengan
+
+| Lapisan | Teknologi |
+| --- | --- |
+| Antarmuka | React 19 + TypeScript 5, Tailwind CSS 3 |
+| Build & hosting | Vite 6, GitHub Pages + GitHub Actions |
+| Penyimpanan | Google Drive API v3, IndexedDB (`idb-keyval`), Zustand |
+| PWA | `vite-plugin-pwa` + Workbox |
+| Lainnya | `jszip`, `lz-string`, PeerJS, DOMPurify, lucide-react |
+
+## Mulai Cepat
 
 ```bash
-# Masuk ke direktori proyek
-cd "Web Fotografi"
-
-# Jalankan server pengembangan
+git clone https://github.com/miezlearning/aryst_studio.git
+cd aryst_studio
+npm install
 npm run dev
-
-# Buka peramban di http://127.0.0.1:5173/
 ```
 
-### 2. Konfigurasi Studio (Fotografer)
+Buka `http://localhost:5173`. Masuk mode admin dengan **mengklik ganda logo ARYST** di kiri atas, lalu isi PIN admin.
 
-Klik tombol **Studio Hub** di bilah navigasi kanan atas:
-- Masukkan URL atau ID folder Google Drive publik.
-- Masukkan **Google Drive API Key v3**.
-- Tentukan kuota maksimal foto (misal: 20, 30, atau 50).
-- Masukkan Nama Klien dan ID Proyek.
-- Masukkan URL Webhook Google Apps Script (jika ingin hasil langsung masuk ke Google Sheets).
-- Klik **Salin Tautan Klien** untuk membagikan tautan yang sudah terkonfigurasi ke klien.
+## Konfigurasi Studio
 
-Contoh tautan klien:
+<details>
+<summary><b>Folder Drive, API key, dan tautan klien</b></summary>
+
+1. Ubah folder Google Drive menjadi **Anyone with the link can view**.
+2. Buat API key di Google Cloud Console (Drive API v3 aktif), lalu simpan lewat tombol pengaturan sesi di dashboard admin.
+3. Isi ID folder + API key pada sesi klien, tentukan kuota, lalu **Salin Tautan Klien**.
+4. Contoh tautan yang dibagikan ke klien:
+
 ```text
-https://username.github.io/web-fotografi/?folder=1AbC...&quota=25&client=Rian%20%26%20Amanda&project=WED-2026-01
+https://miezlearning.github.io/aryst_studio/?folder=1AbC...&quota=25&client=Rian%20%26%20Amanda&project=WED-2026-01
 ```
 
-### 3. Mengatur Google Apps Script (GAS) untuk Google Sheets
+</details>
 
-1. Buat Google Spreadsheet baru di akun Google Anda.
-2. Buka menu **Extensions > Apps Script**.
-3. Buka tab **Google Apps Script (GAS)** di dalam menu *Studio Hub* aplikasi, lalu salin kode `Code.gs`.
-4. Tempel ke editor Apps Script dan simpan.
-5. Klik **Deploy > New deployment**:
-   - Pilih jenis: **Web App**.
-   - Description: `Lumina Proof Webhook`.
-   - Execute as: **Me** (akun Google Anda).
-   - Who has access: **Anyone**.
-6. Klik **Deploy** dan salin URL Web App yang dihasilkan ke kolom Webhook di *Studio Hub*.
+<details>
+<summary><b>Webhook Google Sheets (opsional)</b></summary>
 
-### 4. Deploy ke GitHub Pages via GitHub Actions
+1. Buat Spreadsheet baru → menu **Extensions → Apps Script**.
+2. Salin kode `Code.gs` dari tab *Integrasi* di dashboard ARYST, tempel, simpan.
+3. **Deploy → New deployment → Web App**, *Execute as*: Me, *Access*: Anyone.
+4. Tempel URL Web App ke kolom Webhook pada sesi klien — pilihan klien masuk otomatis ke Spreadsheet.
 
-Pipeline CI/CD telah disediakan di berkas [deploy.yml](file:///.github/workflows/deploy.yml).
+</details>
 
-1. Buat repositori baru di GitHub dan dorong (*push*) kode ini ke cabang `main`.
-2. Di GitHub Repository:
-   - Buka **Settings > Pages**.
-   - Pada bagian **Build and deployment > Source**, pilih **GitHub Actions**.
-   - (Opsional) Di **Settings > Secrets and variables > Actions**, tambahkan secret `PROD_GOOGLE_API_KEY` jika ingin menyematkan API key saat build.
-3. Setiap kali ada commit ke branch `main`, GitHub Actions akan otomatis memverifikasi kode, mengompilasi Vite SPA, membuat berkas `404.html` dan `.nojekyll`, lalu mempublikasikannya ke CDN GitHub Pages.
+## Deploy
 
----
+Tidak ada langkah manual: setiap **push ke `master`**, GitHub Actions mengecek tipe, membangun, dan menerbitkan ke
 
-## Struktur Berkas Proyek
+**https://miezlearning.github.io/aryst_studio/**
+
+Pipeline ada di [`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml).
+
+## Struktur Proyek
+
+<details>
+<summary>Buka struktur berkas</summary>
 
 ```text
-├── .github/
-│   └── workflows/
-│       └── deploy.yml              # CI/CD otomatis untuk GitHub Pages
-├── public/
-│   ├── favicon.svg                 # Ikon studio kamera
-│   ├── masked-icon.svg
-│   ├── pwa-192x192.png             # Ikon PWA
-│   └── pwa-512x512.png
+aryst_studio/
+├── .github/workflows/deploy.yml   # CI/CD → GitHub Pages
+├── public/                        # Ikon PWA & aset statis
 ├── src/
-│   ├── components/
-│   │   ├── EmptyState.tsx          # Komponen status kosong (pencarian, seleksi)
-│   │   ├── FloatingDock.tsx        # Dock mengambang penghitung kuota & progress bar
-│   │   ├── LightboxModal.tsx       # Peninjau layar penuh resolusi tinggi & catatan revisi
-│   │   ├── MasonryGallery.tsx      # Galeri kisi adaptif multi-kolom
-│   │   ├── Navbar.tsx              # Bilah navigasi, status koneksi & aksi
-│   │   ├── OfflineIndicator.tsx    # Banner status koneksi luring
-│   │   ├── PhotographerStudioModal.tsx # Hub pengaturan fotografer & kode GAS
-│   │   └── SubmissionModal.tsx     # Dialog ekspor Lightroom, WhatsApp, GAS, CSV/JSON
-│   ├── lib/
-│   │   ├── googleDrive.ts          # Integrasi Google Drive API v3 & dataset demo
-│   │   ├── storage.ts              # Zustand store & persistensi IndexedDB (idb-keyval)
-│   │   ├── sync.ts                 # Algoritma kompresi URL hash lz-string & ekspor
-│   │   └── utils.ts                # Utilitas tailwind, sanitasi DOMPurify, format ukuran
-│   ├── types/
-│   │   └── index.ts                # Antarmuka TypeScript (PhotoMetadata, Session, Config)
-│   ├── App.tsx                     # Komponen utama aplikasi
-│   ├── index.css                   # Token desain Tailwind CSS, custom scrollbar & masonry
-│   ├── main.tsx                    # Entry point React & registrasi PWA
-│   └── vite-env.d.ts               # Definisi types Vite dan VitePWA
-├── index.html                      # Template HTML dengan CSP deklaratif & frame-busting
-├── package.json                    # Dependensi dan script build
-├── postcss.config.js               # Konfigurasi PostCSS
-├── tailwind.config.js              # Desain sistem & tema warna gelap
-├── tsconfig.json                   # Konfigurasi TypeScript dan path alias @/*
-└── vite.config.ts                  # Bundler Vite & konfigurasi PWA Workbox runtime caching
+│   ├── components/                # Galeri, lightbox, dock, dashboard admin
+│   ├── lib/                       # Drive API, store, sync, zip
+│   ├── types/                     # Kontrak tipe TypeScript
+│   ├── App.tsx                    # Router tampilan klien & admin
+│   └── main.tsx                   # Entry + registrasi service worker
+├── index.html                     # CSP + frame-busting
+├── vite.config.ts                 # Vite + konfigurasi PWA Workbox
+└── package.json
 ```
+
+</details>

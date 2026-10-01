@@ -110,13 +110,44 @@ const flushPush = () => {
   if (!db || !pending) return;
   const { projectId, session } = pending;
   pending = null;
-  setDoc(doc(db, COLLECTION, projectId), { ...session }, { merge: true }).catch((err) => {
+  setDoc(doc(db, COLLECTION, projectId), sanitizeForFirestore({ ...session }), { merge: true }).catch((err) => {
     handlers?.onStatus("error", err?.message || "Gagal mengirim ke cloud");
   });
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+/**
+ * Deep-strips `undefined` values before any Firestore write. Firestore
+ * rejects the whole document when a single nested field is undefined,
+ * and it throws synchronously (past any promise catch), so every write
+ * path goes through here. In dev, dropped paths are warned once so the
+ * source can be fixed instead of silently masked.
+ */
+const droppedPaths = new Set<string>();
+const sanitizeForFirestore = <T>(value: T, path = ""): T => {
+  if (Array.isArray(value))
+    return value.map((v, i) =>
+      sanitizeForFirestore(v, `${path}[${i}]`)
+    ) as unknown as T;
+  if (isRecord(value)) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v === undefined) {
+        const at = path ? `${path}.${k}` : k;
+        if (import.meta.env.DEV && !droppedPaths.has(at)) {
+          droppedPaths.add(at);
+          console.warn(`[sync] dropped undefined Firestore field: ${at}`);
+        }
+        continue;
+      }
+      out[k] = sanitizeForFirestore(v, path ? `${path}.${k}` : k);
+    }
+    return out as unknown as T;
+  }
+  return value;
+};
 
 const isProject = (value: unknown): value is ClientProject =>
   isRecord(value) && typeof value.id === "string" && typeof value.projectId === "string";
@@ -167,7 +198,7 @@ const flushStatePush = () => {
   if (!db || !pendingState) return;
   const state = pendingState;
   pendingState = null;
-  setDoc(doc(db, STUDIO_COLLECTION, STUDIO_STATE_ID), { ...state }).catch((err) => {
+  setDoc(doc(db, STUDIO_COLLECTION, STUDIO_STATE_ID), sanitizeForFirestore({ ...state })).catch((err) => {
     handlers?.onStatus("error", err?.message || "Gagal mengirim data studio ke cloud");
   });
 };
@@ -344,7 +375,7 @@ export const fetchShowcaseCloud = async (): Promise<ShowcaseCloudItem[]> => {
 
 export const pushShowcaseCloud = (item: ShowcaseCloudItem): void => {
   if (!db) return;
-  setDoc(doc(db, SHOWCASE_COLLECTION, item.id), { ...item }).catch((err) => {
+  setDoc(doc(db, SHOWCASE_COLLECTION, item.id), sanitizeForFirestore({ ...item })).catch((err) => {
     handlers?.onStatus("error", err?.message || "Gagal mengirim showcase ke cloud");
   });
 };

@@ -20,17 +20,17 @@ const toneFor = (urgency: ReturnType<typeof deadlineUrgency>) => {
     case "expired":
     case "soon":
       return {
-        box: "border-rose-500/35 bg-rose-500/10",
-        stroke: "stroke-rose-400",
-        text: "text-rose-300",
-        icon: "text-rose-400",
+        box: "border-rose-200 bg-rose-50",
+        stroke: "stroke-rose-500",
+        text: "text-rose-700",
+        icon: "text-rose-500",
       };
     case "near":
       return {
-        box: "border-amber-500/35 bg-amber-500/10",
-        stroke: "stroke-amber-400",
-        text: "text-amber-300",
-        icon: "text-amber-400",
+        box: "border-[#FF5A1F]/25 bg-[#FFF7ED]",
+        stroke: "stroke-[#FF5A1F]",
+        text: "text-[#C2410C]",
+        icon: "text-[#FF5A1F]",
       };
     default:
       return {
@@ -177,7 +177,7 @@ export const DeadlineCountdown: React.FC<Props> = ({
             r={RING_R}
             fill="none"
             strokeWidth="3"
-            className="text-zinc-800"
+            className="text-black/[0.08]"
             stroke="currentColor"
           />
           <circle
@@ -269,10 +269,10 @@ export const DeadlineBadge: React.FC<{
     <span
       className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border tabular-nums ${
         expired
-          ? "bg-rose-500/10 text-rose-400 border-rose-500/30"
+          ? "bg-rose-50 text-rose-700 border-rose-200"
           : soon
-            ? "bg-amber-500/10 text-amber-400 border-amber-500/30"
-            : "bg-zinc-800 text-zinc-300 border-zinc-700"
+            ? "bg-[#FFF7ED] text-[#C2410C] border-[#FF5A1F]/25"
+            : "bg-[#F4F1EA] text-[#121212]/70 border-black/[0.08]"
       } ${className}`}
       title={`Batas pilihan: ${new Date(deadline).toLocaleString("id-ID")}`}
     >

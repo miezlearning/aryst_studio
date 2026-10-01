@@ -152,7 +152,7 @@ export const MasonryGallery: React.FC = () => {
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <div className="inline-block w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <div className="inline-block w-8 h-8 border-2 border-[#FF5A1F] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-sm text-zinc-400">Memuat foto galeri...</p>
       </div>
     );
@@ -161,9 +161,9 @@ export const MasonryGallery: React.FC = () => {
   if (error) {
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center">
-        <div className="p-6 rounded-2xl bg-rose-950/20 border border-rose-500/30 text-rose-200">
-          <h3 className="text-base font-semibold text-rose-300 mb-2">Gagal Memuat Galeri</h3>
-          <p className="text-xs text-rose-400 mb-4">{error}</p>
+        <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700">
+          <h3 className="text-base font-semibold text-rose-700 mb-2">Gagal Memuat Galeri</h3>
+          <p className="text-xs text-rose-600 mb-4">{error}</p>
           <button
             onClick={() => loadPhotos(true)}
             className="px-4 py-2 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-500 text-white transition-colors"

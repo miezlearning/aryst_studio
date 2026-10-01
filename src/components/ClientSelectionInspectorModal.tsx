@@ -238,45 +238,45 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
     >
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative w-full max-w-2xl my-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl"
+        className="relative w-full max-w-2xl my-auto bg-white border border-black/[0.08] rounded-2xl p-6 shadow-2xl"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 -mx-6 -mt-6 px-6 pt-5 pb-4 mb-5 bg-zinc-900 border-b border-zinc-800 rounded-t-xl flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-10 -mx-6 -mt-6 px-6 pt-5 pb-4 mb-5 bg-white border-b border-black/[0.06] rounded-t-2xl flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-amber-400">
+            <div className="w-9 h-9 rounded-xl bg-[#FFF0EB] border border-[#FF5A1F]/20 flex items-center justify-center text-[#FF5A1F]">
               <CheckCircle className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white tracking-tight">
+                <h3 className="text-lg font-bold text-[#121212] tracking-tight">
                   Seleksi Klien: {project.clientName}
                 </h3>
                 {isP2PConnected ? (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     Sinkron Realtime
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-zinc-800 text-zinc-400 border border-zinc-700">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F5F2EB] text-[#71717A] border border-black/[0.06]">
                     <Radio className="w-3 h-3" />
                     Tersimpan Lokal
                   </span>
                 )}
               </div>
-              <p className="text-xs text-zinc-400">
-                Project Code: <span className="font-semibold text-zinc-300">{project.projectId}</span> • Kuota: <span className="text-amber-400 font-semibold">{selectedIds.length} / {project.maxQuota} foto</span>
+              <p className="text-xs text-[#71717A] mt-0.5">
+                Kode Sesi: <span className="font-semibold text-[#121212]">{project.projectId}</span> • Kuota: <span className="text-[#FF5A1F] font-bold">{selectedIds.length} / {project.maxQuota} foto</span>
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-colors"
+            className="p-2 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] text-[#71717A] hover:text-[#121212] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -284,18 +284,18 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
 
         {/* Selected Photos Gallery Grid */}
         <div className="mb-6">
-          <h4 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+          <h4 className="text-xs font-bold text-[#121212] uppercase tracking-wider mb-2.5 flex items-center justify-between">
             <span>Daftar Foto yang Dipilih Klien ({selectedIds.length})</span>
             {selectedIds.length >= project.maxQuota && (
-              <span className="text-emerald-400 text-[11px] font-semibold">✓ Kuota Terpenuhi</span>
+              <span className="text-emerald-600 text-[11px] font-bold">✓ Kuota Terpenuhi</span>
             )}
           </h4>
 
           {selectedPhotos.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800 text-zinc-400 text-xs">
-              <Camera className="w-6 h-6 mx-auto mb-2 text-zinc-600" />
-              <p className="font-medium text-zinc-300 mb-1">Belum Ada Foto Terpilih</p>
-              <p className="text-[11px] text-zinc-500 max-w-sm mx-auto">
+            <div className="p-8 text-center rounded-2xl bg-[#FAF8F5] border border-black/[0.06] text-[#71717A] text-xs">
+              <Camera className="w-6 h-6 mx-auto mb-2 text-[#A1A1AA]" />
+              <p className="font-bold text-[#121212] mb-1">Belum Ada Foto Terpilih</p>
+              <p className="text-[11px] text-[#71717A] max-w-sm mx-auto">
                 Klien belum memilih foto untuk sesi ini. Saat klien memilih foto di galeri, daftar pilihan akan otomatis muncul di sini.
               </p>
             </div>
@@ -304,39 +304,39 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
               {selectedPhotos.map((photo, idx) => (
                 <div
                   key={photo.id}
-                  className="flex items-start justify-between p-3 rounded-2xl bg-zinc-900 border border-zinc-800/80 text-xs"
+                  className="flex items-start justify-between p-3 rounded-2xl bg-[#FAF8F5] border border-black/[0.06] text-xs"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={photo.thumbnailUrl}
                       alt={photo.name}
-                      className="w-12 h-12 rounded-xl object-cover bg-zinc-800 shrink-0"
+                      className="w-12 h-12 rounded-xl object-cover bg-black/5 shrink-0"
                     />
                     <div className="truncate">
-                      <p className="text-zinc-200 font-semibold truncate">
+                      <p className="text-[#121212] font-bold truncate">
                         {photo.name}
                       </p>
                       {photo.section && (
-                        <p className="text-[10px] text-amber-400 truncate flex items-center gap-1 mt-0.5">
+                        <p className="text-[10px] text-[#FF5A1F] font-semibold truncate flex items-center gap-1 mt-0.5">
                           <span>{photo.section}</span>
                           {photo.location && (
-                            <span className="text-zinc-500">• {photo.location}</span>
+                            <span className="text-[#71717A]">• {photo.location}</span>
                           )}
                         </p>
                       )}
                       {revisionNotes[photo.id] ? (
-                        <p className="text-[11px] text-amber-400 mt-0.5 flex items-center gap-1">
+                        <p className="text-[11px] text-[#E8470B] mt-0.5 flex items-center gap-1 font-medium">
                           <MessageSquare className="w-3 h-3 shrink-0" />
                           <span>Instruksi: {revisionNotes[photo.id]}</span>
                         </p>
                       ) : (
-                        <p className="text-[11px] text-zinc-500 mt-0.5">
+                        <p className="text-[11px] text-[#71717A] mt-0.5">
                           Tanpa instruksi revisi khusus
                         </p>
                       )}
                     </div>
                   </div>
-                  <span className="text-zinc-500 font-medium text-[11px] ml-2 shrink-0">
+                  <span className="text-[#A1A1AA] font-bold text-[11px] ml-2 shrink-0">
                     #{idx + 1}
                   </span>
                 </div>
@@ -346,13 +346,13 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
         </div>
 
         {/* Quick Studio Export Tools */}
-        <div className="pt-4 border-t border-zinc-800/80 space-y-4">
+        <div className="pt-4 border-t border-black/[0.06] space-y-4">
           {/* One-click ZIP of every photo the client picked */}
           <div>
             <button
               onClick={handleDownloadZip}
               disabled={selectedPhotos.length === 0 || zipProgress !== null}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 btn-mtioon-primary font-bold text-xs transition-colors disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
               <span>
@@ -364,9 +364,9 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
               </span>
             </button>
             {zipProgress && (
-              <div className="mt-1.5 h-1 rounded-full bg-zinc-800 overflow-hidden">
+              <div className="mt-1.5 h-1.5 rounded-full bg-black/10 overflow-hidden">
                 <div
-                  className="h-full bg-amber-400 transition-all duration-300"
+                  className="h-full bg-[#FF5A1F] transition-all duration-300"
                   style={{
                     width:
                       zipProgress.phase === "zip"
@@ -377,7 +377,7 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
               </div>
             )}
             {zipError && (
-              <p className="mt-1.5 text-[11px] text-rose-400 flex items-center gap-1">
+              <p className="mt-1.5 text-[11px] text-rose-600 flex items-center gap-1 font-medium">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>{zipError}</span>
               </p>
@@ -388,34 +388,34 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
             <button
               onClick={handleCopyLightroom}
               disabled={selectedPhotos.length === 0}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-semibold text-zinc-200 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F5F2EB] hover:bg-[#EDE9E0] text-xs font-semibold text-[#121212] transition-colors disabled:opacity-50"
             >
-              {copiedType === "lightroom" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-400" />}
+              {copiedType === "lightroom" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-[#FF5A1F]" />}
               <span>{copiedType === "lightroom" ? "Filter Lightroom Tersalin!" : "Salin Filter Lightroom"}</span>
             </button>
 
             <button
               onClick={handleDownloadCSV}
               disabled={selectedPhotos.length === 0}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-semibold text-zinc-200 transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F5F2EB] hover:bg-[#EDE9E0] text-xs font-semibold text-[#121212] transition-colors disabled:opacity-50"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
               <span>Unduh CSV</span>
             </button>
 
             <button
               onClick={handleDownloadJSON}
               disabled={selectedPhotos.length === 0}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-semibold text-zinc-200 transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F5F2EB] hover:bg-[#EDE9E0] text-xs font-semibold text-[#121212] transition-colors disabled:opacity-50"
             >
-              <FileText className="w-3.5 h-3.5 text-zinc-400" />
+              <FileText className="w-3.5 h-3.5 text-[#71717A]" />
               <span>Unduh JSON</span>
             </button>
           </div>
 
           {/* Manual Import Box (in case client sent WhatsApp link) */}
-          <div className="p-3.5 rounded-lg bg-zinc-950 border border-zinc-800">
-            <label className="block text-[11px] font-semibold text-zinc-400 mb-1.5">
+          <div className="p-4 rounded-xl bg-[#FAF8F5] border border-black/[0.06]">
+            <label className="block text-[11px] font-bold text-[#121212] mb-1.5">
               Impor Tautan Seleksi Klien (dari pesan WhatsApp)
             </label>
             <form onSubmit={handleManualImport} className="flex items-center gap-2">
@@ -424,25 +424,25 @@ export const ClientSelectionInspectorModal: React.FC<ClientSelectionInspectorMod
                 value={importInput}
                 onChange={(e) => setImportInput(e.target.value)}
                 placeholder="Tempel tautan seleksi yang dikirimkan klien di sini..."
-                className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-200 focus:outline-none focus:border-amber-500"
+                className="flex-1 px-3 py-2 bg-white border border-black/15 rounded-xl text-xs text-[#121212] placeholder-[#A1A1AA] focus:outline-none focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F]"
               />
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors shrink-0"
+                className="px-4 py-2 btn-mtioon-black font-bold text-xs transition-colors shrink-0"
               >
                 Impor
               </button>
             </form>
 
             {importSuccess && (
-              <p className="mt-1.5 text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+              <p className="mt-1.5 text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
                 <Check className="w-3.5 h-3.5" />
                 <span>Pilihan foto klien berhasil dimuat!</span>
               </p>
             )}
 
             {importError && (
-              <p className="mt-1.5 text-[11px] text-rose-400 flex items-center gap-1">
+              <p className="mt-1.5 text-[11px] text-rose-600 font-medium flex items-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" />
                 <span>{importError}</span>
               </p>

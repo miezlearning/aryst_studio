@@ -5,42 +5,42 @@
 /* Sunghyun Sans: Self-hosted Web Fonts */
 @font-face {
   font-family: 'Sunghyun Sans';
-  src: url('/fonts/sunghyun-sans/SunghyunSans-Regular.woff2') format('woff2');
+  src: url('./fonts/SunghyunSans-Regular.woff2') format('woff2');
   font-weight: 400;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
   font-family: 'Sunghyun Sans';
-  src: url('/fonts/sunghyun-sans/SunghyunSans-Medium.woff2') format('woff2');
+  src: url('./fonts/SunghyunSans-Medium.woff2') format('woff2');
   font-weight: 500;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
   font-family: 'Sunghyun Sans';
-  src: url('/fonts/sunghyun-sans/SunghyunSans-SemiBold.woff2') format('woff2');
+  src: url('./fonts/SunghyunSans-SemiBold.woff2') format('woff2');
   font-weight: 600;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
   font-family: 'Sunghyun Sans';
-  src: url('/fonts/sunghyun-sans/SunghyunSans-Bold.woff2') format('woff2');
+  src: url('./fonts/SunghyunSans-Bold.woff2') format('woff2');
   font-weight: 700;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
   font-family: 'Sunghyun Sans';
-  src: url('/fonts/sunghyun-sans/SunghyunSans-ExtraBold.woff2') format('woff2');
+  src: url('./fonts/SunghyunSans-ExtraBold.woff2') format('woff2');
   font-weight: 800;
   font-display: swap;
   font-style: normal;
 }
 @font-face {
   font-family: 'Sunghyun Sans';
-  src: url('/fonts/sunghyun-sans/SunghyunSans-Black.woff2') format('woff2');
+  src: url('./fonts/SunghyunSans-Black.woff2') format('woff2');
   font-weight: 900;
   font-display: swap;
   font-style: normal;
@@ -356,7 +356,7 @@ body {
 /* Real skeleton loading (shimmer) used while IndexedDB hydrates */
 .skeleton {
   overflow: hidden;
-  background-color: #18181b;
+  background-color: #ECE9E2;
 }
 
 .skeleton::after {
@@ -367,9 +367,9 @@ body {
   background-image: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.055) 45%,
-    rgba(255, 255, 255, 0.11) 50%,
-    rgba(255, 255, 255, 0.055) 55%,
+    rgba(255, 255, 255, 0.65) 45%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0.65) 55%,
     rgba(255, 255, 255, 0) 100%
   );
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
@@ -478,6 +478,62 @@ body {
   .btn-glossy::after {
     animation: none;
   }
+}
+
+/* Hover gloss sweep for photo cards: a diagonal light pass that signals
+   the card is interactive. Hover-triggered only, never a loop. */
+.gloss-sweep {
+  position: relative;
+}
+
+.gloss-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.38) 50%,
+    transparent 60%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.9s ease;
+}
+
+.group:hover .gloss-sweep::after,
+.gloss-sweep:hover::after {
+  transform: translateX(130%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gloss-sweep::after {
+    transition: none;
+  }
+  .animate-fade-in {
+    animation: none;
+  }
+}
+
+/* Edge fade for the draggable showcase strip: signals more content
+   on both sides without any extra chrome. */
+.strip-mask {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 48px,
+    black calc(100% - 48px),
+    transparent 100%
+  );
 }
 
 /* Natural photographic bleed mask for session switcher card */

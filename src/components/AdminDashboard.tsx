@@ -87,7 +87,7 @@ const SourceStatus: React.FC<{
       <button
         type="button"
         onClick={onConfigure}
-        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md border border-amber-400/40 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20 text-[11px] font-semibold transition-colors"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#FF5A1F]/30 bg-[#FFF0EB] text-[#FF5A1F] hover:bg-[#FFE5DB] text-[11px] font-bold transition-colors"
         title="Pasang tautan folder Google Drive untuk sesi ini"
       >
         <Upload className="w-3 h-3" />
@@ -101,7 +101,7 @@ const SourceStatus: React.FC<{
       <button
         type="button"
         onClick={onOpenSettings}
-        className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md border border-rose-400/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 text-[11px] font-semibold transition-colors"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 text-[11px] font-semibold transition-colors"
         title="Folder sudah terpasang, tetapi kunci API belum diisi"
       >
         <Key className="w-3 h-3" />
@@ -111,7 +111,7 @@ const SourceStatus: React.FC<{
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium min-w-0">
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold min-w-0">
       <FolderGit2 className="w-3 h-3 shrink-0" />
       <span className="truncate max-w-[150px]">
         {count ? `${count} foto siap` : "Folder terhubung"}
@@ -120,7 +120,7 @@ const SourceStatus: React.FC<{
         <button
           type="button"
           onClick={onReload}
-          className="p-0.5 rounded hover:bg-zinc-800 text-zinc-400 hover:text-amber-300 transition-colors"
+          className="p-0.5 rounded hover:bg-black/5 text-[#71717A] hover:text-[#FF5A1F] transition-colors"
           title="Muat ulang foto dari Google Drive"
         >
           <RefreshCw className="w-3 h-3" />
@@ -134,7 +134,7 @@ const SourceStatus: React.FC<{
 const SessionModeBadge: React.FC<{ proj: ClientProject }> = ({ proj }) =>
   proj.sessionMode === "group" ? (
     <span
-      className="px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-400/10 text-sky-300 border border-sky-400/25"
+      className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200"
       title={proj.members?.length ? proj.members.join(", ") : "Sesi grup"}
     >
       <span className="inline-flex items-center gap-1">
@@ -143,7 +143,7 @@ const SessionModeBadge: React.FC<{ proj: ClientProject }> = ({ proj }) =>
       </span>
     </span>
   ) : (
-    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700 inline-flex items-center gap-1">
+    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F5F2EB] text-[#52525B] border border-black/[0.06] inline-flex items-center gap-1">
       <User className="w-3 h-3" />
       Perorangan
     </span>
@@ -590,29 +590,29 @@ function doPost(e) {
       <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-zinc-800">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.08]">
         <div>
           <div className="flex items-center gap-2 mb-1 text-xs">
-            <span className="font-semibold text-amber-400">
+            <span className="font-extrabold text-[#FF5A1F] uppercase tracking-wider">
               Admin
             </span>
-            <span className="text-zinc-600">•</span>
+            <span className="text-[#A1A1AA]">•</span>
             {isP2PConnected ? (
-              <span className="text-emerald-400 flex items-center gap-1.5 font-medium text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span className="text-emerald-700 flex items-center gap-1.5 font-bold text-[11px] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Sinkron Realtime
               </span>
             ) : (
-              <span className="text-zinc-400 flex items-center gap-1.5 text-[11px]">
-                <Radio className="w-3 h-3 text-zinc-400" />
+              <span className="text-[#71717A] flex items-center gap-1.5 text-[11px] font-medium">
+                <Radio className="w-3 h-3 text-[#71717A]" />
                 Siap Menerima Pilihan
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-display font-black text-[#121212] tracking-tight">
             Dashboard Fotografer
           </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 mt-1 max-w-2xl">
+          <p className="text-xs sm:text-sm text-[#52525B] mt-1 max-w-2xl font-medium">
             Kelola sesi kurasi klien, pantau pilihan foto secara realtime, dan atur sandi galeri.
           </p>
         </div>
@@ -624,17 +624,17 @@ function doPost(e) {
               unlockForPreview(activeProjectId);
               setViewMode("client");
             }}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-200 transition-colors"
+            className="btn-mtioon-secondary flex items-center gap-2 px-4 py-2 text-xs font-semibold transition-colors"
           >
-            <Eye className="w-4 h-4 text-amber-400" />
+            <Eye className="w-4 h-4 text-[#FF5A1F]" />
             <span>Lihat Galeri Klien</span>
-            <ArrowRight className="w-3.5 h-3.5 text-zinc-400" />
+            <ArrowRight className="w-3.5 h-3.5 text-[#71717A]" />
           </button>
 
           <button
             id="admin-add-session-btn"
             onClick={() => openCreateModal()}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-semibold transition-colors"
+            className="btn-mtioon-primary flex items-center gap-2 px-4 py-2 text-xs font-bold"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Sesi Klien</span>
@@ -642,7 +642,7 @@ function doPost(e) {
 
           <button
             onClick={logoutAdmin}
-            className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 border border-zinc-800 transition-colors"
+            className="btn-mtioon-secondary p-2 text-[#71717A] hover:text-rose-600 transition-colors"
             title="Kunci & Logout Admin"
           >
             <LogOut className="w-4 h-4" />
@@ -650,23 +650,23 @@ function doPost(e) {
         </div>
       </div>
 
-      {/* Studio Overview Metrics (Real Data Only, No Gradients) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-6">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-xs font-medium text-zinc-400">Total Sesi Klien</p>
-          <p className="text-2xl font-bold text-white mt-1">{clientProjects.length}</p>
+      {/* Studio Overview Metrics (Clean White Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 my-6">
+        <div className="mtioon-card p-5">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A]">Total Sesi Klien</p>
+          <p className="text-2xl sm:text-3xl font-black text-[#121212] mt-1.5">{clientProjects.length}</p>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-xs font-medium text-zinc-400">Sesi Dilindungi Sandi</p>
-          <p className="text-2xl font-bold text-amber-400 mt-1">
+        <div className="mtioon-card p-5">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A]">Sesi Dilindungi Sandi</p>
+          <p className="text-2xl sm:text-3xl font-black text-[#121212] mt-1.5">
             {clientProjects.filter((p) => Boolean(p.password || p.passwordHash)).length}
           </p>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-xs font-medium text-zinc-400">Sesi Aktif di Preview</p>
-          <p className="text-sm font-semibold text-zinc-200 mt-2 truncate">
+        <div className="mtioon-card p-5">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A]">Sesi Aktif di Preview</p>
+          <p className="text-base sm:text-lg font-bold text-[#121212] mt-2 truncate">
             {clientProjects.find((p) => p.id === activeProjectId)?.clientName || "Belum dipilih"}
           </p>
         </div>
@@ -678,23 +678,23 @@ function doPost(e) {
           {/* Search Bar & View Mode Switcher */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717A]" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari sesi berdasarkan nama klien atau kode project..."
-                className="w-full pl-9 pr-3.5 py-1.5 text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
               />
             </div>
 
-            <div className="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 self-end sm:self-auto">
+            <div className="flex items-center gap-1 bg-white border border-black/[0.06] rounded-full p-1 self-end sm:self-auto">
               <button
                 onClick={() => setViewLayout("by_client")}
-                className={`p-1.5 rounded text-xs transition-colors flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 ${
                   viewLayout === "by_client"
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-[#121212] text-[#FFFFFF] font-bold"
+                    : "text-[#121212]/60 hover:text-[#121212] font-semibold"
                 }`}
                 title="Kelompokkan Sesi per Klien"
               >
@@ -704,10 +704,10 @@ function doPost(e) {
 
               <button
                 onClick={() => setViewLayout("table")}
-                className={`p-1.5 rounded text-xs transition-colors flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 ${
                   viewLayout === "table"
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-[#121212] text-[#FFFFFF] font-bold"
+                    : "text-[#121212]/60 hover:text-[#121212] font-semibold"
                 }`}
                 title="Tampilan Tabel Pro"
               >
@@ -717,10 +717,10 @@ function doPost(e) {
 
               <button
                 onClick={() => setViewLayout("grid")}
-                className={`p-1.5 rounded text-xs transition-colors flex items-center gap-1.5 ${
+                className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 ${
                   viewLayout === "grid"
-                    ? "bg-zinc-800 text-white font-semibold"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-[#121212] text-[#FFFFFF] font-bold"
+                    : "text-[#121212]/60 hover:text-[#121212] font-semibold"
                 }`}
                 title="Tampilan Kartu"
               >
@@ -732,16 +732,16 @@ function doPost(e) {
 
           {/* Photo source setup banner: unfinished sessions are never silent */}
           {(sourceGaps.unset.length > 0 || sourceGaps.noKey.length > 0) && (
-            <div className="rounded-lg border border-amber-400/30 bg-amber-400/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-2.5">
-                <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <div className="rounded-2xl bg-[#FFF7ED] border border-[#FF5A1F]/25 p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <Info className="w-4 h-4 text-[#C2410C] shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-semibold text-amber-200">
+                  <p className="text-xs font-bold text-[#121212]">
                     {sourceGaps.unset.length > 0
                       ? `${sourceGaps.unset.length} sesi belum punya sumber foto`
                       : "Folder sudah terpasang, kunci API belum diisi"}
                   </p>
-                  <p className="text-[11px] text-zinc-400 mt-0.5">
+                  <p className="text-[11px] text-[#121212]/80 mt-0.5 font-medium">
                     {sourceGaps.unset.length > 0
                       ? "Galeri klien tetap kosong sampai tautan folder Google Drive dipasang pada sesi tersebut."
                       : "Foto belum bisa dimuat sampai kunci API Google Drive diisi pada tab Pengaturan."}
@@ -753,7 +753,7 @@ function doPost(e) {
                   <button
                     type="button"
                     onClick={() => openEditModal(sourceGaps.unset[0], { focusFolder: true })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-semibold transition-colors"
+                    className="btn-mtioon-primary flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>Tambah Link Folder Drive</span>
@@ -763,7 +763,7 @@ function doPost(e) {
                   <button
                     type="button"
                     onClick={() => setActiveTab("settings")}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-rose-300 text-xs font-semibold transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold transition-colors"
                   >
                     <Key className="w-3.5 h-3.5" />
                     <span>Atur Kunci API</span>
@@ -774,10 +774,10 @@ function doPost(e) {
           )}
 
           {filteredProjects.length === 0 ? (
-            <div className="p-12 text-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs">
-              <Users className="w-8 h-8 mx-auto mb-2 text-zinc-600" />
-              <p className="font-semibold text-zinc-200 mb-1">Tidak Ada Sesi Ditemukan</p>
-              <p className="text-zinc-400 max-w-sm mx-auto">
+            <div className="p-12 text-center rounded-2xl bg-white border border-black/[0.08] text-[#71717A] text-xs shadow-sm">
+              <Users className="w-8 h-8 mx-auto mb-2 text-[#A1A1AA]" />
+              <p className="font-bold text-[#121212] text-sm mb-1">Tidak Ada Sesi Ditemukan</p>
+              <p className="text-[#71717A] max-w-sm mx-auto">
                 {searchQuery
                   ? "Coba ubah kata kunci pencarian Anda."
                   : "Belum ada sesi klien yang dibuat. Buat sesi pertama untuk mulai mengumpulkan foto."}
@@ -786,7 +786,7 @@ function doPost(e) {
                 <button
                   type="button"
                   onClick={() => openCreateModal()}
-                  className="mt-4 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-semibold transition-colors"
+                  className="btn-mtioon-primary mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Tambah Sesi Klien</span>
@@ -800,26 +800,26 @@ function doPost(e) {
                 return (
                   <div
                     key={group.key}
-                    className="rounded-xl border border-zinc-800 bg-zinc-900/90 overflow-hidden shadow-sm"
+                    className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm"
                   >
                     {/* Client Group Header */}
-                    <div className="p-4 sm:p-5 bg-zinc-950/70 border-b border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="p-4 sm:p-5 bg-[#F4F1EA] border-b border-black/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-zinc-800 border border-zinc-700/80 flex items-center justify-center font-bold text-amber-400 text-base shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#FFF0EB] border border-[#FF5A1F]/20 flex items-center justify-center font-bold text-[#FF5A1F] text-base shrink-0">
                           {group.clientName.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-base font-bold text-white tracking-tight">
+                            <h3 className="text-base font-bold text-[#121212] tracking-tight">
                               {group.clientName}
                             </h3>
-                            <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-zinc-800 text-amber-400 border border-zinc-700">
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FF5A1F]/10 text-[#FF5A1F] border border-[#FF5A1F]/20">
                               {group.projects.length} Sesi Foto
                             </span>
                           </div>
                           {group.clientContact && (
-                            <p className="text-xs text-zinc-400 mt-0.5 flex items-center gap-1.5">
-                              <Phone className="w-3 h-3 text-zinc-400" />
+                            <p className="text-xs text-[#71717A] mt-0.5 flex items-center gap-1.5 font-medium">
+                              <Phone className="w-3 h-3 text-[#71717A]" />
                               <span>{group.clientContact}</span>
                             </p>
                           )}
@@ -828,15 +828,15 @@ function doPost(e) {
 
                       <button
                         onClick={() => openCreateModalForClient(group.clientName, group.clientContact)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-amber-400 hover:text-amber-300 text-xs font-semibold transition-colors"
+                        className="btn-mtioon-secondary flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold transition-colors"
                       >
-                        <FolderPlus className="w-3.5 h-3.5" />
+                        <FolderPlus className="w-3.5 h-3.5 text-[#FF5A1F]" />
                         <span>Tambah Sesi untuk Klien Ini</span>
                       </button>
                     </div>
 
                     {/* Sessions List within Client */}
-                    <div className="divide-y divide-zinc-800/80">
+                    <div className="divide-y divide-black/[0.06]">
                       {group.projects.map((proj) => {
                         const isActive = proj.id === activeProjectId;
                         const hasPassword = Boolean(proj.password || proj.passwordHash);
@@ -845,25 +845,25 @@ function doPost(e) {
                         return (
                           <div
                             key={proj.id}
-                            className={`p-4 sm:p-5 transition-colors hover:bg-zinc-800/30 flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
-                              isActive ? "bg-amber-500/5" : ""
+                            className={`p-4 sm:p-5 transition-colors hover:bg-black/[0.02] flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
+                              isActive ? "bg-[#FFF0EB]/40" : ""
                             }`}
                           >
                             <div className="space-y-2 flex-1 min-w-0">
                               {/* Session Badges & Title */}
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FF5A1F]/10 text-[#FF5A1F] border border-[#FF5A1F]/20">
                                   {proj.sessionType || "Sesi Foto"}
                                 </span>
                                 <SessionModeBadge proj={proj} />
-                                <h4 className="text-sm sm:text-base font-semibold text-white truncate">
+                                <h4 className="text-sm sm:text-base font-bold text-[#121212] truncate">
                                   {proj.sessionTitle || proj.projectId}
                                 </h4>
-                                <span className="text-[11px] font-mono text-zinc-400">
+                                <span className="text-[11px] font-mono text-[#71717A]">
                                   ({proj.projectId})
                                 </span>
                                 {isActive && (
-                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                     Aktif di Preview
                                   </span>
                                 )}
@@ -873,41 +873,41 @@ function doPost(e) {
                               {/* Venue & Purpose (Esensi Sesi) */}
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                                 {proj.location && (
-                                  <div className="flex items-center gap-1.5 text-zinc-300">
-                                    <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                    <span className="text-zinc-400 font-medium">Tempat:</span>
+                                  <div className="flex items-center gap-1.5 text-[#52525B]">
+                                    <MapPin className="w-3.5 h-3.5 text-[#FF5A1F] shrink-0" />
+                                    <span className="text-[#71717A] font-medium">Tempat:</span>
                                     <span className="font-medium truncate">{proj.location}</span>
                                   </div>
                                 )}
                                 {(proj.sessionPurpose || proj.notes) && (
-                                  <div className="flex items-center gap-1.5 text-zinc-300">
-                                    <Target className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                    <span className="text-zinc-400 font-medium">Tujuan / Esensi:</span>
+                                  <div className="flex items-center gap-1.5 text-[#52525B]">
+                                    <Target className="w-3.5 h-3.5 text-[#FF5A1F] shrink-0" />
+                                    <span className="text-[#71717A] font-medium">Tujuan / Esensi:</span>
                                     <span className="font-medium truncate">{proj.sessionPurpose || proj.notes}</span>
                                   </div>
                                 )}
                               </div>
 
                               {/* Meta info tags */}
-                              <div className="flex flex-wrap items-center gap-3 text-[11px] text-zinc-400 pt-1">
+                              <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#71717A] pt-1">
                                 <span className="flex items-center gap-1">
-                                  <Camera className="w-3 h-3 text-zinc-400" />
-                                  <span>Kuota: <strong className="text-zinc-200">{proj.maxQuota} foto</strong></span>
+                                  <Camera className="w-3 h-3 text-[#71717A]" />
+                                  <span>Kuota: <strong className="text-[#121212]">{proj.maxQuota} foto</strong></span>
                                 </span>
                                 {proj.sessionDate && (
                                   <span className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3 text-zinc-400" />
+                                    <Calendar className="w-3 h-3 text-[#71717A]" />
                                     <span>{proj.sessionDate}</span>
                                   </span>
                                 )}
                                 <span>•</span>
                                 {hasPassword ? (
-                                  <span className="inline-flex items-center gap-1 text-amber-400">
+                                  <span className="inline-flex items-center gap-1 text-[#FF5A1F] font-medium">
                                     <Lock className="w-3 h-3" />
                                     <span>Dilindungi Sandi</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-zinc-400">
+                                  <span className="inline-flex items-center gap-1 text-[#71717A]">
                                     <Unlock className="w-3 h-3" />
                                     <span>Publik</span>
                                   </span>
@@ -915,7 +915,7 @@ function doPost(e) {
                                 {proj.sections && proj.sections.length > 0 && (
                                   <>
                                     <span>•</span>
-                                    <span className="text-amber-400">
+                                    <span className="text-[#FF5A1F] font-semibold">
                                       {proj.sections.length} Bab Lokasi
                                     </span>
                                   </>
@@ -936,7 +936,7 @@ function doPost(e) {
                             <div className="flex items-center gap-1.5 shrink-0 self-start lg:self-center">
                               <button
                                 onClick={() => setInspectingProject(proj)}
-                                className="px-2.5 py-1.5 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 text-amber-300 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                                className="px-3 py-1.5 rounded-xl bg-[#FFF0EB] hover:bg-[#FFE5DB] border border-[#FF5A1F]/30 text-[#FF5A1F] font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"
                                 title="Lihat foto yang dipilih klien"
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
@@ -945,19 +945,19 @@ function doPost(e) {
 
                               <button
                                 onClick={() => handlePreviewAsClient(proj.id)}
-                                className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-medium transition-colors flex items-center gap-1.5"
+                                className="px-3 py-1.5 rounded-xl bg-[#F5F2EB] hover:bg-[#EDE9E0] text-[#121212] border border-black/5 text-xs font-semibold transition-colors flex items-center gap-1.5"
                                 title="Buka galeri klien untuk sesi ini"
                               >
-                                <Eye className="w-3.5 h-3.5 text-zinc-400" />
+                                <Eye className="w-3.5 h-3.5 text-[#71717A]" />
                                 <span>Buka Galeri</span>
                               </button>
 
                               <button
                                 onClick={() => handleCopyClientLink(proj)}
-                                className={`p-2 rounded-lg border text-xs transition-colors ${
+                                className={`p-2 rounded-xl border text-xs transition-colors ${
                                   isCopied
-                                    ? "bg-emerald-500 text-zinc-950 border-emerald-400 font-bold"
-                                    : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
+                                    ? "bg-emerald-600 text-[#FFFFFF] border-emerald-600 font-bold"
+                                    : "bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border-black/10"
                                 }`}
                                 title="Salin tautan galeri klien"
                               >
@@ -966,7 +966,7 @@ function doPost(e) {
 
                               <button
                                 onClick={() => openEditModal(proj)}
-                                className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+                                className="p-2 rounded-xl bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
                                 title="Edit sesi"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -979,7 +979,7 @@ function doPost(e) {
                                       deleteProject(proj.id);
                                     }
                                   }}
-                                  className="p-2 rounded-lg bg-zinc-800 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-400 border border-zinc-700 transition-colors"
+                                  className="p-2 rounded-xl bg-white hover:bg-rose-50 text-[#71717A] hover:text-rose-600 border border-black/10 transition-colors"
                                   title="Hapus sesi"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -996,10 +996,10 @@ function doPost(e) {
             </div>
           ) : viewLayout === "table" ? (
             /* PROFESSIONAL DATA TABLE */
-            <div className="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900">
+            <div className="overflow-x-auto mtioon-card">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-zinc-800 bg-zinc-950/60 text-zinc-400 font-semibold uppercase tracking-wider text-[11px]">
+                  <tr className="border-b border-black/[0.06] bg-[#F4F1EA] text-[#121212]/60 font-semibold uppercase tracking-wider text-[11px]">
                     <th className="py-3 px-4">Klien & Tipe Sesi</th>
                     <th className="py-3 px-4">Tempat & Tujuan Sesi</th>
                     <th className="py-3 px-4">Sumber Foto</th>
@@ -1008,7 +1008,7 @@ function doPost(e) {
                     <th className="py-3 px-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/80">
+                <tbody className="divide-y divide-black/[0.06]">
                   {filteredProjects.map((proj) => {
                     const isActive = proj.id === activeProjectId;
                     const hasPassword = Boolean(proj.password || proj.passwordHash);
@@ -1017,33 +1017,33 @@ function doPost(e) {
                     return (
                       <tr
                         key={proj.id}
-                        className={`hover:bg-zinc-800/30 transition-colors ${
-                          isActive ? "bg-amber-500/5" : ""
+                        className={`hover:bg-black/[0.02] transition-colors ${
+                          isActive ? "bg-[#FFF0EB]/40" : ""
                         }`}
                       >
                         {/* Klien & Tipe Sesi */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-sm">
+                            <span className="font-bold text-[#121212] text-sm">
                               {proj.clientName}
                             </span>
                             {proj.sessionType && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF0EB] text-[#FF5A1F] border border-[#FF5A1F]/20">
                                 {proj.sessionType}
                               </span>
                             )}
                             <SessionModeBadge proj={proj} />
                             {isActive && (
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                 Aktif
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className="text-zinc-300 font-medium text-xs">
+                            <span className="text-[#121212]/80 font-medium text-xs">
                               {proj.sessionTitle || proj.projectId}
                             </span>
-                            <span className="text-zinc-400 font-mono text-[11px]">
+                            <span className="text-[#121212]/60 font-mono text-[11px]">
                               ({proj.projectId})
                             </span>
                             <DeadlineBadge deadline={proj.selectionDeadline} />
@@ -1053,14 +1053,14 @@ function doPost(e) {
                         {/* Tempat & Tujuan Sesi */}
                         <td className="py-3 px-4 max-w-xs">
                           {proj.location && (
-                            <div className="flex items-center gap-1 text-zinc-300 truncate">
-                              <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
+                            <div className="flex items-center gap-1 text-[#121212]/80 truncate">
+                              <MapPin className="w-3 h-3 text-[#C2410C] shrink-0" />
                               <span className="truncate">{proj.location}</span>
                             </div>
                           )}
                           {(proj.sessionPurpose || proj.notes) && (
-                            <div className="flex items-center gap-1 text-zinc-400 truncate mt-0.5 text-[11px]">
-                              <Target className="w-3 h-3 text-zinc-400 shrink-0" />
+                            <div className="flex items-center gap-1 text-[#121212]/60 truncate mt-0.5 text-[11px]">
+                              <Target className="w-3 h-3 text-[#121212]/60 shrink-0" />
                               <span className="truncate">{proj.sessionPurpose || proj.notes}</span>
                             </div>
                           )}
@@ -1079,19 +1079,19 @@ function doPost(e) {
                         </td>
 
                         {/* Kuota */}
-                        <td className="py-3 px-4 font-semibold text-zinc-200">
+                        <td className="py-3 px-4 font-semibold text-[#121212]/80">
                           {proj.maxQuota} foto
                         </td>
 
                         {/* Proteksi Sandi */}
                         <td className="py-3 px-4">
                           {hasPassword ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-amber-400/10 text-amber-400 border border-amber-400/20 font-medium">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[#FFF0EB] text-[#FF5A1F] border border-[#FF5A1F]/20 font-medium">
                               <Lock className="w-3 h-3" />
                               <span>Dilindungi</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] bg-zinc-800 text-zinc-400 font-medium">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[#F4F1EA] text-[#121212]/60 border border-black/[0.06] font-medium">
                               <Unlock className="w-3 h-3" />
                               <span>Publik</span>
                             </span>
@@ -1103,7 +1103,7 @@ function doPost(e) {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => setInspectingProject(proj)}
-                              className="px-2.5 py-1.5 rounded-md bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 text-amber-300 font-semibold text-xs transition-colors flex items-center gap-1"
+                              className="px-2.5 py-1.5 rounded-full bg-[#FFF0EB] hover:bg-[#FFE5DB] border border-[#FF5A1F]/30 text-[#FF5A1F] font-semibold text-xs transition-colors flex items-center gap-1"
                               title="Lihat foto yang dipilih klien"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
@@ -1112,10 +1112,10 @@ function doPost(e) {
 
                             <button
                               onClick={() => handleCopyClientLink(proj)}
-                              className={`p-1.5 rounded-md border text-xs transition-colors ${
+                              className={`p-1.5 rounded-full border text-xs transition-colors ${
                                 isCopied
-                                  ? "bg-emerald-500 text-zinc-950 border-emerald-400"
-                                  : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
+                                  ? "bg-emerald-600 text-[#FFFFFF] border-emerald-600"
+                                  : "bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border-black/10"
                               }`}
                               title="Salin tautan galeri klien"
                             >
@@ -1124,7 +1124,7 @@ function doPost(e) {
 
                             <button
                               onClick={() => handlePreviewAsClient(proj.id)}
-                              className="p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+                              className="p-1.5 rounded-full bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
                               title="Buka galeri klien ini"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -1132,7 +1132,7 @@ function doPost(e) {
 
                             <button
                               onClick={() => openEditModal(proj)}
-                              className="p-1.5 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+                              className="p-1.5 rounded-full bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
                               title="Edit sesi"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -1145,7 +1145,7 @@ function doPost(e) {
                                     deleteProject(proj.id);
                                   }
                                 }}
-                                className="p-1.5 rounded-md bg-zinc-800 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-400 border border-zinc-700 transition-colors"
+                                className="p-1.5 rounded-full bg-white hover:bg-rose-50 text-[#71717A] hover:text-rose-600 border border-black/10 transition-colors"
                                 title="Hapus sesi"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1170,70 +1170,70 @@ function doPost(e) {
                 return (
                   <div
                     key={proj.id}
-                    className={`rounded-lg p-5 border transition-colors flex flex-col justify-between ${
+                    className={`mtioon-card mtioon-card-hover p-5 transition-colors flex flex-col justify-between ${
                       isActive
-                        ? "bg-zinc-900 border-amber-400"
-                        : "bg-zinc-900 border-zinc-800 hover:border-zinc-700"
+                        ? "ring-2 ring-[#FF5A1F]/40"
+                        : ""
                     }`}
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="font-bold text-[11px] px-2 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                        <span className="font-bold text-[11px] px-2 py-0.5 rounded-full bg-[#FFF0EB] text-[#FF5A1F] border border-[#FF5A1F]/20">
                           {proj.sessionType || "Sesi Foto"}
                         </span>
                         <SessionModeBadge proj={proj} />
 
                         {hasPassword ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-amber-400/10 text-amber-400 border border-amber-400/20 font-medium">
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#FFF0EB] text-[#FF5A1F] border border-[#FF5A1F]/20 font-medium">
                             <Lock className="w-3 h-3" />
                             <span>Dilindungi Sandi</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-zinc-800 text-zinc-400 font-medium">
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#F4F1EA] text-[#121212]/60 border border-black/[0.06] font-medium">
                             <Unlock className="w-3 h-3" />
                             <span>Publik</span>
                           </span>
                         )}
                       </div>
 
-                      <h3 className="text-lg font-bold text-white tracking-tight">
+                      <h3 className="text-lg font-bold text-[#121212] tracking-tight">
                         {proj.clientName}
                       </h3>
                       {proj.sessionTitle && (
-                        <p className="text-xs font-semibold text-zinc-300 mt-0.5">
+                        <p className="text-xs font-semibold text-[#121212]/80 mt-0.5">
                           {proj.sessionTitle}
                         </p>
                       )}
 
                       <div className="mt-3 space-y-1.5 text-xs">
                         {proj.location && (
-                          <div className="flex items-center gap-1.5 text-zinc-300">
-                            <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <span className="text-zinc-400">Tempat:</span>
+                          <div className="flex items-center gap-1.5 text-[#121212]/80">
+                            <MapPin className="w-3.5 h-3.5 text-[#C2410C] shrink-0" />
+                            <span className="text-[#121212]/60">Tempat:</span>
                             <span className="truncate font-medium">{proj.location}</span>
                           </div>
                         )}
                         {(proj.sessionPurpose || proj.notes) && (
-                          <div className="flex items-center gap-1.5 text-zinc-300">
-                            <Target className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            <span className="text-zinc-400">Tujuan:</span>
+                          <div className="flex items-center gap-1.5 text-[#121212]/80">
+                            <Target className="w-3.5 h-3.5 text-[#C2410C] shrink-0" />
+                            <span className="text-[#121212]/60">Tujuan:</span>
                             <span className="truncate font-medium">{proj.sessionPurpose || proj.notes}</span>
                           </div>
                         )}
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-zinc-800 flex items-center justify-between gap-2 text-xs text-zinc-400">
+                      <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between gap-2 text-xs text-[#121212]/60">
                         <div className="flex items-center gap-2">
                           <span>Kuota: </span>
-                          <strong className="text-zinc-200">{proj.maxQuota} foto</strong>
+                          <strong className="text-[#121212]">{proj.maxQuota} foto</strong>
                           <DeadlineBadge deadline={proj.selectionDeadline} />
                         </div>
-                        <span className="text-[11px] text-zinc-400 shrink-0">
+                        <span className="text-[11px] text-[#121212]/60 shrink-0">
                           {proj.sessionDate || formatDate(proj.createdAt)}
                         </span>
                       </div>
 
-                      <div className="mt-2 text-[11px] flex items-center gap-1.5 text-zinc-400">
+                      <div className="mt-2 text-[11px] flex items-center gap-1.5 text-[#121212]/60">
                         <SourceStatus
                           state={sourceStateOf(proj, Boolean(globalApiKey))}
                           count={photoCounts[proj.id]}
@@ -1245,22 +1245,22 @@ function doPost(e) {
                       </div>
                     </div>
 
-                    <div className="mt-5 pt-3 border-t border-zinc-800 space-y-2">
+                    <div className="mt-5 pt-3 border-t border-black/[0.06] space-y-2">
                       <button
                         onClick={() => setInspectingProject(proj)}
-                        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 text-amber-300 font-semibold text-xs transition-colors"
+                        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-full bg-[#FFF0EB] hover:bg-[#FFE5DB] border border-[#FF5A1F]/30 text-[#FF5A1F] font-semibold text-xs transition-colors"
                       >
-                        <CheckCircle className="w-4 h-4 text-amber-400" />
+                        <CheckCircle className="w-4 h-4" />
                         <span>Lihat Seleksi Klien</span>
                       </button>
 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleCopyClientLink(proj)}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-semibold border transition-colors ${
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full text-xs font-semibold border transition-colors ${
                             isCopied
-                              ? "bg-emerald-500 text-zinc-950 border-emerald-400"
-                              : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700"
+                              ? "bg-emerald-600 text-[#FFFFFF] border-emerald-600"
+                              : "bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border-black/10"
                           }`}
                         >
                           {isCopied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
@@ -1269,7 +1269,7 @@ function doPost(e) {
 
                         <button
                           onClick={() => handlePreviewAsClient(proj.id)}
-                          className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+                          className="p-2 rounded-full bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
                           title="Buka galeri klien ini"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -1277,7 +1277,7 @@ function doPost(e) {
 
                         <button
                           onClick={() => openEditModal(proj)}
-                          className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+                          className="p-2 rounded-full bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
                           title="Edit sesi"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -1290,7 +1290,7 @@ function doPost(e) {
                                 deleteProject(proj.id);
                               }
                             }}
-                            className="p-2 rounded-lg bg-zinc-800 hover:bg-rose-950/60 text-zinc-400 hover:text-rose-400 border border-zinc-700 transition-colors"
+                            className="p-2 rounded-full bg-white hover:bg-rose-50 text-[#71717A] hover:text-rose-600 border border-black/10 transition-colors"
                             title="Hapus sesi"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1318,19 +1318,19 @@ function doPost(e) {
       {activeTab === "settings" && (
         <div className="max-w-2xl space-y-5">
           {/* Admin Master PIN */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-amber-400" />
+          <div className="mtioon-card p-6">
+            <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+              <Lock className="w-4 h-4 text-[#C2410C]" />
               <span>PIN Master Admin</span>
             </h2>
-            <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+            <p className="text-xs text-[#121212]/60 mb-4 leading-relaxed">
               PIN ini melindungi akses ke Dashboard Admin agar klien tidak dapat membuka konfigurasi studio Anda.
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>PIN Master Baru</span>
                 </label>
                 <input
@@ -1338,13 +1338,13 @@ function doPost(e) {
                   value={newPinInput}
                   onChange={(e) => setNewPinInput(e.target.value)}
                   placeholder="Contoh: studio2026"
-                  className="w-full px-3.5 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                 />
               </div>
 
               <button
                 onClick={handleSavePin}
-                className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
               >
                 {pinSaved ? <Check className="w-4 h-4" /> : null}
                 <span>{pinSaved ? "PIN Tersimpan!" : "Perbarui PIN Master"}</span>
@@ -1353,19 +1353,19 @@ function doPost(e) {
           </div>
 
           {/* Global Google Drive API Key */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-amber-400" />
+          <div className="mtioon-card p-6">
+            <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-[#C2410C]" />
               <span>Kredensial Global Google Drive</span>
             </h2>
-            <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+            <p className="text-xs text-[#121212]/60 mb-4 leading-relaxed">
               Kunci API ini digunakan secara otomatis untuk folder Google Drive publik klien tanpa perlu memasukkan kunci berulang kali.
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Google Drive API Key v3</span>
                 </label>
                 <input
@@ -1373,10 +1373,10 @@ function doPost(e) {
                   value={apiKeyInput}
                   onChange={(e) => setApiKeyInput(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full px-3.5 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                 />
-                <p className="text-[11px] text-zinc-400 mt-1.5 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <p className="text-[11px] text-[#121212]/60 mt-1.5 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>
                     Tersimpan di cloud, ikut tampil di semua peramban Anda.
                   </span>
@@ -1385,7 +1385,7 @@ function doPost(e) {
 
               <button
                 onClick={handleSaveApiKey}
-                className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
               >
                 {apiKeySaved ? <Check className="w-4 h-4" /> : null}
                 <span>{apiKeySaved ? "Tersimpan!" : "Simpan Kunci API"}</span>
@@ -1394,12 +1394,12 @@ function doPost(e) {
           </div>
 
           {/* Cloud sync (Firestore) */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
-              <Cloud className="w-4 h-4 text-amber-400" />
+          <div className="mtioon-card p-6">
+            <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+              <Cloud className="w-4 h-4 text-[#C2410C]" />
               <span>Sinkronisasi Cloud (Firestore)</span>
             </h2>
-            <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+            <p className="text-xs text-[#121212]/60 mb-4 leading-relaxed">
               Pilihan klien disimpan di Firebase Firestore, sehingga Anda dapat
               melihatnya dari perangkat mana pun dan tautan sesi tetap membawa
               data terbaru walau dibuka di peramban yang berbeda.
@@ -1407,14 +1407,14 @@ function doPost(e) {
 
             <div className="space-y-4">
               <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-semibold ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold ${
                   syncStatus === "live"
-                    ? "bg-emerald-400/10 text-emerald-300 border-emerald-400/30"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                     : syncStatus === "connecting"
-                      ? "bg-amber-400/10 text-amber-300 border-amber-400/30"
+                      ? "bg-[#FFF0EB] text-[#FF5A1F] border-[#FF5A1F]/20"
                       : syncStatus === "error"
-                        ? "bg-red-400/10 text-red-300 border-red-400/30"
-                        : "bg-zinc-800 text-zinc-400 border-zinc-700"
+                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                        : "bg-[#F4F1EA] text-[#121212]/60 border-black/[0.06]"
                 }`}
                 data-testid="sync-status"
               >
@@ -1437,8 +1437,8 @@ function doPost(e) {
               </div>
 
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Konfigurasi Web App (JSON)</span>
                 </label>
                 <textarea
@@ -1446,22 +1446,22 @@ function doPost(e) {
                   value={fbInput}
                   onChange={(e) => setFbInput(e.target.value)}
                   placeholder={'{"apiKey": "AIza...", "authDomain": "...", "projectId": "..."}'}
-                  className="w-full px-3.5 py-2 text-xs font-mono bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-y"
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-[#F5F2EB] border border-black/10 rounded-[20px] text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all resize-y"
                 />
-                <p className="text-[11px] text-zinc-400 mt-1.5 leading-relaxed">
+                <p className="text-[11px] text-[#121212]/60 mt-1.5 leading-relaxed">
                   Firebase Console -&gt; Pengaturan proyek -&gt; Aplikasi saya -&gt;
                   SDK web -&gt; konfigurasi. Anda juga dapat mengisi
                   VITE_FIREBASE_CONFIG di file .env agar berlaku untuk semua perangkat.
                 </p>
                 {fbError ? (
-                  <p className="text-[11px] text-red-400 mt-1.5">{fbError}</p>
+                  <p className="text-[11px] text-rose-600 mt-1.5">{fbError}</p>
                 ) : null}
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleSaveFirebase}
-                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                  className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
                 >
                   {fbSaved ? <Check className="w-3.5 h-3.5" /> : null}
                   <span>{fbSaved ? "Tersimpan!" : "Simpan & Aktifkan"}</span>
@@ -1469,7 +1469,7 @@ function doPost(e) {
                 {syncStatus !== "off" ? (
                   <button
                     onClick={handleClearFirebase}
-                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs transition-colors"
+                    className="btn-mtioon-secondary px-4 py-2 text-xs font-semibold transition-colors"
                   >
                     Putuskan
                   </button>
@@ -1478,12 +1478,12 @@ function doPost(e) {
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-            <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
-              <HardDrive className="w-4 h-4 text-amber-400" />
+          <div className="mtioon-card p-6">
+            <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+              <HardDrive className="w-4 h-4 text-[#C2410C]" />
               <span>Video Hero (Cloudflare R2)</span>
             </h2>
-            <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+            <p className="text-xs text-[#121212]/60 mb-4 leading-relaxed">
               Wajib diisi untuk mengunggah video hero: file disimpan di bucket R2
               (gratis tanpa kartu kredit: 10GB penyimpanan, biaya kirim data $0)
               sehingga bisa diputar di semua peramban. Tanpa konfigurasi ini,
@@ -1493,8 +1493,8 @@ function doPost(e) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Konfigurasi R2 (JSON)</span>
                 </label>
                 <textarea
@@ -1504,9 +1504,9 @@ function doPost(e) {
                   placeholder={
                     '{"accountId": "...", "bucket": "...", "accessKeyId": "...", "secretAccessKey": "...", "publicBaseUrl": "https://pub-xxxx.r2.dev"}'
                   }
-                  className="w-full px-3.5 py-2 text-xs font-mono bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-y"
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-[#F5F2EB] border border-black/10 rounded-[20px] text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all resize-y"
                 />
-                <p className="text-[11px] text-zinc-400 mt-1.5 leading-relaxed">
+                <p className="text-[11px] text-[#121212]/60 mt-1.5 leading-relaxed">
                   Cloudflare Console -&gt; R2: buat bucket, lalu Manage R2 API
                   Tokens (izin Read &amp; Write, scope bucket + prefix studio/)
                   dan salin Public Development URL dari Settings bucket. Simpan
@@ -1514,14 +1514,14 @@ function doPost(e) {
                   variabel VITE_* ikut terpublikasi ke internet.
                 </p>
                 {r2Error ? (
-                  <p className="text-[11px] text-red-400 mt-1.5">{r2Error}</p>
+                  <p className="text-[11px] text-rose-600 mt-1.5">{r2Error}</p>
                 ) : null}
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleSaveR2}
-                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                  className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
                 >
                   {r2Saved ? <Check className="w-3.5 h-3.5" /> : null}
                   <span>{r2Saved ? "Tersimpan!" : "Simpan & Aktifkan"}</span>
@@ -1529,7 +1529,7 @@ function doPost(e) {
                 {r2Active ? (
                   <button
                     onClick={handleClearR2}
-                    className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs transition-colors"
+                    className="btn-mtioon-secondary px-4 py-2 text-xs font-semibold transition-colors"
                   >
                     Lepas
                   </button>
@@ -1542,35 +1542,35 @@ function doPost(e) {
 
       {/* TAB 3: GAS GUIDE */}
       {activeTab === "gas_guide" && (
-        <div className="max-w-3xl bg-zinc-900 border border-zinc-800 rounded-lg p-6">
-          <h2 className="text-base font-bold text-white mb-1 flex items-center gap-2">
-            <Code2 className="w-4 h-4 text-zinc-400" />
+        <div className="max-w-3xl mtioon-card p-6">
+          <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+            <Code2 className="w-4 h-4 text-[#121212]/60" />
             <span>Panduan Integrasi Google Sheets (Apps Script)</span>
           </h2>
-          <p className="text-xs text-zinc-400 mb-5 leading-relaxed">
+          <p className="text-xs text-[#121212]/60 mb-5 leading-relaxed">
             Terima pilihan foto klien langsung ke spreadsheet Google Sheets studio Anda secara otomatis dan gratis.
           </p>
 
           <div className="space-y-4">
-            <ol className="list-decimal list-inside space-y-1.5 text-xs text-zinc-300">
+            <ol className="list-decimal list-inside space-y-1.5 text-xs text-[#121212]/80">
               <li>Buat Google Spreadsheet baru di Google Drive Anda.</li>
               <li>Buka menu <b>Extensions &gt; Apps Script</b>.</li>
               <li>Salin dan tempel kode di bawah ini:</li>
             </ol>
 
             <div className="relative">
-              <pre className="p-4 rounded-lg bg-zinc-950 border border-zinc-800 text-[11px] text-zinc-300 overflow-x-auto max-h-60 leading-relaxed font-normal">
+              <pre className="p-4 rounded-2xl bg-[#F4F1EA] border border-black/[0.06] text-[11px] text-[#121212]/80 overflow-x-auto max-h-60 leading-relaxed font-normal">
                 {gasScriptCode}
               </pre>
               <button
                 onClick={() => navigator.clipboard.writeText(gasScriptCode)}
-                className="absolute top-3 right-3 px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-medium transition-colors"
+                className="btn-mtioon-secondary absolute top-3 right-3 px-3 py-1.5 text-xs font-medium transition-colors"
               >
                 Salin Kode
               </button>
             </div>
 
-            <ol start={4} className="list-decimal list-inside space-y-1.5 text-xs text-zinc-300">
+            <ol start={4} className="list-decimal list-inside space-y-1.5 text-xs text-[#121212]/80">
               <li>Klik tombol <b>Deploy &gt; New deployment</b>.</li>
               <li>Pilih tipe <b>Web App</b>.</li>
               <li>Atur <b>Execute as: Me</b> dan <b>Who has access: Anyone</b>.</li>
@@ -1593,21 +1593,21 @@ function doPost(e) {
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsModalOpen(false);
           }}
-          className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
         >
-          <div className="relative w-full max-w-3xl my-auto bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl">
-            <div className="sticky top-0 z-10 -mx-6 -mt-6 px-6 pt-5 pb-3 mb-3 bg-zinc-900 border-b border-zinc-800 rounded-t-xl flex items-center justify-between gap-3">
+          <div className="relative w-full max-w-3xl my-auto bg-white rounded-[28px] p-6 shadow-2xl">
+            <div className="sticky top-0 z-10 -mx-6 -mt-6 px-6 pt-5 pb-3 mb-3 bg-white border-b border-black/[0.06] rounded-t-[28px] flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h3 className="text-base font-bold text-[#121212]">
                   {editingProject ? "Edit Sesi Klien" : "Buat Sesi Galeri Klien Baru"}
                 </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
+                <p className="text-xs text-[#121212]/60 mt-0.5">
                   Atur mode sesi, sumber foto, kuota, dan akses galeri klien.
                 </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors"
+                className="p-1.5 rounded-full bg-[#F4F1EA] hover:bg-[#EDE9E0] text-[#121212]/60 hover:text-[#121212] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1616,8 +1616,8 @@ function doPost(e) {
             <form onSubmit={handleSaveProjectForm} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Nama Klien / Pasangan</span>
                   </label>
                   <input
@@ -1626,13 +1626,13 @@ function doPost(e) {
                     value={formClientName}
                     onChange={(e) => setFormClientName(e.target.value)}
                     placeholder="Contoh: Rian & Amanda"
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                    <Hash className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>ID / Kode Project</span>
                   </label>
                   <input
@@ -1641,15 +1641,15 @@ function doPost(e) {
                     value={formProjectId}
                     onChange={(e) => setFormProjectId(e.target.value)}
                     placeholder="WED-2026-RIAN"
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Mode Sesi: perorangan atau grup */}
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Mode Sesi</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1658,15 +1658,15 @@ function doPost(e) {
                     onClick={() => setFormSessionMode("individual")}
                     className={`text-left px-3 py-2 rounded-lg border transition-colors ${
                       formSessionMode === "individual"
-                        ? "bg-amber-400/10 border-amber-400/50 text-white"
-                        : "bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                        ? "bg-[#FFF0EB] border-[#FF5A1F]/40 text-[#121212]"
+                        : "bg-[#F5F2EB] border-black/10 text-[#121212]/60 hover:border-black/20"
                     }`}
                   >
                     <span className="text-xs font-semibold flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5" />
                       Perorangan
                     </span>
-                    <span className="text-[11px] text-zinc-400 block mt-0.5">
+                    <span className="text-[11px] text-[#121212]/60 block mt-0.5">
                       Satu penerima, kuota pilihannya sendiri
                     </span>
                   </button>
@@ -1675,15 +1675,15 @@ function doPost(e) {
                     onClick={() => setFormSessionMode("group")}
                     className={`text-left px-3 py-2 rounded-lg border transition-colors ${
                       formSessionMode === "group"
-                        ? "bg-amber-400/10 border-amber-400/50 text-white"
-                        : "bg-zinc-950 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                        ? "bg-[#FFF0EB] border-[#FF5A1F]/40 text-[#121212]"
+                        : "bg-[#F5F2EB] border-black/10 text-[#121212]/60 hover:border-black/20"
                     }`}
                   >
                     <span className="text-xs font-semibold flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" />
                       Grup
                     </span>
-                    <span className="text-[11px] text-zinc-400 block mt-0.5">
+                    <span className="text-[11px] text-[#121212]/60 block mt-0.5">
                       Beberapa anggota, satu daftar bersama
                     </span>
                   </button>
@@ -1695,28 +1695,28 @@ function doPost(e) {
                       value={formMembers}
                       onChange={(e) => setFormMembers(e.target.value)}
                       placeholder="Nama anggota, pisahkan koma: Rina, Budi, Citra"
-                      className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                      className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                     />
-                    <p className="text-[11px] text-zinc-400 mt-1">
+                    <p className="text-[11px] text-[#121212]/60 mt-1">
                       Kuota dan daftar pilihan dipakai bersama oleh seluruh anggota sesi ini.
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-zinc-400 mt-1.5">
+                  <p className="text-[11px] text-[#121212]/60 mt-1.5">
                     Sesi untuk satu penerima dengan kuota pilihannya sendiri.
                   </p>
                 )}
               </div>
 
               {/* Sumber Foto: tautan folder Drive, tervalidasi sebelum disimpan */}
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 p-3 space-y-2">
+              <div className="rounded-2xl border border-black/[0.06] bg-[#F4F1EA] p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                    <FolderGit2 className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="text-xs font-semibold text-[#121212]/80 flex items-center gap-1.5">
+                    <FolderGit2 className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Sumber Foto (Google Drive)</span>
                   </label>
                   {formFolderId.trim() !== "" && Boolean(globalApiKey) && (
-                    <span className="text-[11px] text-emerald-400 font-medium">
+                    <span className="text-[11px] text-emerald-700 font-medium">
                       {editingProject && photoCounts[editingProject.id]
                         ? `${photoCounts[editingProject.id]} foto siap`
                         : "Terhubung"}
@@ -1725,12 +1725,12 @@ function doPost(e) {
                 </div>
 
                 {!formFolderId.trim() ? (
-                  <p className="text-[11px] text-amber-200/90 bg-amber-400/10 border border-amber-400/25 rounded-md px-2.5 py-2">
+                  <p className="text-[11px] text-[#C2410C] bg-[#FFF0EB] border border-[#FF5A1F]/25 rounded-md px-2.5 py-2">
                     Belum ada foto. Tempel tautan folder Google Drive di bawah agar galeri
                     klien terisi.
                   </p>
                 ) : !globalApiKey ? (
-                  <p className="text-[11px] text-rose-200/90 bg-rose-500/10 border border-rose-400/25 rounded-md px-2.5 py-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-md px-2.5 py-2 flex items-center justify-between gap-2">
                     <span>Kunci API Google Drive belum diisi.</span>
                     <button
                       type="button"
@@ -1749,13 +1749,13 @@ function doPost(e) {
                     value={formFolderId}
                     onChange={(e) => setFormFolderId(e.target.value)}
                     placeholder="https://drive.google.com/drive/folders/..."
-                    className="flex-1 px-3 py-1 text-sm bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="flex-1 px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                   <button
                     type="button"
                     onClick={handleProbeFolder}
                     disabled={isProbing}
-                    className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-60 border border-zinc-700 text-zinc-200 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
+                    className="btn-mtioon-secondary px-3 py-1 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isProbing ? "animate-spin" : ""}`} />
                     <span>{isProbing ? "Memeriksa..." : "Periksa Folder"}</span>
@@ -1765,16 +1765,16 @@ function doPost(e) {
                 {probeResult && (
                   <p
                     className={`text-[11px] flex items-start gap-1.5 ${
-                      probeResult.ok ? "text-emerald-300" : "text-rose-300"
+                      probeResult.ok ? "text-emerald-700" : "text-rose-600"
                     }`}
                   >
                     <span>{probeResult.message}</span>
                   </p>
                 )}
 
-                <p className="text-[11px] text-zinc-400">
+                <p className="text-[11px] text-[#121212]/60">
                   Izin folder harus{" "}
-                  <span className="text-zinc-400">Anyone with the link can view</span>. Bisa
+                  <span className="text-[#121212]/60">Anyone with the link can view</span>. Bisa
                   ditempel tautan maupun ID folder.
                 </p>
               </div>
@@ -1782,14 +1782,14 @@ function doPost(e) {
               {/* Tipe Sesi & Tanggal Pelaksanaan */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <Camera className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                    <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Tipe / Kategori Sesi Foto</span>
                   </label>
                   <select
                     value={formSessionType}
                     onChange={(e) => setFormSessionType(e.target.value)}
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   >
                     <option value="Pernikahan">Pernikahan (Wedding Day)</option>
                     <option value="Prewedding">Prewedding</option>
@@ -1803,8 +1803,8 @@ function doPost(e) {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Tanggal Sesi (Opsional)</span>
                   </label>
                   <input
@@ -1812,15 +1812,15 @@ function doPost(e) {
                     value={formSessionDate}
                     onChange={(e) => setFormSessionDate(e.target.value)}
                     placeholder="Contoh: 14 Maret 2026"
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Batas Waktu Pilihan Foto (Deadline) */}
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                  <CalendarClock className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <CalendarClock className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Batas Waktu Pilihan Foto</span>
                 </label>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
@@ -1828,7 +1828,7 @@ function doPost(e) {
                     type="datetime-local"
                     value={formDeadline}
                     onChange={(e) => setFormDeadline(e.target.value)}
-                    className="flex-1 min-w-[190px] px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="flex-1 min-w-[190px] px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                   <div className="flex flex-wrap gap-1.5">
                     {[3, 7, 14].map((days) => (
@@ -1836,7 +1836,7 @@ function doPost(e) {
                         key={days}
                         type="button"
                         onClick={() => setFormDeadline(defaultDeadlineInput(days))}
-                        className="px-2.5 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-[11px] font-semibold transition-colors"
+                        className="px-2.5 py-1.5 rounded-full bg-[#F5F2EB] hover:bg-[#EDE9E0] border border-black/10 text-[#121212]/80 text-[11px] font-semibold transition-colors"
                       >
                         +{days} hari
                       </button>
@@ -1844,13 +1844,13 @@ function doPost(e) {
                     <button
                       type="button"
                       onClick={() => setFormDeadline("")}
-                      className="px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 text-[11px] font-medium transition-colors"
+                      className="px-2.5 py-1.5 rounded-full bg-white hover:bg-black/[0.03] border border-black/10 text-[#121212]/60 text-[11px] font-medium transition-colors"
                     >
                       Tanpa batas
                     </button>
                   </div>
                 </div>
-                <p className="text-[11px] text-zinc-400 mt-1">
+                <p className="text-[11px] text-[#121212]/60 mt-1">
                   Setelah lewat waktu, sesi terkunci otomatis untuk klien (pilihan tetap
                   tersimpan). Perpanjang tanggal untuk membuka kembali.
                 </p>
@@ -1859,7 +1859,7 @@ function doPost(e) {
               {/* Judul Sesi & Tempat / Lokasi */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1">
                     Tema / Judul Sesi
                   </label>
                   <input
@@ -1867,13 +1867,13 @@ function doPost(e) {
                     value={formSessionTitle}
                     onChange={(e) => setFormSessionTitle(e.target.value)}
                     placeholder="Contoh: Prewedding Alam & Sunset"
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Tempat / Lokasi Utama</span>
                   </label>
                   <input
@@ -1881,15 +1881,15 @@ function doPost(e) {
                     value={formLocation}
                     onChange={(e) => setFormLocation(e.target.value)}
                     placeholder="Contoh: Kintamani & Pantai Melasti, Bali"
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Tujuan & Esensi Sesi Foto */}
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                  <Target className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <Target className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Tujuan Foto / Esensi Sesi</span>
                 </label>
                 <input
@@ -1897,17 +1897,17 @@ function doPost(e) {
                   value={formSessionPurpose}
                   onChange={(e) => setFormSessionPurpose(e.target.value)}
                   placeholder="Contoh: Foto Cetak Kanvas Resepsi & Video Undangan Digital"
-                  className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                 />
-                <p className="text-[11px] text-zinc-400 mt-1">
+                <p className="text-[11px] text-[#121212]/60 mt-1">
                   Menjelaskan esensi foto bagi klien (misal: album cetak, kanvas dekorasi, dokumentasi sakral).
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <Hash className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                    <Hash className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Kuota Maksimal Pilihan</span>
                   </label>
                   <input
@@ -1916,13 +1916,13 @@ function doPost(e) {
                     max="1000"
                     value={formQuota}
                     onChange={(e) => setFormQuota(Number(e.target.value))}
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Kata Sandi Galeri (Opsional)</span>
                   </label>
                   <input
@@ -1937,12 +1937,12 @@ function doPost(e) {
                         ? "Biarkan kosong untuk mempertahankan sandi lama"
                         : "Kosongkan jika publik"
                     }
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                   {editingProject &&
                     !editingProject.password &&
                     Boolean(editingProject.passwordHash) && (
-                      <p className="text-[11px] text-zinc-400 mt-1">
+                      <p className="text-[11px] text-[#121212]/60 mt-1">
                         Sandi tersimpan ter-hash dan tidak bisa ditampilkan kembali.
                       </p>
                     )}
@@ -1953,7 +1953,7 @@ function doPost(e) {
                         type="button"
                         onClick={() => setFormClearPassword((prev) => !prev)}
                         className={`mt-1.5 text-[11px] font-semibold transition-colors ${
-                          formClearPassword ? "text-rose-300" : "text-zinc-400 hover:text-rose-300"
+                          formClearPassword ? "text-rose-600" : "text-[#121212]/60 hover:text-rose-600"
                         }`}
                       >
                         {formClearPassword
@@ -1966,8 +1966,8 @@ function doPost(e) {
 
               {/* Bab Acara & Lokasi */}
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Bab Acara & Lokasi Foto (Pisahkan koma)</span>
                 </label>
                 <input
@@ -1975,17 +1975,17 @@ function doPost(e) {
                   value={formSections}
                   onChange={(e) => setFormSections(e.target.value)}
                   placeholder="Contoh: Persiapan (Hotel), Akad Nikah (Masjid), Resepsi (Ballroom)"
-                  className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                 />
-                <p className="text-[11px] text-zinc-400 mt-1">
-                  Format: <span className="text-zinc-400 font-mono">Nama Bab (Nama Lokasi)</span>, pisahkan dengan koma.
+                <p className="text-[11px] text-[#121212]/60 mt-1">
+                  Format: <span className="text-[#121212]/60 font-mono">Nama Bab (Nama Lokasi)</span>, pisahkan dengan koma.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-amber-400" />
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>WhatsApp Klien/Fotografer</span>
                   </label>
                   <input
@@ -1993,12 +1993,12 @@ function doPost(e) {
                     value={formContact}
                     onChange={(e) => setFormContact(e.target.value)}
                     placeholder="08123456789"
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-zinc-300 mb-1">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1">
                     Catatan Sesi (Opsional)
                   </label>
                   <input
@@ -2006,15 +2006,15 @@ function doPost(e) {
                     value={formNotes}
                     onChange={(e) => setFormNotes(e.target.value)}
                     placeholder="Paket Album Premium 2026"
-                    className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
               {/* Webhook Spreadsheet */}
               <div>
-                <label className="block text-[13px] font-semibold text-zinc-300 mb-1 flex items-center gap-1.5">
-                  <Code2 className="w-3.5 h-3.5 text-amber-400" />
+                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <Code2 className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>URL Webhook Spreadsheet (Opsional)</span>
                 </label>
                 <input
@@ -2022,25 +2022,25 @@ function doPost(e) {
                   value={formWebhookUrl}
                   onChange={(e) => setFormWebhookUrl(e.target.value)}
                   placeholder="https://script.google.com/macros/s/.../exec"
-                  className="w-full px-3 py-1 text-sm bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
                 />
-                <p className="text-[11px] text-zinc-400 mt-1">
-                  Diambil dari tab <span className="text-zinc-400">Integrasi</span>. Pilihan
+                <p className="text-[11px] text-[#121212]/60 mt-1">
+                  Diambil dari tab <span className="text-[#121212]/60">Integrasi</span>. Pilihan
                   klien akan terkirim ke Google Sheets studio Anda.
                 </p>
               </div>
 
-              <div className="sticky bottom-0 z-10 -mx-6 px-6 pb-5 pt-3 bg-zinc-900 border-t border-zinc-800 rounded-b-xl mt-4 flex items-center justify-end gap-2">
+              <div className="sticky bottom-0 z-10 -mx-6 px-6 pb-5 pt-3 bg-white border-t border-black/[0.06] rounded-b-[28px] mt-4 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs font-medium text-zinc-300 transition-colors"
+                  className="btn-mtioon-secondary px-3.5 py-2 text-xs font-medium transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs transition-colors"
+                  className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors"
                 >
                   {editingProject ? "Simpan Perubahan" : "Buat Sesi Klien"}
                 </button>

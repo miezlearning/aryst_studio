@@ -329,7 +329,7 @@ export const HeroVideo: React.FC = () => {
       {ripples.map((r) => (
         <span
           key={r.id}
-          className="absolute w-44 h-44 rounded-full border-2 border-amber-400/70 pointer-events-none animate-hero-ripple"
+          className="absolute w-44 h-44 rounded-full border-2 border-[#FF5A1F]/70 pointer-events-none animate-hero-ripple"
           style={{ left: `${r.x}%`, top: `${r.y}%` }}
         />
       ))}

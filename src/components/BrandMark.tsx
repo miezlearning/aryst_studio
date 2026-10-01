@@ -25,11 +25,11 @@ export const BrandMark: React.FC<{
     <BrandMarkIcon className={cn("w-7 h-7 sm:w-8 sm:h-8", iconClassName)} />
     <span
       className={cn(
-        "font-display font-[900] tracking-tight text-xl sm:text-2xl text-[#121212] leading-none lowercase",
+        "font-display font-[900] tracking-tight text-xl sm:text-2xl text-[#121212] leading-none",
         textClassName
       )}
     >
-      aryst<span className="text-[#FF5A1F]">.</span>
+      ARYST<span className="text-[#FF5A1F]">.</span>
     </span>
   </div>
 );

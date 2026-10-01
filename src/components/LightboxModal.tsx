@@ -397,7 +397,7 @@ export const LightboxModal: React.FC = () => {
                 {currentPhoto.name}
               </h2>
               {currentPhoto.section && (
-                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 px-2 py-0.5 rounded bg-amber-400/10 border border-amber-400/20">
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium text-[#FF5A1F] px-2 py-0.5 rounded bg-[#FF5A1F]/10 border border-amber-400/20">
                   <MapPin className="w-2.5 h-2.5" />
                   <span>{currentPhoto.section}</span>
                   {currentPhoto.location && (
@@ -443,7 +443,7 @@ export const LightboxModal: React.FC = () => {
             {isZoomed && (
               <button
                 onClick={resetView}
-                className="p-1.5 rounded-lg hover:bg-zinc-800 text-amber-400 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-zinc-800 text-[#FF5A1F] transition-colors"
                 title="Kembali ke ukuran asli (0)"
               >
                 <Minimize2 className="w-4 h-4" />
@@ -457,7 +457,7 @@ export const LightboxModal: React.FC = () => {
             onClick={() => toggleSelectPhoto(currentPhoto.id)}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
               isSelected
-                ? "bg-amber-500 text-zinc-950"
+                ? "bg-[#FF5A1F] text-white"
                 : session.isLocked || isFull
                 ? "bg-zinc-800 text-zinc-400 cursor-not-allowed"
                 : "bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
@@ -588,7 +588,7 @@ export const LightboxModal: React.FC = () => {
               />
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
-              <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+              <Loader2 className="w-8 h-8 text-[#FF5A1F] animate-spin" />
               <span className="text-xs text-zinc-400 whitespace-nowrap">Memuat foto...</span>
             </div>
           </>
@@ -599,7 +599,7 @@ export const LightboxModal: React.FC = () => {
       <div className="p-4 border-t border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md z-10">
         <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="flex items-center gap-2 text-zinc-400 text-xs shrink-0">
-            <MessageSquare className="w-4 h-4 text-amber-400" />
+            <MessageSquare className="w-4 h-4 text-[#FF5A1F]" />
             <span className="font-medium text-zinc-200">Instruksi Revisi / Retouch:</span>
           </div>
 
@@ -614,7 +614,7 @@ export const LightboxModal: React.FC = () => {
           </div>
 
           {localNote && (
-            <span className="text-[11px] text-amber-400/90 font-medium shrink-0 self-end sm:self-center">
+            <span className="text-[11px] text-[#FF5A1F]/90 font-medium shrink-0 self-end sm:self-center">
               ✓ Tersimpan
             </span>
           )}

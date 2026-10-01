@@ -322,7 +322,7 @@ const ensureClients = (
           dirty = true;
         }
         if (!next.coverPhotoUrl || next.coverPhotoUrl.includes("w=800")) {
-          next.coverPhotoUrl = dp.coverPhotoUrl;
+          if (dp.coverPhotoUrl) next.coverPhotoUrl = dp.coverPhotoUrl;
           dirty = true;
         }
         if (!next.selectionDeadline && dp.selectionDeadline) {

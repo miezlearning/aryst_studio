@@ -92,7 +92,7 @@ export const AdminAuthGate: React.FC = () => {
             {capsLockOn && (
               <p
                 role="status"
-                className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 mt-2 px-1"
+                className="flex items-center gap-1.5 text-[11px] font-bold text-[#C2410C] mt-2 px-1"
               >
                 <TriangleAlert className="w-3.5 h-3.5 shrink-0" />
                 <span>Caps Lock menyala. Periksa huruf besar/kecil sebelum mengirim PIN.</span>

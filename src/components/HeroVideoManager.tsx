@@ -142,11 +142,11 @@ export const HeroVideoManager: React.FC = () => {
       : "Default studio";
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+    <div className="bg-white border border-black/[0.08] rounded-2xl p-6 shadow-sm">
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Preview */}
         <div className="lg:w-64 shrink-0">
-          <div className="relative rounded-xl overflow-hidden bg-zinc-950 border border-zinc-800 aspect-video">
+          <div className="relative rounded-xl overflow-hidden bg-black/5 border border-black/[0.08] aspect-video">
             <video
               key={previewSrc}
               className="w-full h-full object-cover"
@@ -161,11 +161,11 @@ export const HeroVideoManager: React.FC = () => {
               onMouseEnter={(e) => e.currentTarget.play().catch(() => undefined)}
               onMouseLeave={(e) => e.currentTarget.pause()}
             />
-            <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-black/70 text-amber-400 border border-amber-400/30">
+            <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/80 text-white backdrop-blur-sm border border-white/20">
               {activeSource}
             </span>
           </div>
-          <p className="mt-1.5 text-[11px] text-zinc-400">
+          <p className="mt-2 text-[11px] text-[#71717A]">
             {previewBroken
               ? "Video tidak bisa dimuat di browser ini (host diblokir / bukan file mp4). Coba URL lain atau upload file."
               : "Arahkan kursor ke preview untuk memutar."}
@@ -174,20 +174,20 @@ export const HeroVideoManager: React.FC = () => {
 
         {/* Controls */}
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Clapperboard className="w-4 h-4 text-amber-400" />
+          <h2 className="text-base font-bold text-[#121212] flex items-center gap-2">
+            <Clapperboard className="w-4 h-4 text-[#FF5A1F]" />
             <span>Video Latar Hero</span>
           </h2>
-          <p className="text-xs text-zinc-400 mt-1 mb-4">
+          <p className="text-xs text-[#52525B] mt-1 mb-4">
             Video autoplay tanpa suara di latar hero halaman utama. Upload mendapat
             prioritas, lalu URL kustom, lalu default studio.
           </p>
 
           {error && (
-            <p className="mb-3 text-xs text-rose-400 font-medium">{error}</p>
+            <p className="mb-3 text-xs text-rose-600 font-medium">{error}</p>
           )}
           {saved && !error && (
-            <p className="mb-3 text-xs text-emerald-400 font-semibold flex items-center gap-1">
+            <p className="mb-3 text-xs text-emerald-600 font-semibold flex items-center gap-1">
               <Check className="w-3.5 h-3.5" />
               <span>Tersimpan. Buka halaman utama untuk melihat.</span>
             </p>
@@ -195,19 +195,19 @@ export const HeroVideoManager: React.FC = () => {
 
           <form onSubmit={handleSaveUrl} className="flex items-center gap-2 mb-3">
             <div className="relative flex-1">
-              <Link2 className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Link2 className="w-3.5 h-3.5 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 placeholder="https://.../video.mp4 (opsional)"
-                className="w-full pl-9 pr-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-200 placeholder-zinc-400 focus:outline-none focus:border-amber-500 transition-colors"
+                className="w-full pl-9 pr-3.5 py-2 bg-white border border-black/15 rounded-xl text-xs text-[#121212] placeholder-[#A1A1AA] focus:outline-none focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] transition-colors"
               />
             </div>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 text-xs font-semibold transition-colors disabled:opacity-50 shrink-0"
+              className="px-4 py-2 rounded-xl bg-[#F5F2EB] hover:bg-[#EDE9E0] text-[#121212] text-xs font-semibold transition-colors disabled:opacity-50 shrink-0"
             >
               {isSaving ? "Menyimpan..." : "Simpan URL"}
             </button>
@@ -218,7 +218,7 @@ export const HeroVideoManager: React.FC = () => {
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={isUploading}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 text-xs font-bold transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-2 btn-mtioon-primary text-xs font-bold transition-colors disabled:opacity-50"
             >
               {isUploading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -241,7 +241,7 @@ export const HeroVideoManager: React.FC = () => {
                   setError(null);
                   clearHeroVideo().then(flashSaved);
                 }}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-black/[0.04] border border-black/10 text-[#71717A] hover:text-[#121212] text-xs font-medium transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Kembalikan Default</span>

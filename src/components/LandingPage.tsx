@@ -2,12 +2,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { useProofingStore } from "@/lib/storage";
 import { BrandMark } from "@/components/BrandMark";
 import { DraggableCandyChip } from "@/components/DraggableCandyChip";
+import { ShowcaseStrip } from "@/components/ShowcaseStrip";
 import {
   KeyRound,
   ArrowRight,
   Lock,
-  Images,
-  Maximize2
+  Images
 } from "lucide-react";
 
 export const LandingPage: React.FC = () => {
@@ -97,6 +97,13 @@ export const LandingPage: React.FC = () => {
     }
   };
 
+  const focusSessionForm = () => {
+    searchInputRef.current?.focus({ preventScroll: true });
+    document
+      .getElementById("kurasi")
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const previewShowcase =
     showcaseItems.length > 0
       ? showcaseItems.map((item) => ({
@@ -157,7 +164,7 @@ export const LandingPage: React.FC = () => {
         {/* Hero Section */}
         <section
           id="kurasi"
-          className="relative pt-36 sm:pt-44 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center overflow-visible"
+          className="relative pt-36 sm:pt-44 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center overflow-x-clip"
         >
           {/* Warm ambient aura */}
           <div
@@ -485,54 +492,28 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
-            {!isBooted ? (
-              [0, 1, 2, 3].map((i) => (
+          {!isBooted ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-5">
+              {[0, 1, 2, 3].map((i) => (
                 <div
                   key={`skeleton-${i}`}
                   className="skeleton relative rounded-2xl aspect-[4/5] bg-black/[0.06]"
                 />
-              ))
-            ) : previewShowcase.length === 0 ? (
-              <div className="col-span-2 sm:col-span-4 mtioon-card p-10 text-center">
-                <Images className="w-8 h-8 text-[#A1A1AA] mx-auto mb-3" />
-                <p className="text-sm font-bold text-[#121212]">
-                  Belum ada foto yang dimuat
-                </p>
-                <p className="text-xs text-[#71717A] mt-1 font-normal">
-                  Foto akan muncul otomatis setelah galeri sesi diisi.
-                </p>
-              </div>
-            ) : (
-              previewShowcase.map((photo, idx) => (
-                <div
-                  key={photo.id}
-                  className="group relative rounded-2xl overflow-hidden bg-white border border-black/[0.07] aspect-[4/5] shadow-[0_4px_16px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.08)]"
-                >
-                  <img
-                    src={photo.thumbnailUrl}
-                    alt={photo.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {/* Top pill badge */}
-                  <div className="absolute top-3 left-3">
-                    <span className="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[10px] text-white font-semibold">
-                      #{idx + 1}
-                    </span>
-                  </div>
-
-                  {/* Bottom title pill on hover */}
-                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between text-white">
-                    <span className="text-xs font-semibold truncate">
-                      {photo.name}
-                    </span>
-                    <Maximize2 className="w-3.5 h-3.5 shrink-0 opacity-80" />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          ) : previewShowcase.length === 0 ? (
+            <div className="mtioon-card p-10 text-center">
+              <Images className="w-8 h-8 text-[#A1A1AA] mx-auto mb-3" />
+              <p className="text-sm font-bold text-[#121212]">
+                Belum ada foto yang dimuat
+              </p>
+              <p className="text-xs text-[#71717A] mt-1 font-normal">
+                Foto akan muncul otomatis setelah galeri sesi diisi.
+              </p>
+            </div>
+          ) : (
+            <ShowcaseStrip items={previewShowcase} onPick={focusSessionForm} />
+          )}
         </section>
 
         {/* 3-Step Clean Workflow */}

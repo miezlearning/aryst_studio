@@ -34,10 +34,10 @@ const toneFor = (urgency: ReturnType<typeof deadlineUrgency>) => {
       };
     default:
       return {
-        box: "border-zinc-800 bg-zinc-950/70",
-        stroke: "stroke-amber-400",
-        text: "text-white",
-        icon: "text-amber-400",
+        box: "border-black/[0.08] bg-white",
+        stroke: "stroke-[#FF5A1F]",
+        text: "text-[#121212]",
+        icon: "text-[#FF5A1F]",
       };
   }
 };
@@ -46,13 +46,14 @@ interface Props {
   deadline: number;
   createdAt?: number;
   className?: string;
-  variant?: "panel" | "inline";
+  variant?: "panel" | "inline" | "minimal";
 }
 
 /**
  * Live selection countdown.
- * panel  -> ring + flipping hourglass + big mono digits
- * inline -> compact label for the floating dock
+ * panel   -> ring + flipping hourglass + big mono digits inside bordered box
+ * inline  -> compact label for the floating dock
+ * minimal -> flat, unboxed layout with no card-in-card styling
  */
 export const DeadlineCountdown: React.FC<Props> = ({
   deadline,
@@ -75,7 +76,7 @@ export const DeadlineCountdown: React.FC<Props> = ({
   if (variant === "inline") {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold tabular-nums ${tone.text} ${className}`}
+        className={`inline-flex items-center gap-1.5 text-[11px] font-bold tabular-nums ${tone.text} ${className}`}
         title="Batas waktu pilihan foto"
       >
         <Hourglass className={`w-3 h-3 animate-hourglass ${tone.icon}`} />
@@ -99,6 +100,65 @@ export const DeadlineCountdown: React.FC<Props> = ({
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  if (variant === "minimal") {
+    return (
+      <div className={`flex items-center gap-3 ${className}`}>
+        {/* Progress ring + hourglass */}
+        <div className="relative w-9 h-9 shrink-0">
+          <svg
+            viewBox="0 0 48 48"
+            className="w-9 h-9 -rotate-90"
+            aria-hidden="true"
+          >
+            <circle
+              cx="24"
+              cy="24"
+              r={RING_R}
+              fill="none"
+              strokeWidth="4"
+              className="text-black/[0.08]"
+              stroke="currentColor"
+            />
+            <circle
+              cx="24"
+              cy="24"
+              r={RING_R}
+              fill="none"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeDasharray={RING_C}
+              strokeDashoffset={offset}
+              className={`${tone.stroke} transition-[stroke-dashoffset] duration-1000 ease-linear`}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            {expired ? (
+              <AlertTriangle className={`w-4 h-4 ${tone.icon}`} />
+            ) : (
+              <Hourglass className={`w-4 h-4 animate-hourglass ${tone.icon}`} />
+            )}
+          </div>
+        </div>
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#71717A]">
+              Batas Waktu Pilihan
+            </span>
+            <span
+              className={`text-sm font-black tabular-nums tracking-tight ${tone.text}`}
+            >
+              {expired ? "Waktu berakhir" : formatDeadlineRemaining(remaining)}
+            </span>
+          </div>
+          <p className="text-[11px] text-[#A1A1AA] truncate">
+            {expired ? "Hubungi fotografer untuk perpanjangan" : `s/d ${deadlineLabel}`}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -159,7 +219,7 @@ export const DeadlineCountdown: React.FC<Props> = ({
         ) : (
           <>
             <p
-              className={`font-mono text-lg font-bold tabular-nums leading-tight tracking-tight mt-0.5 ${tone.text}`}
+              className={`text-lg font-black tabular-nums leading-tight tracking-tight mt-0.5 ${tone.text}`}
             >
               {formatDeadlineRemaining(remaining)}
             </p>

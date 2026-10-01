@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useProofingStore } from "@/lib/storage";
 import { BrandMark } from "@/components/BrandMark";
+import { animate } from "animejs";
 import {
   Send,
   CheckCircle2,
@@ -13,17 +14,25 @@ import {
   Search,
   Plus,
   Users,
+  ArrowUp,
+  MapPin,
+  Layers,
+  Camera,
 } from "lucide-react";
 
-const shellClass =
-  "fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-6xl bg-zinc-950/85 border border-zinc-800/80 rounded-2xl px-3 sm:px-4 h-16 flex items-center justify-between gap-3 backdrop-blur-md shadow-xl shadow-black/40";
-
 const iconBtnClass =
-  "p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition-colors";
+  "p-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#52525B] hover:text-[#121212] border border-black/[0.06] transition-colors";
 
 export const Navbar: React.FC = () => {
   const {
     session,
+    photos,
+    activeFilter,
+    setActiveFilter,
+    activeSectionFilter,
+    setActiveSectionFilter,
+    isSidebarActive,
+    setIsSidebarActive,
     setIsSubmissionOpen,
     viewMode,
     setViewMode,
@@ -99,15 +108,15 @@ export const Navbar: React.FC = () => {
   // Slim control bar docked to the right of the sidebar (no duplicate brand).
   if (viewMode === "admin") {
     return (
-      <header className="fixed top-3 sm:top-4 z-40 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] lg:left-[276px] lg:right-3 lg:w-auto lg:translate-x-0 h-16 flex items-center justify-between gap-2 bg-zinc-950/85 border border-zinc-800/80 rounded-2xl px-3 sm:px-4 backdrop-blur-md shadow-xl shadow-black/40">
+      <header className="fixed top-4 z-40 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] lg:left-[284px] lg:right-4 lg:w-auto lg:translate-x-0 h-16 flex items-center justify-between gap-3 bg-white/90 border border-black/[0.08] rounded-full px-4 sm:px-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] transition-all">
         {/* Brand: only on small screens where the sidebar is hidden */}
         <div className="flex lg:hidden items-center gap-2.5 min-w-0">
           <div
             onDoubleClick={() => setViewMode("admin")}
-            className="cursor-default"
-            title="ARYST"
+            className="cursor-pointer"
+            title="aryst studio"
           >
-            <BrandMark iconClassName="w-7 h-7" textClassName="text-sm" />
+            <BrandMark iconClassName="w-7 h-7" textClassName="text-base" />
           </div>
           {liveDot}
         </div>
@@ -115,141 +124,139 @@ export const Navbar: React.FC = () => {
         {/* Session switcher */}
         {clientProjects.length > 0 && (
           <div className="relative min-w-0" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setIsSessionDropdownOpen((prev) => !prev)}
-                className={`flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 rounded-xl border text-xs transition-colors focus:outline-none focus:ring-1 focus:ring-amber-400/50 ${
-                  isSessionDropdownOpen
-                    ? "bg-zinc-900 border-zinc-700 text-white"
-                    : "bg-zinc-900/60 hover:bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white"
-                }`}
-                aria-expanded={isSessionDropdownOpen}
-                aria-label="Pilih sesi klien aktif"
-              >
-                <span className="w-7 h-7 rounded-lg bg-amber-400/10 border border-amber-400/25 flex items-center justify-center text-[11px] font-bold text-amber-400 shrink-0">
-                  {activeProject?.clientName
-                    ? activeProject.clientName.charAt(0).toUpperCase()
-                    : "-"}
+            <button
+              type="button"
+              onClick={() => setIsSessionDropdownOpen((prev) => !prev)}
+              className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border text-xs font-semibold transition-colors focus:outline-none ${
+                isSessionDropdownOpen
+                  ? "bg-black/[0.06] border-black/20 text-[#121212]"
+                  : "bg-black/[0.03] hover:bg-black/[0.06] border-black/[0.06] text-[#52525B] hover:text-[#121212]"
+              }`}
+              aria-expanded={isSessionDropdownOpen}
+              aria-label="Pilih sesi klien aktif"
+            >
+              <span className="w-6 h-6 rounded-full bg-[#FF5A1F]/10 border border-[#FF5A1F]/25 flex items-center justify-center text-[10px] font-bold text-[#FF5A1F] shrink-0">
+                {activeProject?.clientName
+                  ? activeProject.clientName.charAt(0).toUpperCase()
+                  : "-"}
+              </span>
+              <span className="text-left hidden md:block max-w-[140px] leading-tight">
+                <span className="block text-xs font-bold text-[#121212] truncate">
+                  {activeProject?.clientName || "Pilih Sesi"}
                 </span>
-                <span className="text-left hidden md:block max-w-[140px] leading-tight">
-                  <span className="block text-xs font-semibold text-white truncate">
-                    {activeProject?.clientName || "Pilih Sesi"}
-                  </span>
-                  <span className="block text-[10px] text-zinc-400 font-mono truncate">
-                    {activeProject?.projectId || ""}
-                  </span>
+                <span className="block text-[10px] text-[#71717A] truncate">
+                  {activeProject?.projectId || ""}
                 </span>
-                <ChevronsUpDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-              </button>
+              </span>
+              <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717A] shrink-0" />
+            </button>
 
-              {isSessionDropdownOpen && (
-                <div className="absolute top-full mt-2 left-0 w-72 sm:w-80 bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl shadow-black/70 z-50 p-2 flex flex-col gap-1.5">
-                  {clientProjects.length >= 2 && (
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      <input
-                        type="text"
-                        value={sessionSearch}
-                        onChange={(e) => setSessionSearch(e.target.value)}
-                        placeholder="Cari nama / ID..."
-                        className="w-full bg-zinc-900 border border-zinc-800 focus:border-zinc-700 rounded-xl pl-8 pr-3 py-2 text-xs text-zinc-200 placeholder-zinc-400 focus:outline-none transition-colors"
-                        autoFocus
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between px-2 pt-1 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">
-                    <span>Sesi</span>
-                    <span>{filteredProjects.length}</span>
+            {isSessionDropdownOpen && (
+              <div className="absolute top-full mt-2 left-0 w-72 sm:w-80 bg-white border border-black/[0.08] rounded-2xl shadow-xl shadow-black/10 z-50 p-2.5 flex flex-col gap-2">
+                {clientProjects.length >= 2 && (
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={sessionSearch}
+                      onChange={(e) => setSessionSearch(e.target.value)}
+                      placeholder="Cari nama / ID..."
+                      className="w-full bg-black/[0.03] border border-black/[0.06] focus:border-black/20 rounded-xl pl-8 pr-3 py-2 text-xs text-[#121212] placeholder-[#A1A1AA] focus:outline-none transition-colors"
+                      autoFocus
+                    />
                   </div>
+                )}
 
-                  <div className="max-h-60 overflow-y-auto space-y-0.5">
-                    {filteredProjects.map((p) => {
-                      const isCurrent = p.id === activeProjectId;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => {
-                            switchProject(p.id);
-                            setIsSessionDropdownOpen(false);
-                            setSessionSearch("");
-                          }}
-                          className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors ${
-                            isCurrent
-                              ? "bg-zinc-900 border border-zinc-700/80 text-white"
-                              : "hover:bg-zinc-900 border border-transparent text-zinc-300 hover:text-white"
-                          }`}
-                        >
-                          <span className="flex items-center gap-2.5 min-w-0">
-                            <span
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border ${
-                                isCurrent
-                                  ? "bg-amber-400/10 border-amber-400/30 text-amber-400"
-                                  : "bg-zinc-900 border-zinc-800 text-zinc-400"
-                              }`}
-                            >
-                              {p.clientName.charAt(0).toUpperCase()}
+                <div className="flex items-center justify-between px-2 pt-1 text-[10px] font-semibold text-[#71717A] uppercase tracking-wider">
+                  <span>Daftar Sesi</span>
+                  <span>{filteredProjects.length}</span>
+                </div>
+
+                <div className="max-h-60 overflow-y-auto space-y-0.5">
+                  {filteredProjects.map((p) => {
+                    const isCurrent = p.id === activeProjectId;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          switchProject(p.id);
+                          setIsSessionDropdownOpen(false);
+                          setSessionSearch("");
+                        }}
+                        className={`w-full flex items-center justify-between p-2 rounded-xl text-left transition-colors ${
+                          isCurrent
+                            ? "bg-black/[0.05] text-[#121212] font-semibold"
+                            : "hover:bg-black/[0.03] text-[#52525B] hover:text-[#121212]"
+                        }`}
+                      >
+                        <span className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border ${
+                              isCurrent
+                                ? "bg-[#FF5A1F]/10 border-[#FF5A1F]/30 text-[#FF5A1F]"
+                                : "bg-black/[0.04] border-black/[0.06] text-[#71717A]"
+                            }`}
+                          >
+                            {p.clientName.charAt(0).toUpperCase()}
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-xs font-semibold truncate leading-snug">
+                              {p.clientName}
                             </span>
-                            <span className="min-w-0">
-                              <span className="block text-xs font-semibold truncate leading-snug">
-                                {p.clientName}
-                              </span>
-                              <span className="block text-[10px] text-zinc-400 font-mono truncate">
-                                {p.projectId} • {p.maxQuota} foto
-                                {(p.password || p.passwordHash) ? " • 🔒" : ""}
-                              </span>
+                            <span className="block text-[10px] text-[#71717A] truncate">
+                              {p.projectId} • {p.maxQuota} foto
+                              {(p.password || p.passwordHash) ? " • 🔒" : ""}
                             </span>
                           </span>
-                          {isCurrent && (
-                            <Check className="w-4 h-4 text-amber-400 shrink-0 ml-2" />
-                          )}
-                        </button>
-                      );
-                    })}
+                        </span>
+                        {isCurrent && (
+                          <Check className="w-4 h-4 text-[#FF5A1F] shrink-0 ml-2" />
+                        )}
+                      </button>
+                    );
+                  })}
 
-                    {filteredProjects.length === 0 && (
-                      <div className="text-center py-5 text-xs text-zinc-400">
-                        Tidak ada hasil untuk &ldquo;{sessionSearch}&rdquo;
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="border-t border-zinc-800/80 pt-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsSessionDropdownOpen(false);
-                        setSessionSearch("");
-                        const el = document.getElementById(
-                          "admin-add-session-btn"
-                        );
-                        if (el) el.click();
-                        else window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-semibold text-amber-400 hover:bg-amber-400/10 transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Tambah Sesi</span>
-                    </button>
-                  </div>
+                  {filteredProjects.length === 0 && (
+                    <div className="text-center py-5 text-xs text-[#71717A]">
+                      Tidak ada hasil untuk &ldquo;{sessionSearch}&rdquo;
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Actions */}
-          <div className="flex items-center gap-2 shrink-0">
+                <div className="border-t border-black/[0.06] pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSessionDropdownOpen(false);
+                      setSessionSearch("");
+                      const el = document.getElementById("admin-add-session-btn");
+                      if (el) el.click();
+                      else window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold text-[#FF5A1F] hover:bg-[#FF5A1F]/10 transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Tambah Sesi Baru</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setViewMode("client")}
-            className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-full btn-mtioon-primary"
           >
             <Eye className="w-3.5 h-3.5" />
-            <span>Galeri</span>
+            <span>Lihat Galeri</span>
           </button>
           <button
             onClick={() => setViewMode("client")}
-            className="sm:hidden p-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-zinc-950 transition-colors"
+            className="sm:hidden p-2 rounded-full btn-mtioon-primary"
             title="Galeri Klien"
           >
             <Eye className="w-4 h-4" />
@@ -275,83 +282,491 @@ export const Navbar: React.FC = () => {
     );
   }
 
-  // ── Client navbar ─────────────────────────────────────────
+  // ── Client navbar & Sidebar powered by Anime.js (Hardware Accelerated GPU) ──
+  const topNavRef = useRef<HTMLElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const topNavAnimRef = useRef<any>(null);
+  const sidebarAnimRef = useRef<any>(null);
+  const isSidebarActiveRef = useRef(isSidebarActive);
+
+  useEffect(() => {
+    isSidebarActiveRef.current = isSidebarActive;
+  }, [isSidebarActive]);
+
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Smooth, reliable scroll listener without stale closures
+  useEffect(() => {
+    if (viewMode !== "client") return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        if (window.innerWidth < 1024) {
+          if (isSidebarActiveRef.current) setIsSidebarActive(false);
+          return;
+        }
+        const scrollY = window.scrollY;
+        // Scrolled down past welcome header into photos (> 160px)
+        if (scrollY > 160 && !isSidebarActiveRef.current) {
+          setIsSidebarActive(true);
+        } else if (scrollY < 80 && isSidebarActiveRef.current) {
+          setIsSidebarActive(false);
+        }
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [viewMode, setIsSidebarActive]);
+
+  // Anime.js GPU transition driver
+  useEffect(() => {
+    if (viewMode !== "client") return;
+    const showSidebar = isDesktop && isSidebarActive;
+
+    // Cancel any running animations to prevent frame conflicts and stutter
+    if (topNavAnimRef.current) topNavAnimRef.current.pause?.();
+    if (sidebarAnimRef.current) sidebarAnimRef.current.pause?.();
+
+    if (showSidebar) {
+      // 1. Top navbar glides up & fades out
+      if (topNavRef.current) {
+        topNavAnimRef.current = animate(topNavRef.current, {
+          translateY: -40,
+          opacity: 0,
+          duration: 180,
+          ease: "outQuad",
+          onComplete: () => {
+            if (topNavRef.current) topNavRef.current.style.pointerEvents = "none";
+          },
+        });
+      }
+      // 2. Left sidebar glides in from left
+      if (sidebarRef.current) {
+        sidebarRef.current.style.pointerEvents = "auto";
+        sidebarAnimRef.current = animate(sidebarRef.current, {
+          translateX: [-40, 0],
+          opacity: [0, 1],
+          duration: 220,
+          ease: "outQuad",
+        });
+      }
+    } else {
+      // 1. Sidebar glides out to left & fades
+      if (sidebarRef.current) {
+        sidebarAnimRef.current = animate(sidebarRef.current, {
+          translateX: -40,
+          opacity: 0,
+          duration: 160,
+          ease: "outQuad",
+          onComplete: () => {
+            if (sidebarRef.current) sidebarRef.current.style.pointerEvents = "none";
+          },
+        });
+      }
+      // 2. Top navbar glides down into view
+      if (topNavRef.current) {
+        topNavRef.current.style.pointerEvents = "auto";
+        topNavAnimRef.current = animate(topNavRef.current, {
+          translateY: [-40, 0],
+          opacity: [0, 1],
+          duration: 200,
+          ease: "outQuad",
+        });
+      }
+    }
+  }, [viewMode, isDesktop, isSidebarActive]);
+
+  const sectionStats = useMemo(() => {
+    const stats: Record<string, { total: number; selected: number }> = {};
+    photos.forEach((p) => {
+      const secName = p.section || "Galeri Utama";
+      if (!stats[secName]) stats[secName] = { total: 0, selected: 0 };
+      stats[secName].total++;
+      if (session.selectedPhotoIds.includes(p.id)) {
+        stats[secName].selected++;
+      }
+    });
+    return stats;
+  }, [photos, session.selectedPhotoIds]);
+
+  const sectionsList = useMemo(() => {
+    const defined = activeProject?.sections || [];
+    const photoSections = Array.from(
+      new Set(photos.map((p) => p.section).filter(Boolean) as string[])
+    );
+
+    const merged: { id: string; name: string; location?: string; description?: string }[] = [];
+    const seen = new Set<string>();
+
+    defined.forEach((s) => {
+      merged.push(s);
+      seen.add(s.name);
+    });
+
+    photoSections.forEach((sName) => {
+      if (!seen.has(sName)) {
+        const matchingPhoto = photos.find((p) => p.section === sName);
+        merged.push({
+          id: `sec-${sName.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
+          name: sName,
+          location: matchingPhoto?.location || "",
+        });
+        seen.add(sName);
+      }
+    });
+
+    return merged;
+  }, [activeProject, photos]);
+
+  const handleChapterClick = (chapterName: string, index: number) => {
+    setActiveSectionFilter(chapterName);
+    setTimeout(() => {
+      const el = document.getElementById(`section-${index}`);
+      if (el) {
+        const yOffset = -24;
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    }, 40);
+  };
+
+  const remaining = Math.max(0, session.maxQuota - selectedCount);
+  const percentage = Math.min(100, Math.round((selectedCount / (session.maxQuota || 1)) * 100));
+
   return (
-    <header className={shellClass}>
-      {/* Brand */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div
-          onDoubleClick={() => setViewMode("admin")}
-          className="cursor-default shrink-0"
-          title="ARYST"
+    <>
+      {/* ── 1. Top Navbar (Floating Horizontal Capsule) ────── */}
+      <div className="fixed top-4 inset-x-0 z-40 flex justify-center px-4 pointer-events-none">
+        <header
+          ref={topNavRef}
+          style={{ transform: "translate3d(0, 0, 0)", opacity: 1 }}
+          className="pointer-events-auto w-full max-w-6xl h-16 rounded-full px-4 sm:px-6 flex items-center justify-between bg-white/95 backdrop-blur-md border border-black/[0.08] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] will-change-transform"
         >
-          <BrandMark />
-        </div>
-        {(session.projectId || session.clientName) && (
-          <>
-            <span className="hidden sm:block w-px h-6 bg-zinc-800 shrink-0" />
-            <span className="hidden sm:block text-[11px] font-mono font-medium text-zinc-400 truncate max-w-[180px]">
-              {session.projectId || session.clientName}
-            </span>
-          </>
-        )}
-        {activeProject?.sessionMode === "group" && (
-          <span
-            title={
-              activeProject.members?.length
-                ? `Anggota: ${activeProject.members.join(", ")}`
-                : "Sesi grup dengan kuota bersama"
-            }
-            className="hidden sm:inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/[0.06] border border-white/10 text-[10px] font-semibold text-zinc-300"
+        {/* Brand */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            onDoubleClick={() => setViewMode("admin")}
+            className="cursor-pointer shrink-0"
+            title="aryst studio"
           >
-            <Users className="w-3 h-3 text-amber-400" />
-            <span>
-              Grup{activeProject.members?.length ? ` · ${activeProject.members.length}` : ""}
-            </span>
-          </span>
-        )}
-        {liveDot}
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-2 shrink-0">
-        {session.isLocked && (
-          <span
-            title="Seleksi dikunci"
-            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-400"
-          >
-            <Lock className="w-3 h-3 text-amber-400" />
-            <span>Terkunci</span>
-          </span>
-        )}
-
-        <button
-          onClick={() => setIsSubmissionOpen(true)}
-          className={`flex items-center gap-2 pl-3.5 pr-2 py-2 text-xs font-bold rounded-xl transition-colors focus:outline-none ${
-            isFull
-              ? "bg-emerald-400 hover:bg-emerald-300 text-zinc-950"
-              : "bg-amber-400 hover:bg-amber-300 text-zinc-950"
-          }`}
-        >
-          {isFull ? (
-            <CheckCircle2 className="w-4 h-4" />
-          ) : (
-            <Send className="w-3.5 h-3.5" />
+            <BrandMark />
+          </div>
+          {(session.projectId || session.clientName) && (
+            <>
+              <span className="hidden sm:block w-px h-5 bg-black/[0.08] shrink-0" />
+              <span className="hidden sm:block text-xs font-semibold text-[#71717A] truncate max-w-[180px]">
+                {session.projectId || session.clientName}
+              </span>
+            </>
           )}
-          <span className="hidden xs:inline sm:inline">Kirim</span>
-          <span className="px-2 py-0.5 rounded-lg bg-zinc-950/15 text-zinc-950 text-[11px] font-extrabold tabular-nums">
-            {selectedCount}/{session.maxQuota}
-          </span>
-        </button>
+          {activeProject?.sessionMode === "group" && (
+            <span
+              title={
+                activeProject.members?.length
+                  ? `Anggota: ${activeProject.members.join(", ")}`
+                  : "Sesi grup dengan kuota bersama"
+              }
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/[0.04] border border-black/[0.06] text-[10px] font-semibold text-[#52525B]"
+            >
+              <Users className="w-3 h-3 text-[#FF5A1F]" />
+              <span>
+                Grup{activeProject.members?.length ? ` · ${activeProject.members.length}` : ""}
+              </span>
+            </span>
+          )}
+          {liveDot}
+        </div>
 
-        <button
-          onClick={() => setViewMode("landing")}
-          className={iconBtnClass}
-          title="Beranda"
-        >
-          <Home className="w-4 h-4" />
-        </button>
-      </div>
-    </header>
+        {/* Actions - Clean & Minimal (NO tacky "Sidebar" button!) */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {session.isLocked && (
+            <span
+              title="Seleksi dikunci"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-semibold text-[#71717A]"
+            >
+              <Lock className="w-3 h-3 text-[#FF5A1F]" />
+              <span>Terkunci</span>
+            </span>
+          )}
+
+          <button
+            onClick={() => setIsSubmissionOpen(true)}
+            className={`btn-mtioon-primary flex items-center gap-2 pl-4 pr-2.5 py-2 text-xs font-bold ${
+              isFull ? "bg-[#121212] hover:bg-black shadow-[0_4px_0_#000]" : ""
+            }`}
+          >
+            {isFull ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
+            <span className="hidden xs:inline sm:inline">Kirim Seleksi</span>
+            <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold tabular-nums">
+              {selectedCount}/{session.maxQuota}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setViewMode("landing")}
+            className={iconBtnClass}
+            title="Beranda"
+          >
+            <Home className="w-4 h-4" />
+          </button>
+        </div>
+      </header>
+    </div>
+
+      {/* ── 2. Left Sidebar (Docked Vertical Panel for Desktop) ── */}
+      <aside
+        ref={sidebarRef}
+        style={{
+          opacity: 0,
+          pointerEvents: "none",
+          transform: "translate3d(-40px, 0, 0)",
+        }}
+        className="hidden lg:flex fixed z-40 top-6 left-6 bottom-6 w-[286px] h-[calc(100vh-3rem)] rounded-[30px] p-5 flex-col justify-between bg-white/98 backdrop-blur-md shadow-[0_20px_50px_-10px_rgba(0,0,0,0.10)] border border-black/[0.08] overflow-hidden text-[#121212] will-change-transform"
+      >
+        {/* Top Section */}
+        <div className="space-y-4">
+          {/* Header: Brand & Collapse back to top button */}
+          <div className="flex items-center justify-between gap-2 pb-3 border-b border-black/[0.06]">
+            <div
+              onDoubleClick={() => setViewMode("admin")}
+              className="cursor-pointer"
+              title="aryst studio"
+            >
+              <BrandMark iconClassName="w-6 h-6" textClassName="text-base" />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsSidebarActive(false);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-black/[0.03] hover:bg-black/[0.07] text-[#71717A] hover:text-[#121212] transition-colors"
+              title="Kembalikan ke Navigasi Atas"
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+              <span>Ke Atas</span>
+            </button>
+          </div>
+
+          {/* Client Session Card */}
+          <div className="p-3.5 rounded-2xl bg-black/[0.03] border border-black/[0.04]">
+            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+              {activeProject?.sessionType && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF5A1F]/15 text-[#FF5A1F]">
+                  {activeProject.sessionType}
+                </span>
+              )}
+              {liveDot}
+            </div>
+            <h4 className="font-display font-bold text-sm text-[#121212] truncate">
+              {session.clientName || activeProject?.clientName || "Klien Terhormat"}
+            </h4>
+            <p className="text-[11px] text-[#71717A] truncate mt-0.5">
+              {activeProject?.location || activeProject?.sessionTitle || activeProject?.projectId}
+            </p>
+          </div>
+
+          {/* Quota Progress Card */}
+          <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-sm space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="flex items-center gap-1.5 text-[#121212]">
+                {isFull ? (
+                  <CheckCircle2 className="w-4 h-4 text-[#FF5A1F]" />
+                ) : (
+                  <Camera className="w-4 h-4 text-[#71717A]" />
+                )}
+                <span>Kuota Terpilih</span>
+              </span>
+              <span className="text-[#FF5A1F] tabular-nums">
+                {selectedCount}/{session.maxQuota}
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-black/[0.06] rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-full transition-all duration-300 rounded-full ${
+                  isFull ? "bg-[#121212]" : "bg-[#FF5A1F]"
+                }`}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] font-medium text-[#71717A]">
+              <span>{percentage}% Tercapai</span>
+              <span>
+                {session.isLocked
+                  ? "Dikunci"
+                  : isFull
+                  ? "Siap Kirim"
+                  : `Sisa ${remaining} foto`}
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Filter Pill Buttons */}
+          <div className="flex items-center gap-1 p-1 bg-black/[0.03] border border-black/[0.05] rounded-full text-[11px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setActiveFilter("all")}
+              className={`flex-1 py-1 rounded-full text-center transition-all ${
+                activeFilter === "all"
+                  ? "bg-white text-[#121212] shadow-sm font-bold"
+                  : "text-[#71717A] hover:text-[#121212]"
+              }`}
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter("selected")}
+              className={`flex-1 py-1 rounded-full text-center transition-all ${
+                activeFilter === "selected"
+                  ? "bg-[#FF5A1F] text-white shadow-sm font-bold"
+                  : "text-[#71717A] hover:text-[#121212]"
+              }`}
+            >
+              Terpilih ({selectedCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveFilter("unselected")}
+              className={`flex-1 py-1 rounded-full text-center transition-all ${
+                activeFilter === "unselected"
+                  ? "bg-[#121212] text-white shadow-sm font-bold"
+                  : "text-[#71717A] hover:text-[#121212]"
+              }`}
+            >
+              Belum
+            </button>
+          </div>
+        </div>
+
+        {/* Middle: Chapters / Bab List */}
+        {sectionsList.length > 0 && (
+          <div className="my-3 flex-1 min-h-0 flex flex-col">
+            <div className="flex items-center justify-between text-[10px] font-bold text-[#71717A] uppercase tracking-wider mb-2 px-1">
+              <span className="flex items-center gap-1.5">
+                <Layers className="w-3 h-3 text-[#FF5A1F]" />
+                <span>Bab Cerita</span>
+              </span>
+              <span>{sectionsList.length} Bab</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveSectionFilter("all");
+                  window.scrollTo({ top: 200, behavior: "smooth" });
+                }}
+                className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold transition-all text-left ${
+                  activeSectionFilter === "all"
+                    ? "bg-black/[0.07] text-[#121212] font-bold"
+                    : "text-[#52525B] hover:bg-black/[0.03] hover:text-[#121212]"
+                }`}
+              >
+                <span className="truncate">Semua Bab</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-[#71717A] tabular-nums">
+                  {photos.length}
+                </span>
+              </button>
+
+              {sectionsList.map((sec, idx) => {
+                const stats = sectionStats[sec.name] || { total: 0, selected: 0 };
+                const isCurrent = activeSectionFilter === sec.name;
+                return (
+                  <button
+                    key={sec.id}
+                    type="button"
+                    onClick={() => handleChapterClick(sec.name, idx)}
+                    className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all text-left ${
+                      isCurrent
+                        ? "bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 text-[#FF5A1F] font-bold"
+                        : "text-[#52525B] hover:bg-black/[0.03] hover:text-[#121212]"
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 truncate min-w-0">
+                      <MapPin className={`w-3 h-3 shrink-0 ${isCurrent ? "text-[#FF5A1F]" : "text-[#71717A]"}`} />
+                      <span className="truncate">{sec.name}</span>
+                    </span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold tabular-nums shrink-0 ml-1.5 ${
+                        isCurrent
+                          ? "bg-[#FF5A1F] text-white"
+                          : stats.selected > 0
+                          ? "bg-[#FF5A1F]/15 text-[#FF5A1F]"
+                          : "bg-black/[0.05] text-[#71717A]"
+                      }`}
+                    >
+                      {stats.selected}/{stats.total}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Actions */}
+        <div className="pt-3 border-t border-black/[0.06] space-y-2">
+          <button
+            type="button"
+            onClick={() => setIsSubmissionOpen(true)}
+            className={`w-full btn-mtioon-primary py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 ${
+              isFull ? "bg-[#121212] hover:bg-black shadow-[0_4px_0_#000]" : ""
+            }`}
+          >
+            {isFull ? (
+              <CheckCircle2 className="w-4 h-4" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
+            <span>Kirim Seleksi</span>
+            <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold tabular-nums">
+              {selectedCount}/{session.maxQuota}
+            </span>
+          </button>
+
+          <div className="flex items-center justify-between text-xs text-[#71717A] pt-1 px-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("landing")}
+              className="flex items-center gap-1.5 hover:text-[#121212] transition-colors"
+              title="Halaman Beranda"
+            >
+              <Home className="w-3.5 h-3.5" />
+              <span>Beranda</span>
+            </button>
+
+            <span className="text-[10px]">
+              {session.isLocked ? "Terkunci" : "Otomatis tersimpan"}
+            </span>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 };

@@ -93,10 +93,14 @@ export interface ClientProject {
   // When passed, the session auto-locks for the client.
   selectionDeadline?: number | null;
 
+  // Cover thumbnail for session switcher and cards
+  coverPhotoUrl?: string;
+
   createdAt: number;
 }
 
 export type ViewMode = "landing" | "client" | "admin";
+export type ClientNavLayout = "auto" | "top" | "sidebar";
 
 export interface ShowcaseItem {
   id: string;

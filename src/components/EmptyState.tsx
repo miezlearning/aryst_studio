@@ -9,18 +9,18 @@ interface EmptyStateProps {
 export const EmptyState: React.FC<EmptyStateProps> = ({ type, onReset }) => {
   if (type === "search") {
     return (
-      <div className="py-20 text-center flex flex-col items-center justify-center text-zinc-400">
-        <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 text-zinc-400">
+      <div className="py-20 text-center flex flex-col items-center justify-center text-[#71717A]">
+        <div className="w-14 h-14 rounded-full bg-black/[0.04] border border-black/[0.06] flex items-center justify-center mb-4 text-[#71717A]">
           <ImageOff className="w-6 h-6" />
         </div>
-        <h3 className="text-lg font-medium text-zinc-200 mb-1">Foto Tidak Ditemukan</h3>
-        <p className="text-sm text-zinc-400 max-w-sm mb-4">
+        <h3 className="font-display font-bold text-lg text-[#121212] mb-1">Foto Tidak Ditemukan</h3>
+        <p className="text-sm text-[#71717A] max-w-sm mb-5 font-normal">
           Tidak ada foto yang cocok dengan kata kunci pencarian Anda.
         </p>
         {onReset && (
           <button
             onClick={onReset}
-            className="px-4 py-2 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors"
+            className="btn-mtioon-secondary px-5 py-2 text-xs font-bold"
           >
             Hapus Pencarian
           </button>
@@ -31,18 +31,18 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ type, onReset }) => {
 
   if (type === "selected") {
     return (
-      <div className="py-20 text-center flex flex-col items-center justify-center text-zinc-400">
-        <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 text-amber-500/80">
+      <div className="py-20 text-center flex flex-col items-center justify-center text-[#71717A]">
+        <div className="w-14 h-14 rounded-full bg-[#FF5A1F]/10 border border-[#FF5A1F]/20 flex items-center justify-center mb-4 text-[#FF5A1F]">
           <CheckCircle2 className="w-6 h-6" />
         </div>
-        <h3 className="text-lg font-medium text-zinc-200 mb-1">Belum Ada Foto Terpilih</h3>
-        <p className="text-sm text-zinc-400 max-w-sm mb-4">
+        <h3 className="font-display font-bold text-lg text-[#121212] mb-1">Belum Ada Foto Terpilih</h3>
+        <p className="text-sm text-[#71717A] max-w-sm mb-5 font-normal">
           Tandai foto favorit yang Anda sukai di galeri untuk menyimpannya ke daftar pilihan.
         </p>
         {onReset && (
           <button
             onClick={onReset}
-            className="px-4 py-2 text-xs font-medium rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold transition-colors"
+            className="btn-mtioon-primary px-6 py-2 text-xs font-bold"
           >
             Lihat Semua Foto
           </button>
@@ -52,12 +52,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ type, onReset }) => {
   }
 
   return (
-    <div className="py-20 text-center flex flex-col items-center justify-center text-zinc-400">
-      <div className="w-14 h-14 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4 text-zinc-400">
+    <div className="py-20 text-center flex flex-col items-center justify-center text-[#71717A]">
+      <div className="w-14 h-14 rounded-full bg-black/[0.04] border border-black/[0.06] flex items-center justify-center mb-4 text-[#71717A]">
         <Camera className="w-6 h-6" />
       </div>
-      <h3 className="text-lg font-medium text-zinc-200 mb-1">Belum Ada Foto</h3>
-      <p className="text-sm text-zinc-400 max-w-sm">
+      <h3 className="font-display font-bold text-lg text-[#121212] mb-1">Belum Ada Foto</h3>
+      <p className="text-sm text-[#71717A] max-w-sm font-normal">
         Belum ada foto yang tersedia untuk sesi ini. Silakan hubungi fotografer Anda.
       </p>
     </div>

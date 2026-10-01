@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id" class="dark">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#FAF8F5" />
     <meta name="description" content="ARYST: Galeri Kurasi Foto Klien" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
 
@@ -13,15 +13,20 @@
     <!-- Frame-busting Script (Anti Clickjacking PRD Sec. 4) -->
     <script src="./frameguard.js"></script>
 
-    <!-- Typography: Figtree (Modern geometric sans akin to Plus Jakarta Sans) -->
+    <!-- Preload Sunghyun Sans Display Typography -->
+    <link rel="preload" href="/fonts/sunghyun-sans/SunghyunSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/sunghyun-sans/SunghyunSans-Bold.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/sunghyun-sans/SunghyunSans-Black.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Fallback font: Figtree -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <title>ARYST</title>
+    <title>ARYST: Kurasi Foto Klien</title>
   </head>
-  <body class="bg-zinc-950 text-zinc-100 antialiased selection:bg-amber-500/20 selection:text-amber-300 min-h-screen">
+  <body class="bg-[#FAF8F5] text-[#121212] antialiased selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] min-h-screen">
     <div id="root"></div>
     <script type="module" src="./src/main.tsx"></script>
   </body>

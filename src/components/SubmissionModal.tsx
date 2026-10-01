@@ -175,20 +175,20 @@ export const SubmissionModal: React.FC = () => {
       onClick={(e) => {
         if (e.target === e.currentTarget) setIsSubmissionOpen(false);
       }}
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl my-auto bg-zinc-950 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+      <div className="relative w-full max-w-2xl my-auto bg-white border border-black/[0.08] rounded-[32px] p-6 sm:p-8 shadow-2xl text-[#121212]">
         {/* Header */}
-        <div className="sticky top-0 z-10 -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 px-6 sm:px-8 pt-5 sm:pt-6 pb-4 mb-6 bg-zinc-950 border-b border-zinc-800/80 rounded-t-3xl flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-10 -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 px-6 sm:px-8 pt-6 pb-4 mb-6 bg-white border-b border-black/[0.06] rounded-t-[32px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-2xl bg-[#FF5A1F]/10 border border-[#FF5A1F]/20 flex items-center justify-center text-[#FF5A1F]">
               <CheckCircle className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="submission-modal-title" className="text-lg font-bold text-zinc-100 tracking-tight">
+              <h2 id="submission-modal-title" className="font-display font-[900] text-lg text-[#121212] tracking-tight">
                 Kirim Pilihan Foto
               </h2>
-              <p className="text-xs text-zinc-400">
+              <p className="text-xs text-[#71717A]">
                 Kirim daftar foto pilihan dan catatan revisi Anda langsung ke fotografer.
               </p>
             </div>
@@ -196,47 +196,47 @@ export const SubmissionModal: React.FC = () => {
 
           <button
             onClick={() => setIsSubmissionOpen(false)}
-            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-100 border border-zinc-800 transition-colors"
+            className="p-2 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#52525B] hover:text-[#121212] border border-black/[0.06] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Quota Status Alert */}
-        <div className="mb-6 p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-between">
+        <div className="mb-6 p-4 rounded-2xl bg-black/[0.03] border border-black/[0.06] flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-200">Status Kuota:</span>
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold">
+              <span className="text-xs font-semibold text-[#121212]">Status Kuota:</span>
+              <span className="px-2.5 py-0.5 rounded-full bg-[#FF5A1F]/10 border border-[#FF5A1F]/20 text-[#FF5A1F] text-xs font-bold">
                 {selectedCount} dari {session.maxQuota} Foto Terpilih
               </span>
             </div>
-            <p className="text-[11px] text-zinc-400 mt-1">
+            <p className="text-[11px] text-[#71717A] mt-1 font-medium">
               Klien: {session.clientName} • Project: {session.projectId}
             </p>
           </div>
 
           <button
             onClick={() => setLockState(!session.isLocked)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
               session.isLocked
-                ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                : "bg-zinc-800 hover:bg-zinc-700 border-zinc-700 text-zinc-300"
+                ? "bg-[#FF5A1F]/10 border-[#FF5A1F]/30 text-[#FF5A1F]"
+                : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-[#52525B]"
             }`}
             title={session.isLocked ? "Buka kunci seleksi" : "Kunci seleksi agar tidak berubah"}
           >
             {session.isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-            <span>{session.isLocked ? "Terkunci" : "Kunci Seleksi"}</span>
+            <span>{session.isLocked ? "Terkunci" : "Kunci"}</span>
           </button>
         </div>
 
         {/* Selected Photos Compact Gallery */}
         <div className="mb-6">
-          <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
+          <h3 className="text-xs font-bold text-[#71717A] uppercase tracking-wider mb-2">
             Pratinjau Foto Terpilih ({selectedCount})
           </h3>
           {selectedPhotos.length === 0 ? (
-            <div className="p-6 text-center rounded-2xl bg-zinc-900/50 border border-zinc-800/80 text-zinc-400 text-xs">
+            <div className="p-6 text-center rounded-2xl bg-black/[0.02] border border-black/[0.06] text-[#71717A] text-xs">
               Belum ada foto yang dipilih. Silakan kembali ke galeri untuk menandai foto.
             </div>
           ) : (
@@ -244,34 +244,34 @@ export const SubmissionModal: React.FC = () => {
               {selectedPhotos.map((photo, i) => (
                 <div
                   key={photo.id}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900 border border-zinc-800/80 text-xs"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-black/[0.02] border border-black/[0.06] text-xs"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={photo.thumbnailUrl}
                       alt={photo.name}
-                      className="w-10 h-10 rounded-lg object-cover bg-zinc-800 shrink-0"
+                      className="w-10 h-10 rounded-lg object-cover bg-black/[0.05] shrink-0"
                     />
                     <div className="truncate">
-                      <p className="font-semibold text-zinc-200 truncate">{photo.name}</p>
+                      <p className="font-bold text-[#121212] truncate">{photo.name}</p>
                       {photo.section && (
-                        <p className="text-[10px] text-amber-400 truncate flex items-center gap-1 mt-0.5">
+                        <p className="text-[10px] text-[#FF5A1F] truncate flex items-center gap-1 mt-0.5 font-medium">
                           <span>{photo.section}</span>
                           {photo.location && (
-                            <span className="text-zinc-400">• {photo.location}</span>
+                            <span className="text-[#A1A1AA]">• {photo.location}</span>
                           )}
                         </p>
                       )}
                       {session.revisionNotes[photo.id] ? (
-                        <p className="text-[11px] text-amber-300 truncate mt-0.5">
+                        <p className="text-[11px] text-[#FF5A1F] truncate mt-0.5">
                           Catatan: {session.revisionNotes[photo.id]}
                         </p>
                       ) : (
-                        <p className="text-[11px] text-zinc-400 mt-0.5">Tanpa instruksi khusus</p>
+                        <p className="text-[11px] text-[#A1A1AA] mt-0.5">Tanpa instruksi khusus</p>
                       )}
                     </div>
                   </div>
-                  <span className="text-zinc-400 font-medium text-[11px] ml-2 shrink-0">
+                  <span className="text-[#71717A] font-bold text-[11px] ml-2 shrink-0">
                     #{i + 1}
                   </span>
                 </div>
@@ -282,7 +282,7 @@ export const SubmissionModal: React.FC = () => {
 
         {/* Export Channels Grid */}
         <div className="space-y-3 mb-6">
-          <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+          <h3 className="text-xs font-bold text-[#71717A] uppercase tracking-wider">
             Pilihan Cara Pengiriman
           </h3>
 
@@ -291,16 +291,16 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleShareWhatsApp}
               disabled={selectedCount === 0}
-              className="flex items-start gap-3 p-3.5 rounded-2xl bg-emerald-950/20 hover:bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-start gap-3 p-4 rounded-2xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-sm">
                 <MessageCircle className="w-4 h-4" />
               </div>
               <div>
-                <span className="block text-xs font-bold text-emerald-300">
+                <span className="block text-xs font-bold text-emerald-800">
                   Kirim via WhatsApp (Utama)
                 </span>
-                <span className="block text-[11px] text-emerald-400/80 mt-0.5">
+                <span className="block text-[11px] text-emerald-700/80 mt-0.5">
                   Kirim rekap foto terpilih dan catatan revisi langsung ke nomor fotografer.
                 </span>
               </div>
@@ -310,16 +310,16 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleCopyLightroom}
               disabled={selectedCount === 0}
-              className="flex items-start gap-3 p-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-start gap-3 p-4 rounded-2xl bg-black/[0.02] hover:bg-black/[0.05] border border-black/[0.07] text-[#121212] text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-full bg-black/[0.06] flex items-center justify-center text-[#121212] shrink-0 group-hover:scale-105 transition-transform">
                 <Copy className="w-4 h-4" />
               </div>
               <div>
-                <span className="block text-xs font-bold text-zinc-100">
+                <span className="block text-xs font-bold text-[#121212]">
                   {copiedType === "lightroom" ? "✓ Tersalin ke Clipboard!" : "Salin Daftar Foto"}
                 </span>
-                <span className="block text-[11px] text-zinc-400 mt-0.5">
+                <span className="block text-[11px] text-[#71717A] mt-0.5">
                   Salin teks nama foto untuk dicari langsung di editor foto.
                 </span>
               </div>
@@ -329,31 +329,31 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleTransmitWebhook}
               disabled={selectedCount === 0 || isTransmitting}
-              className="flex items-start gap-3 p-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2"
+              className="flex items-start gap-3 p-4 rounded-2xl bg-black/[0.02] hover:bg-black/[0.05] border border-black/[0.07] text-[#121212] text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2"
             >
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 {isTransmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
                 ) : (
                   <FileSpreadsheet className="w-4 h-4" />
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="block text-xs font-bold text-zinc-100">
+                  <span className="block text-xs font-bold text-[#121212]">
                     Simpan ke Lembar Kerja Studio
                   </span>
                   {transmitStatus === "success" && (
-                    <span className="text-[11px] text-emerald-400 font-semibold">✓ Terkirim</span>
+                    <span className="text-[11px] text-emerald-600 font-bold">✓ Terkirim</span>
                   )}
                 </div>
-                <span className="block text-[11px] text-zinc-400 mt-0.5">
+                <span className="block text-[11px] text-[#71717A] mt-0.5">
                   Kirimkan data pilihan Anda langsung ke sistem arsip fotografer.
                 </span>
                 {transmitMessage && (
                   <p
-                    className={`text-[11px] mt-2 ${
-                      transmitStatus === "success" ? "text-emerald-400" : "text-rose-400"
+                    className={`text-[11px] mt-2 font-medium ${
+                      transmitStatus === "success" ? "text-emerald-600" : "text-rose-600"
                     }`}
                   >
                     {transmitMessage}
@@ -368,7 +368,7 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleDownloadCSV}
               disabled={selectedCount === 0}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.08] text-xs font-semibold text-[#121212] transition-colors disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Unduh CSV</span>
@@ -376,7 +376,7 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleDownloadJSON}
               disabled={selectedCount === 0}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-medium text-zinc-300 transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.08] text-xs font-semibold text-[#121212] transition-colors disabled:opacity-50"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Unduh JSON</span>
@@ -388,7 +388,7 @@ export const SubmissionModal: React.FC = () => {
         <div className="text-center pt-2">
           <button
             onClick={() => setIsSubmissionOpen(false)}
-            className="text-xs text-zinc-400 hover:text-zinc-300 transition-colors"
+            className="text-xs font-medium text-[#71717A] hover:text-[#121212] transition-colors"
           >
             Kembali ke Kurasi Foto
           </button>

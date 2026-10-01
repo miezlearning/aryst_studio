@@ -9,10 +9,10 @@ export const BrandMarkIcon: React.FC<{ className?: string }> = ({ className }) =
     className={cn("shrink-0", className)}
     aria-hidden="true"
   >
-    <rect width="64" height="64" rx="14" fill="#09090b" />
-    <rect width="64" height="64" rx="14" stroke="#3f3f46" strokeWidth="1.5" />
-    <circle cx="32" cy="32" r="15" stroke="#f59e0b" strokeWidth="3.5" />
-    <circle cx="32" cy="32" r="6" fill="#f59e0b" />
+    <rect width="64" height="64" rx="18" fill="#121212" />
+    <circle cx="32" cy="32" r="16" stroke="#FAF8F5" strokeWidth="3" />
+    <circle cx="32" cy="32" r="7" fill="#FF5A1F" />
+    <circle cx="43" cy="21" r="3" fill="#FFFFFF" opacity="0.8" />
   </svg>
 );
 
@@ -21,15 +21,15 @@ export const BrandMark: React.FC<{
   iconClassName?: string;
   textClassName?: string;
 }> = ({ className, iconClassName, textClassName }) => (
-  <div className={cn("flex items-center gap-2.5 select-none", className)}>
-    <BrandMarkIcon className={cn("w-8 h-8", iconClassName)} />
+  <div className={cn("flex items-center gap-2 select-none", className)}>
+    <BrandMarkIcon className={cn("w-7 h-7 sm:w-8 sm:h-8", iconClassName)} />
     <span
       className={cn(
-        "text-[15px] font-extrabold tracking-[0.24em] text-white leading-none",
+        "font-display font-[900] tracking-tight text-xl sm:text-2xl text-[#121212] leading-none lowercase",
         textClassName
       )}
     >
-      ARYST
+      aryst<span className="text-[#FF5A1F]">.</span>
     </span>
   </div>
 );

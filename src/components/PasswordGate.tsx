@@ -39,7 +39,7 @@ export const PasswordGate: React.FC = () => {
     setIsVerifying(false);
 
     if (!isMatch) {
-      setError("Kata sandi salah. Silakan periksa kembali atau tanyakan ke fotografer Anda.");
+      setError("Kata sandi salah. Silakan periksa kembali atau hubungi fotografer Anda.");
     }
   };
 
@@ -47,34 +47,37 @@ export const PasswordGate: React.FC = () => {
   const maxHours = ACCESS_MAX_AGE_MS / 3_600_000;
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-xl p-6 sm:p-8 shadow-xl animate-fade-in">
+    <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md mtioon-card p-8 sm:p-10 relative overflow-hidden animate-fade-in">
+        {/* Subtle decorative glow */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF5A1F]/10 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10" />
+
         {/* Lock Icon Badge */}
-        <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-amber-400">
-            <Lock className="w-5 h-5" />
+        <div className="flex justify-center mb-5">
+          <div className="w-14 h-14 rounded-2xl bg-[#FFF0EB] border border-[#FF5A1F]/20 flex items-center justify-center text-[#FF5A1F] shadow-[0_8px_20px_rgba(255,90,31,0.15)]">
+            <Lock className="w-6 h-6 stroke-[2.2]" />
           </div>
         </div>
 
         {/* Header Text */}
-        <div className="text-center mb-6">
-          <p className="text-xs font-semibold text-zinc-400 mb-1">
-            {session.projectId || config.projectId}
-          </p>
-          <h2 className="text-xl font-bold tracking-tight text-white">
+        <div className="text-center mb-7">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#F5F2EB] text-[#121212]/70 text-[11px] font-bold tracking-wide uppercase mb-2">
+            {session.projectId || config.projectId || "Koleksi Terproteksi"}
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-[#121212]">
             {session.clientName || config.clientName || "Galeri Foto Klien"}
           </h2>
-          <p className="text-xs text-zinc-400 mt-1.5 max-w-xs mx-auto leading-relaxed">
-            Galeri ini dilindungi kata sandi untuk privasi sesi foto Anda.
+          <p className="text-xs sm:text-sm text-[#121212]/60 mt-2 max-w-xs mx-auto leading-relaxed">
+            Galeri ini dilindungi kata sandi pribadi untuk menjaga privasi seluruh momen foto Anda.
           </p>
         </div>
 
         {/* Password Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-zinc-300 mb-1.5 flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-              <span>Masukkan Kata Sandi</span>
+            <label className="block text-xs font-bold text-[#121212]/80 mb-2 flex items-center gap-1.5">
+              <KeyRound className="w-3.5 h-3.5 text-[#FF5A1F]" />
+              <span>Masukkan Kata Sandi Galeri</span>
             </label>
             <div className="relative">
               <input
@@ -88,12 +91,12 @@ export const PasswordGate: React.FC = () => {
                 onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                 autoFocus
                 placeholder="Kata sandi dari fotografer..."
-                className="w-full pl-3.5 pr-10 py-2.5 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-zinc-100 placeholder-zinc-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
+                className="w-full pl-5 pr-12 py-3.5 bg-[#F5F2EB] border border-black/10 rounded-full text-sm font-medium text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40 hover:text-[#121212] transition-colors p-1"
                 title={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -102,7 +105,7 @@ export const PasswordGate: React.FC = () => {
             {capsLockOn && (
               <p
                 role="status"
-                className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-400 mt-1.5"
+                className="flex items-center gap-1.5 text-[11px] font-bold text-amber-600 mt-2 px-1"
               >
                 <TriangleAlert className="w-3.5 h-3.5 shrink-0" />
                 <span>Caps Lock menyala. Periksa huruf besar/kecil sebelum membuka galeri.</span>
@@ -111,18 +114,18 @@ export const PasswordGate: React.FC = () => {
           </div>
 
           {isLockedOut && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs">
+            <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
               <Timer className="w-4 h-4 shrink-0 mt-0.5" />
               <span>
                 Terlalu banyak percobaan gagal. Akses dijeda{" "}
-                <strong className="tabular-nums">{lockRemaining} detik</strong> lagi.
+                <strong className="tabular-nums font-bold">{lockRemaining} detik</strong> lagi.
               </span>
             </div>
           )}
 
           {error && !isLockedOut && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+            <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
@@ -130,7 +133,7 @@ export const PasswordGate: React.FC = () => {
           <button
             type="submit"
             disabled={isVerifying || isLockedOut}
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-amber-400 hover:bg-amber-300 text-zinc-950 font-semibold text-xs transition-colors disabled:opacity-50"
+            className="w-full btn-mtioon-primary py-3.5 px-6 rounded-full font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
             <span>
               {isLockedOut
@@ -144,12 +147,11 @@ export const PasswordGate: React.FC = () => {
         </form>
 
         {/* Footer Guidance */}
-        <div className="mt-6 pt-4 border-t border-zinc-800 text-center space-y-2">
-          <p className="text-[11px] text-zinc-400 leading-relaxed">
-            Akses terbatas: berlaku {idleHours} jam tanpa aktivitas dan maksimal{" "}
-            {maxHours} jam. Setelah itu kata sandi diminta kembali.
+        <div className="mt-8 pt-5 border-t border-black/[0.06] text-center space-y-1.5">
+          <p className="text-[11px] text-[#121212]/50 leading-relaxed font-medium">
+            Sesi aman: berlaku {idleHours} jam tanpa aktivitas atau maksimal {maxHours} jam.
           </p>
-          <p className="text-[11px] text-zinc-400">
+          <p className="text-[11px] text-[#121212]/50 font-medium">
             Belum menerima kata sandi? Hubungi fotografer Anda via WhatsApp.
           </p>
         </div>

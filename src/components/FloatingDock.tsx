@@ -11,6 +11,7 @@ export const FloatingDock: React.FC = () => {
     setIsSubmissionOpen,
     clientProjects,
     activeProjectId,
+    isSidebarActive,
   } = useProofingStore();
 
   const activeProject = clientProjects.find((p) => p.id === activeProjectId);
@@ -23,45 +24,51 @@ export const FloatingDock: React.FC = () => {
   const remaining = Math.max(0, maxQuota - selectedCount);
 
   return (
-    <div className="fixed bottom-6 inset-x-0 z-30 pointer-events-none flex justify-center px-4">
-      <div className="pointer-events-auto max-w-xl w-full glass-panel rounded-2xl p-3 sm:p-4 shadow-2xl shadow-black/60 border border-zinc-700/60 backdrop-blur-xl animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+    <div
+      className={`fixed bottom-6 inset-x-0 z-30 pointer-events-none flex justify-center px-4 transition-[opacity,transform] duration-200 ease-out will-change-transform ${
+        isSidebarActive
+          ? "lg:opacity-0 lg:translate-y-8 lg:pointer-events-none"
+          : "opacity-100 translate-y-0"
+      }`}
+    >
+      <div className="pointer-events-auto max-w-xl w-full bg-white/95 backdrop-blur-md rounded-full sm:rounded-full p-3 sm:py-2.5 sm:px-5 shadow-[0_12px_40px_-6px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04)] border border-black/[0.08] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Progress & Quota Information */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-100 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[#121212] flex items-center gap-1.5">
                 {isComplete ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <CheckCircle2 className="w-4 h-4 text-[#FF5A1F]" />
                 ) : (
-                  <Camera className="w-4 h-4 text-amber-400" />
+                  <Camera className="w-4 h-4 text-[#52525B]" />
                 )}
-                <span>Kuota Seleksi:</span>
-                <span className="text-white font-bold">{selectedCount}</span>
-                <span className="text-zinc-400">/</span>
-                <span className="text-zinc-400">{maxQuota} Foto</span>
+                <span>Kuota:</span>
+                <span className="text-[#FF5A1F]">{selectedCount}</span>
+                <span className="text-[#A1A1AA]">/</span>
+                <span className="text-[#71717A]">{maxQuota} Foto</span>
               </span>
             </div>
 
-            <div className="text-[11px] font-medium">
+            <div className="text-[11px] font-semibold">
               {session.isLocked ? (
-                <span className="text-amber-400 flex items-center gap-1">
+                <span className="text-[#FF5A1F] flex items-center gap-1">
                   <Lock className="w-3 h-3" /> Dikunci
                 </span>
               ) : isComplete ? (
-                <span className="text-emerald-400 font-semibold">Siap Dikirim!</span>
+                <span className="text-[#121212] font-bold">Siap Dikirim!</span>
               ) : (
-                <span className="text-zinc-400">Sisa {remaining} foto</span>
+                <span className="text-[#71717A]">Sisa {remaining} foto</span>
               )}
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-black/[0.06] rounded-full h-1.5 overflow-hidden">
             <div
               className={`h-full transition-all duration-300 rounded-full ${
                 isComplete
-                  ? "bg-emerald-400"
-                  : "bg-amber-400"
+                  ? "bg-[#121212]"
+                  : "bg-[#FF5A1F]"
               }`}
               style={{ width: `${percentage}%` }}
             />
@@ -70,7 +77,7 @@ export const FloatingDock: React.FC = () => {
           {deadline ? (
             <div className="mt-1.5 flex items-center justify-between gap-2">
               <DeadlineCountdown variant="inline" deadline={deadline} />
-              <span className="text-[10px] text-zinc-400 hidden sm:inline">
+              <span className="text-[10px] font-medium text-[#A1A1AA] hidden sm:inline">
                 Batas pilihan foto
               </span>
             </div>
@@ -83,16 +90,16 @@ export const FloatingDock: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveFilter(activeFilter === "selected" ? "all" : "selected")}
-            className={`px-3 py-2 text-xs font-medium rounded-xl border transition-colors flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 ${
               activeFilter === "selected"
-                ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
-                : "bg-zinc-800/80 hover:bg-zinc-700/80 border-zinc-700 text-zinc-300"
+                ? "bg-[#121212] border-black text-white"
+                : "bg-black/[0.03] hover:bg-black/[0.06] border-black/[0.08] text-[#52525B]"
             }`}
             title="Saring foto terpilih"
           >
             <Filter className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">
-              {activeFilter === "selected" ? "Lihat Semua" : "Hanya Terpilih"}
+              {activeFilter === "selected" ? "Semua" : "Terpilih"}
             </span>
           </button>
 
@@ -100,11 +107,7 @@ export const FloatingDock: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsSubmissionOpen(true)}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all shadow-lg active:scale-95 ${
-              isComplete
-                ? "bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/20"
-                : "bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-amber-500/20"
-            }`}
+            className="btn-mtioon-primary flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-5 py-2 text-xs font-bold"
           >
             <span>Tinjau & Kirim</span>
             <ChevronRight className="w-4 h-4 stroke-[2.5]" />

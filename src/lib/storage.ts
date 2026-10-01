@@ -7,6 +7,7 @@ import {
   ClientProject,
   Client,
   ViewMode,
+  ClientNavLayout,
   ShowcaseItem,
   ShowcaseCandidate,
   GallerySortOrder,
@@ -163,13 +164,13 @@ const DEFAULT_PROJECTS: ClientProject[] = [
     password: "",
     passwordHash: "",
     clientContact: "081234567890",
-    notes: "Sesi 1: Nuansa outdoor pegunungan kabut & tebing sunset",
+    createdAt: Date.now() - 172800000,
+    coverPhotoUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1600&q=85",
     sections: [
       { id: "sec-tamblingan", name: "Danau Tamblingan (Sunrise)", location: "Kabupaten Buleleng, Bali", description: "Sesi pagi berkabut di tepi danau" },
       { id: "sec-pinus", name: "Hutan Pinus Kintamani", location: "Kintamani, Bali", description: "Nuansa sejuk dan potret kasual" },
       { id: "sec-pantai", name: "Pantai Melasti (Sunset)", location: "Ungasan, Bali", description: "Golden hour dramatis di tebing karang" },
     ],
-    createdAt: Date.now() - 172800000,
     // Demo: 7-day selection window (2 days already elapsed)
     selectionDeadline: Date.now() + 432000000,
   },
@@ -192,6 +193,7 @@ const DEFAULT_PROJECTS: ClientProject[] = [
     passwordHash: "",
     clientContact: "081234567890",
     notes: "Sesi 2: Dokumentasi hari H pernikahan lengkap",
+    coverPhotoUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1600&q=85",
     sections: [
       { id: "sec-persiapan", name: "Persiapan & Detail", location: "Suite Room • Hotel Mulia", description: "Momen persiapan rias dan detail perhiasan" },
       { id: "sec-akad", name: "Akad Nikah / Ijab Kabul", location: "Masjid Raya Al-Akbar", description: "Prosesi sakral ijab kabul dan pemasangan cincin" },
@@ -199,6 +201,7 @@ const DEFAULT_PROJECTS: ClientProject[] = [
       { id: "sec-resepsi", name: "Resepsi & After Party", location: "Grand Ballroom", description: "Pesta resepsi malam, dansa, dan ramah tamah" },
     ],
     createdAt: Date.now() - 86400000,
+    selectionDeadline: Date.now() + 604800000,
   },
   // Client 1: Rian & Amanda - Session 3: Maternity Studio
   {
@@ -219,11 +222,13 @@ const DEFAULT_PROJECTS: ClientProject[] = [
     passwordHash: "",
     clientContact: "081234567890",
     notes: "Sesi 3: Potret kehamilan intim monokrom & warm editorial",
+    coverPhotoUrl: "https://images.unsplash.com/photo-1544126592-807ade215a0b?auto=format&fit=crop&w=1600&q=85",
     sections: [
       { id: "sec-mat-mono", name: "Minimalist Monochrome", location: "Studio Cyclorama", description: "Siluet kontras & ekspresi intim" },
       { id: "sec-mat-warm", name: "Warm Editorial Couple", location: "Living Set Studio", description: "Nuansa hangat bersama pasangan" },
     ],
     createdAt: Date.now() - 43200000,
+    selectionDeadline: Date.now() + 864000000,
   },
   // Client 2: Dimas & Sarah - Session 1: Lamaran Bandung
   {
@@ -309,9 +314,22 @@ const ensureClients = (
     const next: ClientProject = { ...p };
     let dirty = false;
 
-    if (sampleIds.has(p.id) && !p.isSample) {
-      next.isSample = true;
-      dirty = true;
+    if (sampleIds.has(p.id)) {
+      const dp = DEFAULT_PROJECTS.find((item) => item.id === p.id);
+      if (dp) {
+        if (!next.isSample) {
+          next.isSample = true;
+          dirty = true;
+        }
+        if (!next.coverPhotoUrl || next.coverPhotoUrl.includes("w=800")) {
+          next.coverPhotoUrl = dp.coverPhotoUrl;
+          dirty = true;
+        }
+        if (!next.selectionDeadline && dp.selectionDeadline) {
+          next.selectionDeadline = dp.selectionDeadline;
+          dirty = true;
+        }
+      }
     }
     if (!p.sessionMode) {
       next.sessionMode = "individual";
@@ -382,6 +400,7 @@ interface ProofingState {
   isLoading: boolean;
   error: string | null;
   activeFilter: "all" | "selected" | "unselected";
+  activeSectionFilter: string;
   searchQuery: string;
   gallerySortOrder: GallerySortOrder;
   lightboxPhotoId: string | null;
@@ -428,6 +447,10 @@ interface ProofingState {
   // Actions
   init: () => Promise<void>;
   setViewMode: (view: ViewMode) => void;
+  clientNavLayout: ClientNavLayout;
+  isSidebarActive: boolean;
+  setClientNavLayout: (layout: ClientNavLayout) => void;
+  setIsSidebarActive: (active: boolean) => void;
   loginAdmin: (pin: string) => Promise<boolean>;
   logoutAdmin: () => void;
   setAdminPin: (newPin: string) => Promise<void>;
@@ -447,6 +470,7 @@ interface ProofingState {
   updateSessionInfo: (info: Partial<ClientSelectionSession>) => void;
   updateConfig: (newConfig: Partial<ProofingConfig>) => void;
   setActiveFilter: (filter: "all" | "selected" | "unselected") => void;
+  setActiveSectionFilter: (section: string) => void;
   setGallerySortOrder: (order: GallerySortOrder) => void;
   setSearchQuery: (query: string) => void;
   setLightboxPhotoId: (id: string | null) => void;
@@ -529,6 +553,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   isLoading: false,
   error: null,
   activeFilter: "all",
+  activeSectionFilter: "all",
   searchQuery: "",
   gallerySortOrder: localStorage.getItem("lumina_gallery_sort") === "date" ? "date" : "name",
   lightboxPhotoId: null,
@@ -552,6 +577,8 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   globalApiKey: "",
   isP2PConnected: false,
 
+  clientNavLayout: "auto",
+  isSidebarActive: false,
   config: DEFAULT_CONFIG,
   session: DEFAULT_SESSION,
   showcaseItems: [],
@@ -923,6 +950,19 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       cleanupP2P();
       setStore({ isP2PConnected: false });
     }
+  },
+
+  setClientNavLayout: (layout) => {
+    setStore({ clientNavLayout: layout });
+    if (layout === "sidebar") {
+      setStore({ isSidebarActive: true });
+    } else if (layout === "top") {
+      setStore({ isSidebarActive: false });
+    }
+  },
+
+  setIsSidebarActive: (active) => {
+    setStore({ isSidebarActive: active });
   },
 
   loginAdmin: async (pinInput: string) => {
@@ -1727,6 +1767,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   },
 
   setActiveFilter: (filter) => setStore({ activeFilter: filter }),
+  setActiveSectionFilter: (section) => setStore({ activeSectionFilter: section }),
   setGallerySortOrder: (order) => {
     localStorage.setItem("lumina_gallery_sort", order);
     setStore({

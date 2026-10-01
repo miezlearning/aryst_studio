@@ -8,12 +8,29 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["'Figtree'", "system-ui", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
-        display: ["'Figtree'", "system-ui", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
-        serif: ["'Figtree'", "system-ui", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
-        mono: ["'Figtree'", "system-ui", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "Roboto", "sans-serif"],
+        sans: ["'Sunghyun Sans'", "'Figtree'", "system-ui", "-apple-system", "sans-serif"],
+        display: ["'Sunghyun Sans'", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["'Sunghyun Sans'", "'Figtree'", "system-ui", "sans-serif"],
       },
       colors: {
+        canvas: {
+          DEFAULT: "#FAF8F5",
+          sand: "#F4F1EA",
+          card: "#FFFFFF",
+          subtle: "#F2EFE9",
+        },
+        ink: {
+          DEFAULT: "#121212",
+          secondary: "#52525B",
+          muted: "#71717A",
+          faint: "#A1A1AA",
+        },
+        brand: {
+          DEFAULT: "#FF5A1F",
+          hover: "#E8470B",
+          dark: "#C2410C",
+          light: "#FFF1EB",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

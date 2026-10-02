@@ -3,6 +3,7 @@ import { useProofingStore } from "@/lib/storage";
 import { BrandMark } from "@/components/BrandMark";
 import { DraggableCandyChip } from "@/components/DraggableCandyChip";
 import { ShowcaseStrip } from "@/components/ShowcaseStrip";
+import { HeroVideo } from "@/components/HeroVideo";
 import {
   KeyRound,
   ArrowRight,
@@ -117,7 +118,38 @@ export const LandingPage: React.FC = () => {
   const primarySample = sampleProjects[0] || { projectId: "WED-2026-RIAN" };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#121212] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B]">
+    <div className="min-h-screen bg-[#FAF8F5] text-[#121212] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] relative">
+      {/* ── Global Precision Studio Millimeter Grid across all sections ── */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+        aria-hidden="true"
+      >
+        {/* Repeating millimeter micro-grid (24px) */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, rgba(18, 18, 18, 0.045) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(18, 18, 18, 0.045) 1px, transparent 1px)
+            `,
+            backgroundSize: "24px 24px",
+            backgroundPosition: "center top",
+          }}
+        />
+
+        {/* Ambient atmospheric gradient wash across the page */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              radial-gradient(circle 800px at 85% 25%, rgba(255, 90, 31, 0.04) 0%, transparent 70%),
+              radial-gradient(circle 900px at 15% 65%, rgba(255, 90, 31, 0.03) 0%, transparent 70%),
+              radial-gradient(circle 1000px at 70% 90%, rgba(255, 90, 31, 0.025) 0%, transparent 70%)
+            `,
+          }}
+        />
+      </div>
+
       {/* Floating Island Navbar */}
       <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl">
         <div className="bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] rounded-full px-5 py-2.5 flex items-center justify-between transition-all">
@@ -160,22 +192,21 @@ export const LandingPage: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
-        {/* Hero Section */}
+      <main className="flex-1 relative z-10">
+        {/* Hero Section with Showcase Video Background */}
         <section
           id="kurasi"
-          className="relative pt-36 sm:pt-44 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center overflow-x-clip"
+          className="relative w-full overflow-hidden"
         >
-          {/* Warm ambient aura */}
-          <div
-            className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[360px] bg-gradient-to-b from-[#FFEBDD]/60 via-[#FDF3EA]/30 to-transparent blur-3xl pointer-events-none -z-10"
-            aria-hidden="true"
-          />
+          {/* Background Showcase Video with Gradient & Grid Overlay */}
+          <HeroVideo />
 
-          {/* Floating 3D Candy Badges (Interactive Draggable Pins with Spring Physics) */}
-          <div className="relative inline-block w-full max-w-4xl mx-auto">
-            {/* Badge 1: Top-Left */}
-            <DraggableCandyChip
+          {/* Hero Content Container */}
+          <div className="relative z-10 pt-36 sm:pt-44 pb-20 sm:pb-28 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center">
+            {/* Floating 3D Candy Badges (Interactive Draggable Pins with Spring Physics) */}
+            <div className="relative inline-block w-full max-w-4xl mx-auto">
+              {/* Badge 1: Top-Left */}
+              <DraggableCandyChip
               text="retouch kulit natural"
               colorClass="bg-[#E5484D]"
               wrapperClassName="hidden sm:block absolute -top-8 left-2 sm:-left-6 animate-float-1"
@@ -294,7 +325,8 @@ export const LandingPage: React.FC = () => {
               </div>
             )}
           </div>
-        </section>
+        </div>
+      </section>
 
         {/* Bento Grid: Photography Studio Experience */}
         <section id="fitur" className="py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">

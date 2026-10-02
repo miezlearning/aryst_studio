@@ -6,48 +6,28 @@ import {
   DEFAULT_HERO_POSTER,
 } from "@/lib/storage";
 
-interface Ripple {
-  id: number;
-  x: number; // percent
-  y: number; // percent
-}
-
-let rippleId = 0;
-
-const INTERACTIVE_SELECTOR =
-  "button, a, input, select, textarea, label, [role='button'], [contenteditable='true']";
-
 /**
- * Full-bleed interactive hero background video.
- * - Cursor move: parallax drift + spotlight glow + speed-reactive playback rate
- * - Click/tap: expanding ripple ring + brief slow-motion pulse
- * - Source chain: uploaded blob / custom URL -> default studio clip -> poster
- * - Pointer tracking is bound to the window so the hero copy overlay
- *   (z-10) does not swallow the effects.
+ * Background Showcase Video for the Hero section.
+ * - Displays studio showcase video in background with smooth autoplay & loop (muted)
+ * - Fallback chain: uploaded video -> custom URL -> default studio clip -> poster
+ * - Layered with warm gradient overlay for high contrast & legibility
+ * - Precision studio grid overlay with radial gradient fade mask
+ * - Pure & clean: no distracting control widgets in the hero
+ * - Accessible: respects prefers-reduced-motion
  */
 export const HeroVideo: React.FC = () => {
   const heroVideoUrl = useProofingStore((s) => s.heroVideoUrl);
   const hasHeroVideoUpload = useProofingStore((s) => s.hasHeroVideoUpload);
   const resolveHeroVideoUrl = useProofingStore((s) => s.resolveHeroVideoUrl);
 
-  const containerRef = useRef<HTMLElement>(null);
-  const mediaRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const rafRef = useRef<number>(0);
-  const lastMoveRef = useRef<{ x: number; y: number; t: number } | null>(null);
-  const lastRateRef = useRef(0);
-  const slowUntilRef = useRef(0);
-  const slowTimerRef = useRef<number | null>(null);
 
   const [customSrc, setCustomSrc] = useState<string>("");
-  // src values that failed to load ("default" marks the built-in clip)
   const [broken, setBroken] = useState<string[]>([]);
-  const [ripples, setRipples] = useState<Ripple[]>([]);
-  // Skeleton states: no media rendered until the source is resolved,
-  // and the shimmer stays up until the active video actually plays.
   const [resolved, setResolved] = useState(false);
   const [mediaReady, setMediaReady] = useState(false);
-  const zoomRef = useRef(1.12);
+
   const [reducedMotion] = useState(
     () =>
       typeof window !== "undefined" &&
@@ -69,155 +49,48 @@ export const HeroVideo: React.FC = () => {
     return () => {
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
-      if (slowTimerRef.current) window.clearTimeout(slowTimerRef.current);
-      cancelAnimationFrame(rafRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroVideoUrl, hasHeroVideoUpload]);
+  }, [heroVideoUrl, hasHeroVideoUpload, resolveHeroVideoUrl]);
 
   const markBroken = useCallback((src: string) => {
     setMediaReady(false);
     setBroken((prev) => (prev.includes(src) ? prev : [...prev, src]));
   }, []);
 
-  const applyParallax = useCallback((nx: number, ny: number) => {
-    cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(() => {
-      const media = mediaRef.current;
-      const container = containerRef.current;
-      if (!media || !container) return;
-      const px = (0.5 - nx) * 26;
-      const py = (0.5 - ny) * 18;
-      media.style.transform = `translate3d(${px.toFixed(1)}px, ${py.toFixed(1)}px, 0) scale(${zoomRef.current})`;
-      container.style.setProperty("--hx", `${(nx * 100).toFixed(1)}%`);
-      container.style.setProperty("--hy", `${(ny * 100).toFixed(1)}%`);
-    });
-  }, []);
-
-  const pointerToNormalized = useCallback((clientX: number, clientY: number) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0 || rect.height === 0) return null;
-    const inside =
-      clientX >= rect.left &&
-      clientX <= rect.right &&
-      clientY >= rect.top &&
-      clientY <= rect.bottom;
-    if (!inside) return null;
-    const nx = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    const ny = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height));
-    return { nx, ny, rect };
-  }, []);
-
-  const handlePointerMove = useCallback(
-    (e: PointerEvent) => {
-      if (reducedMotion) return;
-      const pos = pointerToNormalized(e.clientX, e.clientY);
-      if (!pos) return;
-      applyParallax(pos.nx, pos.ny);
-
-      // Speed-reactive playback rate (skipped during click slow-motion)
-      const now = performance.now();
-      const last = lastMoveRef.current;
-      lastMoveRef.current = { x: e.clientX, y: e.clientY, t: now };
-      if (!last || now < slowUntilRef.current) return;
-      if (now - lastRateRef.current < 120) return;
-      const dt = Math.max(1, now - last.t);
-      const dist = Math.hypot(e.clientX - last.x, e.clientY - last.y);
-      const speed = dist / dt; // px per ms
-      const target = Math.min(1.7, 1 + speed * 0.55);
-      const video = videoRef.current;
-      if (video && Math.abs(video.playbackRate - target) > 0.08) {
-        video.playbackRate = target;
-        lastRateRef.current = now;
-      }
-    },
-    [applyParallax, pointerToNormalized, reducedMotion]
-  );
-
-  const handlePointerDown = useCallback(
-    (e: PointerEvent) => {
-      if (reducedMotion) return;
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest(INTERACTIVE_SELECTOR)) return;
-      const pos = pointerToNormalized(e.clientX, e.clientY);
-      if (!pos) return;
-
-      const x = pos.nx * 100;
-      const y = pos.ny * 100;
-      const id = ++rippleId;
-      setRipples((prev) => [...prev.slice(-4), { id, x, y }]);
-      window.setTimeout(() => {
-        setRipples((prev) => prev.filter((r) => r.id !== id));
-      }, 950);
-
-      // Slow-motion pulse + zoom kick
-      const video = videoRef.current;
-      const media = mediaRef.current;
-      if (video) {
-        slowUntilRef.current = performance.now() + 1000;
-        video.playbackRate = 0.45;
-        if (slowTimerRef.current) window.clearTimeout(slowTimerRef.current);
-        slowTimerRef.current = window.setTimeout(() => {
-          if (videoRef.current) videoRef.current.playbackRate = 1;
-        }, 1000);
-      }
-      if (media) {
-        zoomRef.current = 1.2;
-        media.style.transform = `translate3d(${((0.5 - pos.nx) * 26).toFixed(1)}px, ${((0.5 - pos.ny) * 18).toFixed(1)}px, 0) scale(1.2)`;
-        window.setTimeout(() => {
-          zoomRef.current = 1.12;
-        }, 650);
-      }
-    },
-    [pointerToNormalized, reducedMotion]
-  );
-
-  // Window-level listeners: the hero copy overlay sits above this section,
-  // so section-level handlers miss most of the movement.
-  useEffect(() => {
-    window.addEventListener("pointermove", handlePointerMove, {
-      passive: true,
-    });
-    window.addEventListener("pointerdown", handlePointerDown);
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerdown", handlePointerDown);
-      cancelAnimationFrame(rafRef.current);
-      if (slowTimerRef.current) window.clearTimeout(slowTimerRef.current);
-    };
-  }, [handlePointerMove, handlePointerDown]);
-
-  // Safety net: never leave the shimmer up forever if the browser
-  // refuses to autoplay (frame visible is better than an endless skeleton).
+  // Safety net: never leave shimmer forever if autoplay is slow
   useEffect(() => {
     if (!resolved || mediaReady) return;
-    const timer = window.setTimeout(() => setMediaReady(true), 8000);
+    const timer = window.setTimeout(() => setMediaReady(true), 6000);
     return () => window.clearTimeout(timer);
   }, [resolved, mediaReady]);
 
-  const customBroken = Boolean(customSrc) && broken.includes(customSrc);  const showCustom = resolved && Boolean(customSrc) && !customBroken;
+  const customBroken = Boolean(customSrc) && broken.includes(customSrc);
+  const showCustom = resolved && Boolean(customSrc) && !customBroken;
   const showDefault = resolved && !showCustom && !broken.includes("default");
-  const showVideo = showCustom || showDefault;
-  const showPoster = resolved && !showVideo; // both sources failed
-  const showSkeleton = !resolved || (showVideo && !mediaReady);
+  const showVideo = !reducedMotion && (showCustom || showDefault);
+  const showPoster = reducedMotion || (resolved && !showVideo);
+  const showSkeleton = !resolved || (!reducedMotion && showVideo && !mediaReady);
 
-  // Force-muted + explicit play: React's `muted` prop alone is not
-  // always honored for autoplay, so set it imperatively and retry.
   const attachVideo = useCallback(
     (el: HTMLVideoElement | null, sourceId: string) => {
       videoRef.current = el;
       if (!el) return;
       el.muted = true;
       el.defaultMuted = true;
-      const attempt = () => {
+
+      const attemptPlay = () => {
         if (videoRef.current !== el) return;
         el.muted = true;
         const p = el.play();
-        if (p) p.catch(() => undefined);
+        if (p) {
+          p.catch(() => undefined);
+        }
       };
-      attempt();
-      el.oncanplay = attempt;
-      // Fallback: if no source could be loaded at all, drop this source
+
+      attemptPlay();
+      el.oncanplay = attemptPlay;
+
+      // Fallback if media network error
       window.setTimeout(() => {
         if (
           videoRef.current === el &&
@@ -226,7 +99,7 @@ export const HeroVideo: React.FC = () => {
         ) {
           markBroken(sourceId);
         }
-      }, 6000);
+      }, 7000);
     },
     [markBroken]
   );
@@ -241,24 +114,19 @@ export const HeroVideo: React.FC = () => {
   );
 
   return (
-    <section
+    <div
       ref={containerRef}
       aria-hidden="true"
-      className="absolute inset-0 overflow-hidden"
-      style={{ "--hx": "50%", "--hy": "35%" } as React.CSSProperties}
+      className="absolute inset-0 overflow-hidden select-none pointer-events-none"
     >
-      {/* Media layer (parallax target) */}
-      <div
-        ref={mediaRef}
-        className="absolute -inset-6 will-change-transform transition-transform duration-300 ease-out"
-        style={{ transform: "translate3d(0,0,0) scale(1.12)" }}
-      >
+      {/* ── 1. Video & Poster Layer ────────────────────────────── */}
+      <div className="absolute inset-0 will-change-transform">
         {showVideo ? (
           showCustom ? (
             <video
               ref={customRef}
               key={customSrc}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover scale-[1.03] transition-opacity duration-1000"
               src={customSrc}
               autoPlay
               muted
@@ -274,7 +142,7 @@ export const HeroVideo: React.FC = () => {
             <video
               ref={defaultRef}
               key="default"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover scale-[1.03] transition-opacity duration-1000"
               autoPlay
               muted
               loop
@@ -297,43 +165,84 @@ export const HeroVideo: React.FC = () => {
           <img
             src={DEFAULT_HERO_POSTER}
             alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover scale-[1.02]"
             loading="eager"
           />
         ) : null}
       </div>
 
-      {/* Skeleton shimmer: covers the hero until the real video is playing */}
+      {/* ── 2. Loading Shimmer Skeleton ───────────────────────── */}
       <div
-        className={`absolute inset-0 skeleton transition-opacity duration-700 ${
+        className={`absolute inset-0 bg-[#FAF8F5]/80 backdrop-blur-sm transition-opacity duration-700 ${
           showSkeleton ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       />
 
-      {/* Readability overlays */}
-      <div className="absolute inset-0 bg-zinc-950/55" />
-      <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/80 via-zinc-950/35 to-zinc-950" />
+      {/* ── 3. Gradient Scrim Overlays ────────────────────────── */}
+      {/* Base warm wash to let the video breathe while guaranteeing dark text legibility */}
+      <div className="absolute inset-0 bg-[#FAF8F5]/55" />
 
-      {/* Cursor spotlight */}
-      {!reducedMotion && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(560px circle at var(--hx) var(--hy), rgba(245,158,11,0.14), transparent 65%)",
-          }}
-        />
-      )}
+      {/* Radial ambient lighting: brighter at focal center, glowing softly */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 38%, rgba(250, 248, 245, 0.72) 0%, rgba(250, 248, 245, 0.52) 55%, rgba(250, 248, 245, 0.88) 100%)",
+        }}
+      />
 
-      {/* Click ripples */}
-      {ripples.map((r) => (
-        <span
-          key={r.id}
-          className="absolute w-44 h-44 rounded-full border-2 border-[#FF5A1F]/70 pointer-events-none animate-hero-ripple"
-          style={{ left: `${r.x}%`, top: `${r.y}%` }}
-        />
-      ))}
-    </section>
+      {/* Warm brand aura tint */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle 500px at 50% 32%, rgba(255, 90, 31, 0.08) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Top subtle fade from header */}
+      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/40 to-transparent" />
+
+      {/* Bottom seamless blend into canvas paper (#FAF8F5) */}
+      <div className="absolute bottom-0 inset-x-0 h-48 sm:h-64 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/85 to-transparent" />
+
+      {/* ── 4. Precision Studio Grid with Gradient Fade ───────── */}
+      {/* High-tech creative studio grid with radial gradient mask */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, rgba(18, 18, 18, 0.06) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(18, 18, 18, 0.06) 1px, transparent 1px)
+          `,
+          backgroundSize: "24px 24px",
+          backgroundPosition: "center top",
+          maskImage:
+            "radial-gradient(ellipse 75% 65% at 50% 42%, black 25%, rgba(0, 0, 0, 0.5) 60%, transparent 88%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 75% 65% at 50% 42%, black 25%, rgba(0, 0, 0, 0.5) 60%, transparent 88%)",
+        }}
+      />
+
+      {/* Viewfinder crosshair precision markers (subtle camera sensor marks) */}
+      <div
+        className="hidden sm:block absolute inset-0 pointer-events-none"
+        style={{
+          maskImage:
+            "radial-gradient(ellipse 60% 50% at 50% 40%, black 15%, transparent 70%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 60% 50% at 50% 40%, black 15%, transparent 70%)",
+        }}
+      >
+        {/* Subtle center alignment ticks */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 pointer-events-none">
+          <div className="absolute top-1/2 left-0 w-2 h-[1px] bg-[#121212]/20" />
+          <div className="absolute top-1/2 right-0 w-2 h-[1px] bg-[#121212]/20" />
+          <div className="absolute top-0 left-1/2 h-2 w-[1px] bg-[#121212]/20" />
+          <div className="absolute bottom-0 left-1/2 h-2 w-[1px] bg-[#121212]/20" />
+        </div>
+      </div>
+    </div>
   );
 };
 

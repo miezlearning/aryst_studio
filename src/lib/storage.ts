@@ -725,6 +725,18 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     let savedHeroVideoUrl = (await get<string>(IDB_HERO_VIDEO_URL_KEY)) || "";
     const savedHeroVideoBlob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
 
+    // Credentials adopt independently of the projects guard below: an empty
+    // project list must never veto the admin PIN or API key, or a fresh
+    // browser keeps the default PIN while the cloud already holds the real one.
+    if (cloudState?.adminPin && looksLikeHash(cloudState.adminPin)) {
+      adminPinHash = cloudState.adminPin;
+      await set(IDB_ADMIN_PIN_HASH_KEY, adminPinHash);
+    }
+    if (cloudState?.globalApiKey) {
+      savedApiKey = cloudState.globalApiKey;
+      await set(IDB_GLOBAL_KEY, savedApiKey);
+    }
+
     // 3. Adopt Firestore cloud state as the Single Source of Truth
     // IndexedDB serves strictly as an offline mirror & fast startup cache
     let stateModified = (await get<number>(IDB_STATE_MODIFIED_KEY)) || 0;
@@ -732,10 +744,6 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       savedProjects = cloudState.projects;
       savedClients = cloudState.clients || [];
       savedHeroVideoUrl = cloudState.heroVideoUrl || "";
-      if (cloudState.globalApiKey) savedApiKey = cloudState.globalApiKey;
-      if (cloudState.adminPin && looksLikeHash(cloudState.adminPin)) {
-        adminPinHash = cloudState.adminPin;
-      }
       const cloudDocs = await fetchShowcaseCloud();
       cloudShowcaseDocs = new Map(cloudDocs.map((item) => [item.id, item]));
       cloudShowcaseOrder = cloudState.showcaseOrder || [];
@@ -1978,11 +1986,19 @@ const adoptStudioState = async (remote: StudioState): Promise<void> => {
   const repairedProjects = (remote.projects || []).map((p) => normalizeProjectShape({ ...p }).project);
   const safeClients = Array.isArray(remote.clients) ? remote.clients : [];
   const ensured = ensureClients(repairedProjects, safeClients);
-  const finalProjects = ensured.projects;
-  const finalClients = ensured.clients;
+  // Never let an empty cloud wipe non-empty local projects: a fresh device
+  // pushing defaults (or a junk write) must not delete the admin's real data.
+  // Credentials, hero URL and showcase still adopt normally below.
+  const liveState = useProofingStore.getState();
+  const keepLocalProjects =
+    (remote.projects || []).length === 0 && liveState.clientProjects.length > 0;
+  const finalProjects = keepLocalProjects ? liveState.clientProjects : ensured.projects;
+  const finalClients = keepLocalProjects ? liveState.clients : ensured.clients;
 
-  await set(IDB_PROJECTS_KEY, finalProjects);
-  await set(IDB_CLIENTS_KEY, finalClients);
+  if (!keepLocalProjects) {
+    await set(IDB_PROJECTS_KEY, finalProjects);
+    await set(IDB_CLIENTS_KEY, finalClients);
+  }
   if (remote.globalApiKey) {
     await set(IDB_GLOBAL_KEY, remote.globalApiKey);
   }

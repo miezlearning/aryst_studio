@@ -23,39 +23,99 @@ import {
 } from "lucide-react";
 
 /**
- * Validates video file metadata and playback capability safely in browser
+ * Decode-check the exact bytes before accepting them: metadata alone cannot
+ * tell a playable file from one that only renders its first frame or crawls
+ * at a fraction of real speed (which reads as frozen on screen). Accepting
+ * blindly is how an upload "succeeds" while never moving.
  */
 const probeVideoFile = (file: Blob): Promise<boolean> =>
   new Promise((resolve) => {
-    if (file.type && !file.type.startsWith("video/")) {
-      resolve(false);
-      return;
+    if (file.type) {
+      try {
+        const sniff = document.createElement("video");
+        if (sniff.canPlayType(file.type) === "") {
+          resolve(false);
+          return;
+        }
+      } catch {
+        // Fall through to the decode probe below
+      }
     }
     const url = URL.createObjectURL(file);
     const video = document.createElement("video");
-    video.preload = "metadata";
+    video.muted = true;
+    video.preload = "auto";
+    video.playsInline = true;
+    // Rendered in-viewport but near-invisible: only presented frames prove
+    // the file really moves on screen (decode-only or offscreen checks miss
+    // the exact crawl this probe must catch).
+    video.style.position = "fixed";
+    video.style.right = "8px";
+    video.style.bottom = "8px";
+    video.style.width = "160px";
+    video.style.height = "90px";
+    video.style.opacity = "0.02";
+    video.style.pointerEvents = "none";
+    video.style.zIndex = "1";
+    document.body.appendChild(video);
     let done = false;
 
     const finish = (ok: boolean) => {
       if (done) return;
       done = true;
       clearTimeout(timer);
-      URL.revokeObjectURL(url);
       video.removeAttribute("src");
       video.load();
+      video.remove();
+      URL.revokeObjectURL(url);
       resolve(ok);
     };
 
-    // 4s timeout fallback: if slow, allow upload if it has video mime
-    const timer = setTimeout(() => finish(true), 4000);
-
-    video.onloadedmetadata = () => {
-      const valid = video.duration > 0 || video.videoWidth > 0;
-      finish(valid);
-    };
+    // 12s overall budget: metadata, then a 2.5s real-playback sample.
+    const timer = setTimeout(() => finish(false), 12000);
 
     video.onerror = () => {
       finish(false);
+    };
+
+    video.onloadeddata = () => {
+      if (video.readyState < 2) {
+        finish(false);
+        return;
+      }
+      // A hidden tab throttles decoding, so speed can only be measured
+      // while visible; otherwise metadata alone is the check.
+      if (document.visibilityState !== "visible") {
+        finish(true);
+        return;
+      }
+      const t0 = video.currentTime;
+      let presented = 0;
+      const countFrame = () => {
+        if (done) return;
+        presented += 1;
+        if (typeof video.requestVideoFrameCallback === "function") {
+          video.requestVideoFrameCallback(countFrame);
+        }
+      };
+      if (typeof video.requestVideoFrameCallback === "function") {
+        video.requestVideoFrameCallback(countFrame);
+      }
+      video.play().catch(() => finish(false));
+      setTimeout(() => {
+        const dt = video.currentTime - t0;
+        // Must sustain at least half speed AND actually present frames;
+        // slower reads as frozen even though bytes decode.
+        const ok =
+          dt > 1.2 &&
+          (presented >= 15 || typeof video.requestVideoFrameCallback !== "function");
+        (window as unknown as { __lastProbe?: unknown }).__lastProbe = {
+          dt: +dt.toFixed(2),
+          presented,
+          dur: Number.isFinite(video.duration) ? +video.duration.toFixed(2) : 0,
+        };
+        finish(ok);
+      }, 2500);
     };
 
     video.src = url;
@@ -98,12 +158,15 @@ export const HeroVideoManager: React.FC = () => {
   const [previewBroken, setPreviewBroken] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [hasR2, setHasR2] = useState<boolean | null>(null);
+  // Explicit user pause (Jeda button) must stand: the watchdog below only
+  // recovers unintentional pauses, it never overrides a deliberate one.
+  const [userPausedIntent, setUserPausedIntent] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const previewRef = useRef<HTMLVideoElement>(null);
 
-  // Playback watchdog for the preview element
-  useAssuredPlayback(previewRef, true);
+  // Playback watchdog for the preview element (idle while the user paused).
+  useAssuredPlayback(previewRef, !userPausedIntent);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,6 +191,7 @@ export const HeroVideoManager: React.FC = () => {
     let cancelled = false;
     setPreviewBroken(false);
     setIsBuffering(true);
+    setUserPausedIntent(false);
 
     resolveHeroVideoUrl().then((url) => {
       if (cancelled) return;
@@ -191,11 +255,13 @@ export const HeroVideoManager: React.FC = () => {
     const v = previewRef.current;
     if (!v) return;
     if (v.paused) {
+      setUserPausedIntent(false);
       v.muted = isMuted;
       v.play()
         .then(() => setIsPlaying(true))
         .catch(() => setIsPlaying(false));
     } else {
+      setUserPausedIntent(true);
       v.pause();
       setIsPlaying(false);
     }
@@ -220,6 +286,7 @@ export const HeroVideoManager: React.FC = () => {
   const restartVideo = () => {
     const v = previewRef.current;
     if (!v) return;
+    setUserPausedIntent(false);
     v.currentTime = 0;
     v.play()
       .then(() => setIsPlaying(true))
@@ -300,7 +367,7 @@ export const HeroVideoManager: React.FC = () => {
       const playable = await probeVideoFile(file);
       if (!playable) {
         setError(
-          "Video ini tidak dapat diputar di browser (format atau codec tidak didukung). Simpan sebagai MP4 standar (H.264)."
+          "Video ini tidak dapat diputar lancar di browser (format atau codec tidak didukung, file rusak, atau terlalu berat). Simpan sebagai MP4 (H.264) lalu upload ulang."
         );
         return;
       }

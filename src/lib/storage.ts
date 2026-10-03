@@ -59,7 +59,10 @@ const IDB_STATE_MODIFIED_KEY = "lumina_studio_state_modified";
 export const MAX_SHOWCASE = 8;
 export const MAX_HERO_VIDEO_BYTES = 30 * 1024 * 1024;
 
-export const DEFAULT_HERO_VIDEO_LOCAL = "/hero-video.mp4";
+export const DEFAULT_HERO_VIDEO_LOCAL = `${import.meta.env.BASE_URL || "./"}hero-video.mp4`.replace(
+  /\/{2,}/g,
+  "/"
+);
 export const DEFAULT_HERO_VIDEO_HD = "https://assets.mixkit.co/videos/5382/5382-720.mp4";
 export const DEFAULT_HERO_VIDEO_SD = "https://assets.mixkit.co/videos/5382/5382-360.mp4";
 export const DEFAULT_HERO_POSTER = "https://assets.mixkit.co/videos/5382/5382-thumb-720-0.jpg";

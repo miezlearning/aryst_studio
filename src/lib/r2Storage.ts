@@ -102,18 +102,21 @@ export const uploadHeroVideoR2 = async (blob: Blob, cfg: R2Config): Promise<stri
     throw new Error(`R2 menolak unggahan (HTTP ${res.status}). Periksa CORS bucket dan izin token.`);
   }
   const publicUrl = `${cfg.publicBaseUrl}/${objectKey}`;
-  // Verify the object is actually publicly readable. Without this check a
-  // private bucket would "succeed" while the video fails on every screen.
-  let readable = false;
+  // Attempt to probe if publicUrl is readable.
+  // Note: Indonesian ISPs (Telkomsel/IndiHome) frequently hijack/block *.r2.dev domains,
+  // causing client-side fetch probes to fail even when the file was uploaded successfully.
+  // We log a warning rather than aborting and losing the uploaded video.
   try {
-    const probe = await fetch(publicUrl, { method: "HEAD" });
-    readable = probe.ok;
-  } catch {
-    readable = false;
-  }
-  if (!readable) {
-    throw new Error(
-      "File terupload ke R2, tapi URL publiknya tidak bisa dibaca. Aktifkan Public Development URL di Settings bucket dan pastikan objek bisa dibaca publik, lalu upload ulang."
+    const probe = await fetch(publicUrl, { method: "HEAD" }).catch(() =>
+      fetch(publicUrl, { method: "GET" })
+    );
+    if (!probe.ok && probe.status >= 400 && probe.status !== 405) {
+      console.warn(`R2 public probe returned status ${probe.status} for ${publicUrl}`);
+    }
+  } catch (probeErr) {
+    console.warn(
+      "R2 public URL probe failed (commonly caused by local ISP DNS block or CORS):",
+      probeErr
     );
   }
   return publicUrl;

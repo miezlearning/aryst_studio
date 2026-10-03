@@ -38,7 +38,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Audit Production Dependencies
-        run: npm audit --audit-level=high
+        run: npm audit --omit=dev --audit-level=high
 
   build-and-deploy:
     name: Build Static Distribution & Deploy

@@ -30,6 +30,7 @@ import {
   fetchRemoteSelection,
   fetchStudioState,
   pushStudioState,
+  pushStudioStateNow,
   subscribeStudioState,
   fetchShowcaseCloud,
   pushShowcaseCloud,
@@ -1120,7 +1121,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     await set(IDB_ADMIN_PIN_HASH_KEY, hash);
     await del(IDB_ADMIN_PIN_KEY).catch(() => undefined);
     setStore({ adminPin: hash });
-    persistStudioState();
+    await persistStudioStateNow();
   },
 
   openClientByCode: async (codeOrUrl: string) => {
@@ -1303,7 +1304,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       }
     }
 
-    persistStudioState();
+    await persistStudioStateNow();
 
     // Deadline may have been set / extended / removed
     getStore().scheduleDeadlineLock();
@@ -1327,7 +1328,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     }
 
     setStore({ clientProjects: filtered, clients: nextClients });
-    persistStudioState();
+    await persistStudioStateNow();
 
     if (activeProjectId === projectId && filtered.length > 0) {
       await getStore().switchProject(filtered[0].id);
@@ -1341,7 +1342,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     else clients.push(client);
     await set(IDB_CLIENTS_KEY, clients);
     setStore({ clients });
-    persistStudioState();
+    await persistStudioStateNow();
   },
 
   unlockForPreview: (projectId: string) => {
@@ -1485,7 +1486,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       });
       await getStore().loadPhotos(true);
     }
-    persistStudioState();
+    await persistStudioStateNow();
   },
 
   setFirebaseConfigJson: async (json: string) => {
@@ -1924,10 +1925,17 @@ const buildStudioState = (): StudioState => {
 };
 
 /** Cache the current state locally and publish it to the cloud. */
-const persistStudioState = () => {
+export const persistStudioState = () => {
   const state = buildStudioState();
   void set(IDB_STATE_MODIFIED_KEY, state.lastModified);
   pushStudioState(state);
+};
+
+/** Immediate write to Firestore cloud state, guaranteeing persistence. */
+export const persistStudioStateNow = async (): Promise<boolean> => {
+  const state = buildStudioState();
+  await set(IDB_STATE_MODIFIED_KEY, state.lastModified);
+  return pushStudioStateNow(state);
 };
 
 const stripCloudShowcase = ({ lastModified: _last, ...item }: ShowcaseCloudItem): ShowcaseItem => item;

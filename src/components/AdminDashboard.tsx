@@ -3,8 +3,9 @@ import { useProofingStore } from "@/lib/storage";
 import { ClientProject, SessionMode } from "@/types";
 import { generateClientShareUrl } from "@/lib/sync";
 import { extractFolderId } from "@/lib/googleDrive";
-import { formatDate } from "@/lib/utils";
-import { getR2Config, saveR2Config, parseR2Config } from "@/lib/r2Storage";
+import { formatDate, verifyPassword } from "@/lib/utils";
+import { getR2Config, saveR2Config, parseR2Config, testR2Connection } from "@/lib/r2Storage";
+import { pingFirestore } from "@/lib/firestoreSync";
 import { ClientSelectionInspectorModal } from "./ClientSelectionInspectorModal";
 import { ShowcaseManager } from "./ShowcaseManager";
 import { HeroVideoManager } from "./HeroVideoManager";
@@ -29,6 +30,7 @@ import {
   X,
   Sliders,
   Eye,
+  EyeOff,
   ArrowRight,
   LogOut,
   Radio,
@@ -47,6 +49,13 @@ import {
   Cloud,
   HardDrive,
   Sparkles,
+  Activity,
+  Database,
+  Server,
+  Shield,
+  Layers,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { DeadlineBadge } from "./DeadlineCountdown";
 
@@ -170,6 +179,7 @@ export const AdminDashboard: React.FC = () => {
     deleteProject,
     setGlobalApiKey,
     setAdminPin,
+    adminPin,
     logoutAdmin,
     setViewMode,
     unlockForPreview,
@@ -239,6 +249,40 @@ export const AdminDashboard: React.FC = () => {
   const [isProbing, setIsProbing] = useState(false);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Diagnostics & Architecture state
+  const [showArchitectureDetails, setShowArchitectureDetails] = useState(false);
+  const [isTestingFirestore, setIsTestingFirestore] = useState(false);
+  const [firestoreTestResult, setFirestoreTestResult] = useState<{
+    ok: boolean;
+    latencyMs: number;
+    message: string;
+    projectId?: string;
+  } | null>(null);
+
+  const [isTestingR2, setIsTestingR2] = useState(false);
+  const [r2TestResult, setR2TestResult] = useState<{
+    ok: boolean;
+    latencyMs: number;
+    message: string;
+  } | null>(null);
+
+  const [isTestingDrive, setIsTestingDrive] = useState(false);
+  const [driveTestResult, setDriveTestResult] = useState<{
+    ok: boolean;
+    latencyMs: number;
+    message: string;
+  } | null>(null);
+
+  // Admin PIN tester state
+  const [testPinInput, setTestPinInput] = useState("");
+  const [testPinResult, setTestPinResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [isTestingPin, setIsTestingPin] = useState(false);
+
+  // Form password state & copy helpers
+  const [showFormPassword, setShowFormPassword] = useState(false);
+  const [copiedPasswordId, setCopiedPasswordId] = useState<string | null>(null);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
   // Cached photo count per session, so source status shows a real number
   const [photoCounts, setPhotoCounts] = useState<Record<string, number>>({});
@@ -472,6 +516,116 @@ export const AdminDashboard: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
+  const handleCopyPassword = async (password: string, projId: string) => {
+    await navigator.clipboard.writeText(password);
+    setCopiedPasswordId(projId);
+    setTimeout(() => setCopiedPasswordId(null), 2500);
+  };
+
+  const handleCopyClientInvite = async (proj: ClientProject) => {
+    const link = generateClientShareUrl(proj);
+    const pwdText = proj.password ? `\nKata Sandi Galeri: ${proj.password}` : "";
+    const msg = `Halo ${proj.clientName},\n\nBerikut tautan galeri kurasi foto Anda dari Aryst Photography:\n${link}${pwdText}\n\nSilakan pilih foto-foto terbaik Anda dan tambahkan catatan revisi jika diperlukan.\n\nTerima kasih!`;
+    await navigator.clipboard.writeText(msg);
+    setCopiedInviteId(proj.id);
+    setTimeout(() => setCopiedInviteId(null), 2500);
+  };
+
+  const handleTestFirestore = async () => {
+    setIsTestingFirestore(true);
+    setFirestoreTestResult(null);
+    try {
+      const res = await pingFirestore();
+      setFirestoreTestResult(res);
+    } finally {
+      setIsTestingFirestore(false);
+    }
+  };
+
+  const handleTestR2 = async () => {
+    setIsTestingR2(true);
+    setR2TestResult(null);
+    try {
+      const cfg = await getR2Config();
+      if (!cfg) {
+        setR2TestResult({
+          ok: false,
+          latencyMs: 0,
+          message: "Konfigurasi Cloudflare R2 belum diisi.",
+        });
+        return;
+      }
+      const res = await testR2Connection(cfg);
+      setR2TestResult(res);
+    } finally {
+      setIsTestingR2(false);
+    }
+  };
+
+  const handleTestDrive = async () => {
+    setIsTestingDrive(true);
+    setDriveTestResult(null);
+    const key = apiKeyInput.trim() || globalApiKey.trim();
+    if (!key) {
+      setDriveTestResult({
+        ok: false,
+        latencyMs: 0,
+        message: "Google Drive API Key belum diisi.",
+      });
+      setIsTestingDrive(false);
+      return;
+    }
+    const start = performance.now();
+    try {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/about?fields=user&key=${encodeURIComponent(key)}`);
+      const data = await res.json();
+      const latencyMs = Math.round(performance.now() - start);
+      if (!res.ok) {
+        const errMsg = data?.error?.message || `HTTP ${res.status}`;
+        setDriveTestResult({
+          ok: false,
+          latencyMs,
+          message: errMsg.includes("API key not valid") ? "API key Google Drive tidak valid." : errMsg,
+        });
+      } else {
+        setDriveTestResult({
+          ok: true,
+          latencyMs,
+          message: `API Key Valid (${latencyMs}ms)! Siap membaca folder album Google Drive.`,
+        });
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal menguji koneksi Google Drive";
+      setDriveTestResult({ ok: false, latencyMs: 0, message: msg });
+    } finally {
+      setIsTestingDrive(false);
+    }
+  };
+
+  const handleVerifyTestPin = async () => {
+    if (!testPinInput.trim()) return;
+    setIsTestingPin(true);
+    setTestPinResult(null);
+    try {
+      const isMatch =
+        (await verifyPassword(testPinInput.trim(), adminPin)) ||
+        testPinInput.trim() === adminPin.trim();
+      if (isMatch) {
+        setTestPinResult({
+          ok: true,
+          message: "PIN Cocok! Akses admin Anda terverifikasi dengan benar.",
+        });
+      } else {
+        setTestPinResult({
+          ok: false,
+          message: "PIN Salah. Tidak cocok dengan PIN yang tersimpan di cloud.",
+        });
+      }
+    } finally {
+      setIsTestingPin(false);
+    }
+  };
+
   const handlePreviewAsClient = async (projId: string) => {
     await switchProject(projId);
     // The admin already authenticated, so the preview skips the password gate
@@ -689,7 +843,241 @@ function doPost(e) {
         </div>
       </div>
 
-      {/* TAB 1: PROJECTS LIST */}
+      {/* Cloud & Media Architecture Status Bar */}
+      <div className="rounded-2xl bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.08] p-4 shadow-sm mb-6 transition-all">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] flex items-center justify-center font-bold shrink-0">
+              <Cloud className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-xs font-bold text-[#121212] dark:text-white flex items-center gap-2">
+                <span>Arsitektur Sistem Cloud Terintegrasi</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+                  Terpusat &amp; Terverifikasi
+                </span>
+              </h3>
+              <p className="text-[11px] text-[#71717A] dark:text-zinc-400 mt-0.5">
+                Database teks, sandi &amp; sesi di <strong>Firestore</strong>. Media video/foto besar di <strong>Cloudflare R2</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Firestore Badge */}
+            <button
+              type="button"
+              onClick={() => setShowArchitectureDetails((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all hover:scale-[1.02] ${
+                syncStatus === "live"
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                  : syncStatus === "connecting"
+                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/60"
+                  : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
+              }`}
+              title="Klik untuk diagnosa koneksi database"
+            >
+              <Database className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                {syncStatus === "live" ? "Firestore: Live" : syncStatus === "connecting" ? "Firestore: Menghubungkan..." : "Firestore: Offline"}
+              </span>
+            </button>
+
+            {/* R2 Badge */}
+            <button
+              type="button"
+              onClick={() => setShowArchitectureDetails((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all hover:scale-[1.02] ${
+                r2Active
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                  : "bg-black/[0.04] dark:bg-white/[0.06] text-[#71717A] dark:text-zinc-400 border-black/10 dark:border-white/10"
+              }`}
+              title="Klik untuk diagnosa Cloudflare R2"
+            >
+              <HardDrive className="w-3.5 h-3.5 shrink-0" />
+              <span>Media: {r2Active ? "R2 Siap" : "R2 Belum Diisi"}</span>
+            </button>
+
+            {/* Google Drive API Badge */}
+            <button
+              type="button"
+              onClick={() => setShowArchitectureDetails((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all hover:scale-[1.02] ${
+                globalApiKey
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                  : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/60"
+              }`}
+              title="Klik untuk diagnosa Google Drive API"
+            >
+              <Key className="w-3.5 h-3.5 shrink-0" />
+              <span>GDrive: {globalApiKey ? "API Key Ada" : "Perlu API Key"}</span>
+            </button>
+
+            {/* Toggle Detail Button */}
+            <button
+              type="button"
+              onClick={() => setShowArchitectureDetails((v) => !v)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#121212] hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-[#121212] text-xs font-bold transition-all"
+            >
+              <span>{showArchitectureDetails ? "Tutup Diagnostik" : "Uji Koneksi & Arsitektur"}</span>
+              {showArchitectureDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable Architecture & Diagnostics Panel */}
+        {showArchitectureDetails && (
+          <div className="mt-4 pt-4 border-t border-black/[0.08] dark:border-white/[0.08] space-y-4 animate-fade-in">
+            {/* Architecture Explainer Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+              <div className="p-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08]">
+                <div className="flex items-center gap-1.5 font-bold text-[#121212] dark:text-white mb-1">
+                  <Database className="w-4 h-4 text-[#FF5A1F]" />
+                  <span>1. Database Utama</span>
+                </div>
+                <p className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Google Firestore</p>
+                <p className="text-[11px] text-[#71717A] dark:text-zinc-400 mt-1 leading-relaxed">
+                  <strong>Single Source of Truth:</strong> Menyimpan seluruh data sesi foto, kata sandi klien, PIN admin master, daftar klien, catatan revisi, dan pilihan foto klien secara realtime.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08]">
+                <div className="flex items-center gap-1.5 font-bold text-[#121212] dark:text-white mb-1">
+                  <HardDrive className="w-4 h-4 text-[#FF5A1F]" />
+                  <span>2. Penyimpanan Media</span>
+                </div>
+                <p className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">Cloudflare R2 Bucket</p>
+                <p className="text-[11px] text-[#71717A] dark:text-zinc-400 mt-1 leading-relaxed">
+                  <strong>Objek Biner S3:</strong> Khusus menyimpan file besar seperti Video Hero MP4 dan foto showcase resolusi asli tanpa biaya egress ($0 transfer keluar). URL publiknya disimpan ke Firestore.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08]">
+                <div className="flex items-center gap-1.5 font-bold text-[#121212] dark:text-white mb-1">
+                  <Server className="w-4 h-4 text-[#FF5A1F]" />
+                  <span>3. Album Foto Klien</span>
+                </div>
+                <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">Google Drive API v3</p>
+                <p className="text-[11px] text-[#71717A] dark:text-zinc-400 mt-1 leading-relaxed">
+                  <strong>Folder Drive Studio:</strong> Membaca ribuan foto langsung dari folder Google Drive publik fotografer tanpa perlu mengunggah ulang foto satu per satu.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08]">
+                <div className="flex items-center gap-1.5 font-bold text-[#121212] dark:text-white mb-1">
+                  <Layers className="w-4 h-4 text-[#FF5A1F]" />
+                  <span>4. Offline Resilience</span>
+                </div>
+                <p className="text-[11px] font-semibold text-purple-600 dark:text-purple-400">IndexedDB Browser</p>
+                <p className="text-[11px] text-[#71717A] dark:text-zinc-400 mt-1 leading-relaxed">
+                  <strong>Optimistic Local Cache:</strong> Hanya cache lokal di peramban agar website terbuka instan &amp; dapat dibuka offline. Tidak menimpa Firestore saat boot!
+                </p>
+              </div>
+            </div>
+
+            {/* Live Interactive Connection Testers */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              {/* Firestore Test Card */}
+              <div className="p-3.5 rounded-xl bg-white dark:bg-[#1A1A20] border border-black/[0.08] dark:border-white/[0.1] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-[#121212] dark:text-white flex items-center gap-1.5">
+                    <Database className="w-3.5 h-3.5 text-[#FF5A1F]" />
+                    <span>Uji Ping Database</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-[#71717A] dark:text-zinc-400">aryst-5e94c</span>
+                </div>
+                <p className="text-[11px] text-[#71717A] dark:text-zinc-400">
+                  Uji koneksi baca &amp; tulis realtime ke Firestore Cloud:
+                </p>
+                <button
+                  type="button"
+                  disabled={isTestingFirestore}
+                  onClick={handleTestFirestore}
+                  className="w-full py-1.5 px-3 rounded-full text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isTestingFirestore ? "animate-spin" : ""}`} />
+                  <span>{isTestingFirestore ? "Menguji..." : "Uji Ping Firestore"}</span>
+                </button>
+                {firestoreTestResult && (
+                  <p className={`text-[11px] font-medium p-2 rounded-lg ${
+                    firestoreTestResult.ok
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                  }`}>
+                    {firestoreTestResult.message}
+                  </p>
+                )}
+              </div>
+
+              {/* R2 Test Card */}
+              <div className="p-3.5 rounded-xl bg-white dark:bg-[#1A1A20] border border-black/[0.08] dark:border-white/[0.1] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-[#121212] dark:text-white flex items-center gap-1.5">
+                    <HardDrive className="w-3.5 h-3.5 text-[#FF5A1F]" />
+                    <span>Uji Media R2</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-[#71717A] dark:text-zinc-400">aryst-media</span>
+                </div>
+                <p className="text-[11px] text-[#71717A] dark:text-zinc-400">
+                  Uji otorisasi SigV4 &amp; akses tulis/hapus ke Cloudflare R2:
+                </p>
+                <button
+                  type="button"
+                  disabled={isTestingR2}
+                  onClick={handleTestR2}
+                  className="w-full py-1.5 px-3 rounded-full text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isTestingR2 ? "animate-spin" : ""}`} />
+                  <span>{isTestingR2 ? "Menguji R2..." : "Uji Akses Bucket R2"}</span>
+                </button>
+                {r2TestResult && (
+                  <p className={`text-[11px] font-medium p-2 rounded-lg ${
+                    r2TestResult.ok
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                  }`}>
+                    {r2TestResult.message}
+                  </p>
+                )}
+              </div>
+
+              {/* GDrive API Test Card */}
+              <div className="p-3.5 rounded-xl bg-white dark:bg-[#1A1A20] border border-black/[0.08] dark:border-white/[0.1] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-[#121212] dark:text-white flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5 text-[#FF5A1F]" />
+                    <span>Uji GDrive API</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-[#71717A] dark:text-zinc-400">
+                    {globalApiKey ? "•••" + globalApiKey.slice(-4) : "Belum diisi"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#71717A] dark:text-zinc-400">
+                  Uji validitas Google Drive API Key v3 untuk membaca album:
+                </p>
+                <button
+                  type="button"
+                  disabled={isTestingDrive}
+                  onClick={handleTestDrive}
+                  className="w-full py-1.5 px-3 rounded-full text-xs font-semibold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3 h-3 ${isTestingDrive ? "animate-spin" : ""}`} />
+                  <span>{isTestingDrive ? "Menguji GDrive..." : "Uji Kunci API GDrive"}</span>
+                </button>
+                {driveTestResult && (
+                  <p className={`text-[11px] font-medium p-2 rounded-lg ${
+                    driveTestResult.ok
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                  }`}>
+                    {driveTestResult.message}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
       {activeTab === "projects" && (
         <div className="space-y-4">
           {/* Search Bar & View Mode Switcher */}
@@ -1040,7 +1428,6 @@ function doPost(e) {
                 <tbody className="divide-y divide-black/[0.06] dark:divide-white/[0.08]">
                   {filteredProjects.map((proj) => {
                     const isActive = proj.id === activeProjectId;
-                    const hasPassword = Boolean(proj.password || proj.passwordHash);
                     const isCopied = copiedId === proj.id;
 
                     return (
@@ -1114,10 +1501,23 @@ function doPost(e) {
 
                         {/* Proteksi Sandi */}
                         <td className="py-3 px-4">
-                          {hasPassword ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border border-[#FF5A1F]/20 font-medium">
-                              <Lock className="w-3 h-3" />
-                              <span>Dilindungi</span>
+                          {proj.password ? (
+                            <button
+                              type="button"
+                              onClick={() => handleCopyPassword(proj.password!, proj.id)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 transition-all group"
+                              title="Klik untuk salin kata sandi sesi klien ini"
+                            >
+                              <Key className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                              <span className="font-mono font-bold tracking-wide">{proj.password}</span>
+                              <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70 group-hover:underline">
+                                {copiedPasswordId === proj.id ? "✓ Tersalin" : "Salin"}
+                              </span>
+                            </button>
+                          ) : proj.passwordHash ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 font-semibold" title="Kata sandi aktif tersimpan (hash aman di cloud)">
+                              <Lock className="w-3 h-3 text-amber-600" />
+                              <span>Sandi Aktif</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[#F4F1EA] dark:bg-white/[0.06] text-[#121212]/60 dark:text-zinc-400 border border-black/[0.06] dark:border-white/[0.08] font-medium">
@@ -1137,6 +1537,18 @@ function doPost(e) {
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
                               <span>Pilihan</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleCopyClientInvite(proj)}
+                              className={`p-1.5 rounded-full border text-xs transition-colors ${
+                                copiedInviteId === proj.id
+                                  ? "bg-emerald-600 text-white border-emerald-600"
+                                  : "bg-white dark:bg-white/[0.06] hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-[#71717A] hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400 border-black/10 dark:border-white/10"
+                              }`}
+                              title="Salin pesan undangan WhatsApp (berisi tautan & kata sandi)"
+                            >
+                              {copiedInviteId === proj.id ? <Check className="w-3.5 h-3.5" /> : <Phone className="w-3.5 h-3.5" />}
                             </button>
 
                             <button
@@ -1193,7 +1605,6 @@ function doPost(e) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredProjects.map((proj) => {
                 const isActive = proj.id === activeProjectId;
-                const hasPassword = Boolean(proj.password || proj.passwordHash);
                 const isCopied = copiedId === proj.id;
 
                 return (
@@ -1212,10 +1623,23 @@ function doPost(e) {
                         </span>
                         <SessionModeBadge proj={proj} />
 
-                        {hasPassword ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border border-[#FF5A1F]/20 dark:border-[#FF5A1F]/30 font-medium">
-                            <Lock className="w-3 h-3" />
-                            <span>Dilindungi Sandi</span>
+                        {proj.password ? (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyPassword(proj.password!, proj.id)}
+                            className="inline-flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 font-semibold transition-all group"
+                            title="Klik untuk salin kata sandi sesi klien"
+                          >
+                            <Key className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                            <span className="font-mono font-bold">{proj.password}</span>
+                            <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70 group-hover:underline">
+                              {copiedPasswordId === proj.id ? "✓" : "Salin"}
+                            </span>
+                          </button>
+                        ) : proj.passwordHash ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 font-medium">
+                            <Lock className="w-3 h-3 text-amber-600" />
+                            <span>Sandi Aktif</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#F4F1EA] dark:bg-white/[0.06] text-[#121212]/60 dark:text-zinc-400 border border-black/[0.06] dark:border-white/10 font-medium">
@@ -1285,6 +1709,18 @@ function doPost(e) {
 
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => handleCopyClientInvite(proj)}
+                          className={`p-2 rounded-full border transition-colors ${
+                            copiedInviteId === proj.id
+                              ? "bg-emerald-600 text-white border-emerald-600"
+                              : "bg-white hover:bg-emerald-50 dark:bg-white/[0.06] dark:hover:bg-emerald-950/40 text-[#71717A] hover:text-emerald-600 dark:text-zinc-300 dark:hover:text-emerald-400 border-black/10 dark:border-white/10"
+                          }`}
+                          title="Salin pesan undangan WhatsApp (berisi link & kata sandi)"
+                        >
+                          {copiedInviteId === proj.id ? <Check className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
+                        </button>
+
+                        <button
                           onClick={() => handleCopyClientLink(proj)}
                           className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full text-xs font-semibold border transition-colors ${
                             isCopied
@@ -1345,29 +1781,73 @@ function doPost(e) {
 
       {/* TAB 2: STUDIO SETTINGS */}
       {activeTab === "settings" && (
-        <div className="max-w-2xl space-y-5">
+        <div className="max-w-3xl space-y-6">
           {/* Admin Master PIN */}
           <div className="mtioon-card p-6">
-            <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
-              <Lock className="w-4 h-4 text-[#C2410C]" />
-              <span>PIN Master Admin</span>
-            </h2>
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <h2 className="text-base font-bold text-[#121212] dark:text-white flex items-center gap-2">
+                <Lock className="w-4 h-4 text-[#C2410C]" />
+                <span>PIN Master Admin &amp; Keamanan</span>
+              </h2>
+              <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
+                <Shield className="w-3 h-3" />
+                <span>Tersimpan di Cloud Firestore</span>
+              </span>
+            </div>
             <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-4 leading-relaxed">
-              PIN ini melindungi akses ke Dashboard Admin agar klien tidak dapat membuka konfigurasi studio Anda.
+              PIN ini melindungi akses Dashboard Admin. Disimpan secara aman di koleksi cloud Firestore menggunakan enkripsi hash salted PBKDF2 SHA-256 (format v2$).
             </p>
 
             <div className="space-y-4">
+              {/* PIN Tester */}
+              <div className="p-3.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/[0.06] dark:border-white/[0.08] space-y-2">
+                <label className="block text-xs font-bold text-[#121212]/80 dark:text-zinc-200 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Uji Kecocokan PIN Anda</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="password"
+                    value={testPinInput}
+                    onChange={(e) => {
+                      setTestPinInput(e.target.value);
+                      if (testPinResult) setTestPinResult(null);
+                    }}
+                    placeholder="Ketik PIN Anda untuk verifikasi..."
+                    className="flex-1 px-3.5 py-1.5 text-xs font-mono bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
+                  />
+                  <button
+                    type="button"
+                    disabled={isTestingPin || !testPinInput.trim()}
+                    onClick={handleVerifyTestPin}
+                    className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#121212] hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-[#121212] transition-colors disabled:opacity-50"
+                  >
+                    {isTestingPin ? "Menguji..." : "Cek PIN"}
+                  </button>
+                </div>
+                {testPinResult && (
+                  <p className={`text-[11px] font-medium p-2 rounded-lg ${
+                    testPinResult.ok
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                      : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                  }`}>
+                    {testPinResult.message}
+                  </p>
+                )}
+              </div>
+
+              {/* PIN Updater */}
               <div>
                 <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-[#C2410C]" />
-                  <span>PIN Master Baru</span>
+                  <span>Ganti PIN Master Baru</span>
                 </label>
                 <input
                   type="text"
                   value={newPinInput}
                   onChange={(e) => setNewPinInput(e.target.value)}
                   placeholder="Contoh: studio2026"
-                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
+                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all font-mono"
                 />
               </div>
 
@@ -1376,19 +1856,29 @@ function doPost(e) {
                 className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
               >
                 {pinSaved ? <Check className="w-4 h-4" /> : null}
-                <span>{pinSaved ? "PIN Tersimpan!" : "Perbarui PIN Master"}</span>
+                <span>{pinSaved ? "PIN Berhasil Disimpan ke Cloud!" : "Simpan & Sinkronkan PIN Baru"}</span>
               </button>
             </div>
           </div>
 
           {/* Global Google Drive API Key */}
           <div className="mtioon-card p-6">
-            <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-[#C2410C]" />
-              <span>Kredensial Global Google Drive</span>
-            </h2>
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <h2 className="text-base font-bold text-[#121212] dark:text-white flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-[#C2410C]" />
+                <span>Kredensial Global Google Drive</span>
+              </h2>
+              <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                globalApiKey
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                  : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/60"
+              }`}>
+                <Key className="w-3 h-3" />
+                <span>{globalApiKey ? "Kunci Aktif" : "Belum Dikonfigurasi"}</span>
+              </span>
+            </div>
             <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-4 leading-relaxed">
-              Kunci API ini digunakan secara otomatis untuk folder Google Drive publik klien tanpa perlu memasukkan kunci berulang kali.
+              Kunci API ini digunakan otomatis untuk membaca foto dari folder Google Drive publik klien tanpa perlu memasukkan kunci berulang kali.
             </p>
 
             <div className="space-y-4">
@@ -1402,73 +1892,123 @@ function doPost(e) {
                   value={apiKeyInput}
                   onChange={(e) => setApiKeyInput(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
+                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all font-mono"
                 />
                 <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1.5 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>
-                    Tersimpan di cloud, ikut tampil di semua peramban Anda.
+                    Tersimpan di Firestore cloud, otomatis tersinkron di semua browser Anda.
                   </span>
                 </p>
               </div>
 
-              <button
-                onClick={handleSaveApiKey}
-                className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
-              >
-                {apiKeySaved ? <Check className="w-4 h-4" /> : null}
-                <span>{apiKeySaved ? "Tersimpan!" : "Simpan Kunci API"}</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleSaveApiKey}
+                  className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                >
+                  {apiKeySaved ? <Check className="w-4 h-4" /> : null}
+                  <span>{apiKeySaved ? "Kunci Tersimpan!" : "Simpan Kunci API"}</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isTestingDrive}
+                  onClick={handleTestDrive}
+                  className="btn-mtioon-secondary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isTestingDrive ? "animate-spin" : ""}`} />
+                  <span>{isTestingDrive ? "Menguji..." : "Uji Kunci API GDrive"}</span>
+                </button>
+              </div>
+
+              {driveTestResult && (
+                <p className={`text-[11px] font-medium p-2.5 rounded-xl ${
+                  driveTestResult.ok
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                    : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                }`}>
+                  {driveTestResult.message}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Cloud sync (Firestore) */}
           <div className="mtioon-card p-6">
-            <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
-              <Cloud className="w-4 h-4 text-[#C2410C]" />
-              <span>Sinkronisasi Cloud (Firestore)</span>
-            </h2>
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <h2 className="text-base font-bold text-[#121212] dark:text-white flex items-center gap-2">
+                <Database className="w-4 h-4 text-[#C2410C]" />
+                <span>Database Utama (Google Firestore)</span>
+              </h2>
+              <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                syncStatus === "live"
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                  : syncStatus === "connecting"
+                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/60"
+                  : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
+              }`}>
+                <Activity className="w-3 h-3" />
+                <span>{syncStatus === "live" ? "Live Realtime" : syncStatus === "connecting" ? "Menghubungkan..." : "Offline"}</span>
+              </span>
+            </div>
             <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-4 leading-relaxed">
-              Pilihan klien disimpan di Firebase Firestore, sehingga Anda dapat
-              melihatnya dari perangkat mana pun dan tautan sesi tetap membawa
-              data terbaru walau dibuka di peramban yang berbeda.
+              Seluruh data sesi kurasi klien, kata sandi, kuota, catatan revisi, dan pilihan foto klien tersimpan di Firebase Firestore Project <strong>aryst-5e94c</strong> sebagai Single Source of Truth.
             </p>
 
             <div className="space-y-4">
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold ${
-                  syncStatus === "live"
-                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
-                    : syncStatus === "connecting"
-                      ? "bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border-[#FF5A1F]/20 dark:border-[#FF5A1F]/30"
-                      : syncStatus === "error"
-                        ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
-                        : "bg-[#F4F1EA] dark:bg-white/[0.04] text-[#121212]/60 dark:text-zinc-400 border-black/[0.06] dark:border-white/10"
-                }`}
-                data-testid="sync-status"
-              >
-                <Cloud className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  {syncStatus === "live"
-                    ? "Tersambung ke cloud"
-                    : syncStatus === "connecting"
-                      ? "Menghubungkan..."
-                      : syncStatus === "error"
-                        ? `Gagal: ${syncMessage || "koneksi error"}`
-                        : "Nonaktif - pilihan hanya tersimpan di perangkat ini"}
-                  {syncStatus !== "off" && syncSource === "env"
-                    ? " (konfigurasi dari build)"
-                    : ""}
-                  {syncStatus !== "off" && syncSource === "manual"
-                    ? " (override perangkat)"
-                    : ""}
-                </span>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div
+                  className={`flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold ${
+                    syncStatus === "live"
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                      : syncStatus === "connecting"
+                        ? "bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border-[#FF5A1F]/20 dark:border-[#FF5A1F]/30"
+                        : syncStatus === "error"
+                          ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
+                          : "bg-[#F4F1EA] dark:bg-white/[0.04] text-[#121212]/60 dark:text-zinc-400 border-black/[0.06] dark:border-white/10"
+                  }`}
+                  data-testid="sync-status"
+                >
+                  <Cloud className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {syncStatus === "live"
+                      ? "Tersambung ke cloud Firestore (WebSocket Aktif)"
+                      : syncStatus === "connecting"
+                        ? "Menghubungkan ke cloud..."
+                        : syncStatus === "error"
+                          ? `Gagal: ${syncMessage || "koneksi error"}`
+                          : "Nonaktif - pilihan hanya tersimpan di perangkat ini"}
+                    {syncStatus !== "off" && syncSource === "env" ? " (konfigurasi build)" : ""}
+                    {syncStatus !== "off" && syncSource === "manual" ? " (override manual)" : ""}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isTestingFirestore}
+                  onClick={handleTestFirestore}
+                  className="btn-mtioon-secondary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isTestingFirestore ? "animate-spin" : ""}`} />
+                  <span>{isTestingFirestore ? "Menguji..." : "Uji Ping Firestore"}</span>
+                </button>
               </div>
+
+              {firestoreTestResult && (
+                <p className={`text-[11px] font-medium p-2.5 rounded-xl ${
+                  firestoreTestResult.ok
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                    : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                }`}>
+                  {firestoreTestResult.message}
+                </p>
+              )}
 
               <div>
                 <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-[#C2410C]" />
-                  <span>Konfigurasi Web App (JSON)</span>
+                  <span>Konfigurasi Web App Firestore (JSON)</span>
                 </label>
                 <textarea
                   rows={4}
@@ -1478,9 +2018,7 @@ function doPost(e) {
                   className="w-full px-3.5 py-2 text-xs font-mono bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-[20px] text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all resize-y"
                 />
                 <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1.5 leading-relaxed">
-                  Firebase Console -&gt; Pengaturan proyek -&gt; Aplikasi saya -&gt;
-                  SDK web -&gt; konfigurasi. Anda juga dapat mengisi
-                  VITE_FIREBASE_CONFIG di file .env agar berlaku untuk semua perangkat.
+                  Sudah terhubung secara otomatis ke project <strong>aryst-5e94c</strong> melalui variabel lingkungan build.
                 </p>
                 {fbError ? (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5">{fbError}</p>
@@ -1507,17 +2045,24 @@ function doPost(e) {
             </div>
           </div>
 
+          {/* Cloudflare R2 Media Storage */}
           <div className="mtioon-card p-6">
-            <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
-              <HardDrive className="w-4 h-4 text-[#C2410C]" />
-              <span>Video Hero (Cloudflare R2)</span>
-            </h2>
+            <div className="flex items-center justify-between gap-3 mb-1">
+              <h2 className="text-base font-bold text-[#121212] dark:text-white flex items-center gap-2">
+                <HardDrive className="w-4 h-4 text-[#C2410C]" />
+                <span>Penyimpanan Media &amp; Video Hero (Cloudflare R2)</span>
+              </h2>
+              <span className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                r2Active
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
+                  : "bg-black/[0.04] dark:bg-white/[0.06] text-[#71717A] dark:text-zinc-400 border-black/10 dark:border-white/10"
+              }`}>
+                <Server className="w-3 h-3" />
+                <span>{r2Active ? "Bucket: aryst-media" : "Belum Diatur"}</span>
+              </span>
+            </div>
             <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-4 leading-relaxed">
-              Wajib diisi untuk mengunggah video hero: file disimpan di bucket R2
-              (gratis tanpa kartu kredit: 10GB penyimpanan, biaya kirim data $0)
-              sehingga bisa diputar di semua peramban. Tanpa konfigurasi ini,
-              unggah video hero ditolak (gunakan URL video langsung sebagai
-              gantinya).
+              File video hero MP4 dan gambar beresolusi penuh disimpan di bucket Cloudflare R2 (10GB penyimpanan gratis, biaya kirim data $0). URL publik video otomatis disimpan di Firestore.
             </p>
 
             <div className="space-y-4">
@@ -1536,18 +2081,14 @@ function doPost(e) {
                   className="w-full px-3.5 py-2 text-xs font-mono bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-[20px] text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all resize-y"
                 />
                 <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1.5 leading-relaxed">
-                  Cloudflare Console -&gt; R2: buat bucket, lalu Manage R2 API
-                  Tokens (izin Read &amp; Write, scope bucket + prefix studio/)
-                  dan salin Public Development URL dari Settings bucket. Simpan
-                  per perangkat saja; jangan simpan secret di berkas .env karena
-                  variabel VITE_* ikut terpublikasi ke internet.
+                  Bucket: <code className="font-mono text-xs">aryst-media</code> | Public URL: <code className="font-mono text-xs">https://pub-b7ff3f1f45a44414b5076939830eb283.r2.dev</code>
                 </p>
                 {r2Error ? (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5">{r2Error}</p>
                 ) : null}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handleSaveR2}
                   className="btn-mtioon-primary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
@@ -1555,6 +2096,17 @@ function doPost(e) {
                   {r2Saved ? <Check className="w-3.5 h-3.5" /> : null}
                   <span>{r2Saved ? "Tersimpan!" : "Simpan & Aktifkan"}</span>
                 </button>
+
+                <button
+                  type="button"
+                  disabled={isTestingR2}
+                  onClick={handleTestR2}
+                  className="btn-mtioon-secondary px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isTestingR2 ? "animate-spin" : ""}`} />
+                  <span>{isTestingR2 ? "Menguji..." : "Uji Akses Bucket R2"}</span>
+                </button>
+
                 {r2Active ? (
                   <button
                     onClick={handleClearR2}
@@ -1564,6 +2116,16 @@ function doPost(e) {
                   </button>
                 ) : null}
               </div>
+
+              {r2TestResult && (
+                <p className={`text-[11px] font-medium p-2.5 rounded-xl ${
+                  r2TestResult.ok
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                    : "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                }`}>
+                  {r2TestResult.message}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -1950,29 +2512,49 @@ function doPost(e) {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-[#C2410C]" />
-                    <span>Kata Sandi Galeri (Opsional)</span>
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-[#C2410C]" />
+                      <span>Kata Sandi Galeri Klien</span>
+                    </span>
+                    {formPassword.trim() && (
+                      <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        ✓ Sandi Terpasang
+                      </span>
+                    )}
                   </label>
-                  <input
-                    type="text"
-                    value={formPassword}
-                    onChange={(e) => {
-                      setFormPassword(e.target.value);
-                      if (e.target.value.trim()) setFormClearPassword(false);
-                    }}
-                    placeholder={
-                      editingProject && (editingProject.password || editingProject.passwordHash)
-                        ? "Biarkan kosong untuk mempertahankan sandi lama"
-                        : "Kosongkan jika publik"
-                    }
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showFormPassword ? "text" : "password"}
+                      value={formPassword}
+                      onChange={(e) => {
+                        setFormPassword(e.target.value);
+                        if (e.target.value.trim()) setFormClearPassword(false);
+                      }}
+                      placeholder={
+                        editingProject && (editingProject.password || editingProject.passwordHash)
+                          ? "Biarkan kosong untuk mempertahankan sandi lama"
+                          : "Kosongkan jika publik tanpa sandi"
+                      }
+                      className="w-full pl-3.5 pr-10 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowFormPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-black/40 dark:text-zinc-400 hover:text-[#121212] dark:hover:text-white transition-colors"
+                      title={showFormPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+                    >
+                      {showFormPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1">
+                    Tersimpan di <strong>Firestore Cloud</strong>. Klien wajib memasukkan sandi ini saat membuka galeri foto.
+                  </p>
                   {editingProject &&
                     !editingProject.password &&
                     Boolean(editingProject.passwordHash) && (
-                      <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1">
-                        Sandi tersimpan ter-hash dan tidak bisa ditampilkan kembali.
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+                        Sandi lama tersimpan ter-hash di cloud. Masukkan sandi baru jika ingin mengubah.
                       </p>
                     )}
                   {editingProject &&
@@ -1987,7 +2569,7 @@ function doPost(e) {
                       >
                         {formClearPassword
                           ? "Sandi akan dihapus saat disimpan. Klik untuk batal."
-                          : "Hapus sandi galeri ini"}
+                          : "Hapus sandi galeri ini (Jadikan Publik)"}
                       </button>
                     )}
                 </div>

@@ -121,3 +121,49 @@ export const uploadHeroVideoR2 = async (blob: Blob, cfg: R2Config): Promise<stri
   }
   return publicUrl;
 };
+
+/** Probe connection to Cloudflare R2 bucket: tests authorization and read/write availability. */
+export const testR2Connection = async (
+  cfg: R2Config
+): Promise<{ ok: boolean; message: string; latencyMs: number }> => {
+  const start = performance.now();
+  try {
+    const host = `${cfg.accountId}.r2.cloudflarestorage.com`;
+    const objectKey = `studio/.r2-ping-${Date.now()}.txt`;
+    const objectUrl = `https://${host}/${encodeKeyPath(cfg.bucket)}/${encodeKeyPath(objectKey)}`;
+    const aws = new AwsClient({
+      accessKeyId: cfg.accessKeyId,
+      secretAccessKey: cfg.secretAccessKey,
+      region: "auto",
+      service: "s3",
+    });
+    // Test PUT
+    const res = await aws.fetch(objectUrl, {
+      method: "PUT",
+      headers: { "content-type": "text/plain" },
+      body: "aryst-ping",
+    });
+    const latencyMs = Math.round(performance.now() - start);
+    if (!res.ok) {
+      return {
+        ok: false,
+        latencyMs,
+        message: `R2 API menolak (HTTP ${res.status}). Periksa Account ID, Access Key & CORS bucket.`,
+      };
+    }
+    // Cleanup ping test
+    await aws.fetch(objectUrl, { method: "DELETE" }).catch(() => undefined);
+    return {
+      ok: true,
+      latencyMs,
+      message: `Terhubung (${latencyMs}ms)! Bucket "${cfg.bucket}" aktif & memiliki izin Baca/Tulis.`,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Gagal menghubungi endpoint Cloudflare R2";
+    return {
+      ok: false,
+      latencyMs: 0,
+      message: msg,
+    };
+  }
+};

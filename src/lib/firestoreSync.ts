@@ -172,7 +172,7 @@ const normalizeStudioState = (data: Record<string, unknown>): StudioState => ({
   heroVideoUrl: typeof data.heroVideoUrl === "string" ? data.heroVideoUrl : "",
   globalApiKey: typeof data.globalApiKey === "string" ? data.globalApiKey : "",
   adminPin:
-    typeof data.adminPin === "string" && data.adminPin.length > 0 && data.adminPin.length <= 64
+    typeof data.adminPin === "string" && data.adminPin.length > 0 && data.adminPin.length <= 128
       ? data.adminPin
       : "",
   lastModified: typeof data.lastModified === "number" ? data.lastModified : 0,
@@ -369,15 +369,81 @@ export const pushStudioState = (state: StudioState): void => {
   statePushTimer = window.setTimeout(flushStatePush, PUSH_DEBOUNCE_MS);
 };
 
+/** Immediate write to Firestore cloud state without debounce (used for PIN & project saves). */
+export const pushStudioStateNow = async (state: StudioState): Promise<boolean> => {
+  if (!db) return false;
+  if (statePushTimer !== null) {
+    window.clearTimeout(statePushTimer);
+    statePushTimer = null;
+  }
+  pendingState = null;
+  try {
+    await setDoc(doc(db, STUDIO_COLLECTION, STUDIO_STATE_ID), sanitizeForFirestore({ ...state }));
+    handlers?.onStatus("live");
+    return true;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Gagal menyimpan data studio ke cloud";
+    handlers?.onStatus("error", msg);
+    return false;
+  }
+};
+
+export const pingFirestore = async (): Promise<{
+  ok: boolean;
+  latencyMs: number;
+  message: string;
+  projectId?: string;
+}> => {
+  if (!db) {
+    return { ok: false, latencyMs: 0, message: "Firebase belum terkonfigurasi atau dimuat" };
+  }
+  const start = performance.now();
+  try {
+    const snap = await getDoc(doc(db, STUDIO_COLLECTION, STUDIO_STATE_ID));
+    const latencyMs = Math.round(performance.now() - start);
+    handlers?.onStatus("live");
+    const projId = (app?.options as Record<string, unknown>)?.projectId as string | undefined;
+    return {
+      ok: true,
+      latencyMs,
+      projectId: projId || "aryst-5e94c",
+      message: `Terhubung (${latencyMs}ms). Dokumen database studio ${snap.exists() ? "sinkron & aktif" : "siap dibuat"}.`,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Gagal menghubungi Firestore";
+    handlers?.onStatus("error", msg);
+    return { ok: false, latencyMs: 0, message: msg };
+  }
+};
+
+export const getFirebaseProjectInfo = (): {
+  configured: boolean;
+  projectId?: string;
+  authDomain?: string;
+  source: SyncSource;
+} => {
+  if (!app) return { configured: false, source };
+  const opts = app.options as Record<string, string>;
+  return {
+    configured: true,
+    projectId: opts.projectId,
+    authDomain: opts.authDomain,
+    source,
+  };
+};
+
 export const subscribeStudioState = (cb: (state: StudioState) => void): (() => void) => {
   if (!db) return () => undefined;
   const current = db;
   return onSnapshot(
     doc(current, STUDIO_COLLECTION, STUDIO_STATE_ID),
     (snap) => {
+      handlers?.onStatus("live");
       if (snap.exists()) cb(normalizeStudioState(snap.data() as Record<string, unknown>));
     },
-    () => undefined
+    (err) => {
+      handlers?.onStatus("error", err?.message || "Gagal berlangganan studio state");
+    }
   );
 };
 

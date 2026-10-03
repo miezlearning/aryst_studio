@@ -10,7 +10,10 @@ import {
   Eye,
   Home,
   LogOut,
+  Cloud,
+  HardDrive,
 } from "lucide-react";
+import { getR2Config } from "@/lib/r2Storage";
 
 export type AdminTab = "projects" | "showcase" | "settings" | "gas_guide";
 
@@ -35,9 +38,21 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     activeProjectId,
     setViewMode,
     logoutAdmin,
-    isP2PConnected,
     unlockForPreview,
+    syncStatus,
   } = useProofingStore();
+
+  const [hasR2, setHasR2] = React.useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    getR2Config().then((cfg) => {
+      if (alive) setHasR2(Boolean(cfg));
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   return (
     <>
@@ -91,14 +106,43 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
           })}
         </nav>
 
-        <div className="mt-auto pt-4 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2.5">
-          <div className="flex items-center gap-2 px-2 text-[11px] font-medium text-[#121212]/60 dark:text-zinc-400">
-            <span
-              className={`w-2 h-2 rounded-full shrink-0 ${
-                isP2PConnected ? "bg-emerald-500 animate-pulse" : "bg-black/25 dark:bg-white/25"
-              }`}
-            />
-            <span>{isP2PConnected ? "Sinkron Realtime" : "Mode Lokal"}</span>
+          <div className="px-3 py-2 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] space-y-1.5 text-[11px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[#121212]/60 dark:text-zinc-400 font-medium flex items-center gap-1.5">
+                <Cloud className="w-3 h-3 text-[#FF5A1F]" />
+                <span>Database</span>
+              </span>
+              <span
+                className={`inline-flex items-center gap-1 font-bold ${
+                  syncStatus === "live"
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : syncStatus === "connecting"
+                    ? "text-amber-500"
+                    : "text-zinc-400"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    syncStatus === "live"
+                      ? "bg-emerald-500 animate-pulse"
+                      : syncStatus === "connecting"
+                      ? "bg-amber-400 animate-pulse"
+                      : "bg-zinc-400"
+                  }`}
+                />
+                {syncStatus === "live" ? "Firestore" : syncStatus === "connecting" ? "Koneksi..." : "Offline"}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-[10px]">
+              <span className="text-[#121212]/50 dark:text-zinc-400 flex items-center gap-1.5">
+                <HardDrive className="w-3 h-3 text-[#FF5A1F]" />
+                <span>Media R2</span>
+              </span>
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                {hasR2 ? "Siap" : "Lokal"}
+              </span>
+            </div>
           </div>
 
           <button
@@ -135,7 +179,6 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
               <span>Keluar</span>
             </button>
           </div>
-        </div>
       </aside>
 
       {/* ── Mobile bottom nav ────────────────────────────────── */}

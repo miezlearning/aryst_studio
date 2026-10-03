@@ -720,25 +720,27 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     let savedHeroVideoUrl = (await get<string>(IDB_HERO_VIDEO_URL_KEY)) || "";
     const savedHeroVideoBlob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
 
-    // Adopt the cloud copy when it is newer than the local cache, so a
-    // fresh/private browser shows the same studio as the admin's browser
+    // 3. Adopt Firestore cloud state as the Single Source of Truth
+    // IndexedDB serves strictly as an offline mirror & fast startup cache
     let stateModified = (await get<number>(IDB_STATE_MODIFIED_KEY)) || 0;
-    if (cloudState && cloudState.lastModified > stateModified) {
+    if (cloudState && cloudState.projects && cloudState.projects.length > 0) {
       savedProjects = cloudState.projects;
-      savedClients = cloudState.clients;
-      savedHeroVideoUrl = cloudState.heroVideoUrl;
+      savedClients = cloudState.clients || [];
+      savedHeroVideoUrl = cloudState.heroVideoUrl || "";
       if (cloudState.globalApiKey) savedApiKey = cloudState.globalApiKey;
       if (cloudState.adminPin && looksLikeHash(cloudState.adminPin)) {
         adminPinHash = cloudState.adminPin;
       }
       const cloudDocs = await fetchShowcaseCloud();
       cloudShowcaseDocs = new Map(cloudDocs.map((item) => [item.id, item]));
-      cloudShowcaseOrder = cloudState.showcaseOrder;
-      savedShowcase = cloudState.showcaseOrder
+      cloudShowcaseOrder = cloudState.showcaseOrder || [];
+      savedShowcase = cloudShowcaseOrder
         .map((id) => cloudShowcaseDocs.get(id))
         .filter((item): item is ShowcaseCloudItem => Boolean(item))
         .slice(0, MAX_SHOWCASE)
         .map(stripCloudShowcase);
+
+      // Mirror to local cache for instant boot and offline resilience
       await set(IDB_PROJECTS_KEY, savedProjects);
       await set(IDB_CLIENTS_KEY, savedClients);
       await set(IDB_SHOWCASE_KEY, savedShowcase);
@@ -780,9 +782,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
           (p.id || "").toLowerCase() === c.toLowerCase() ||
           (p.projectId || "").toLowerCase() === c.toLowerCase()
       );
-    let importedFromParams = false;
     if (sessionParam || clientParam || projectParam) {
-      importedFromParams = true;
       const matchIndex = savedProjects.findIndex(matchCode);
 
       if (matchIndex >= 0) {
@@ -942,21 +942,14 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       }
     })();
 
-    // 9c. Studio state: seed the cloud when it is empty or behind, then
-    // follow it live so every browser renders the same studio
+    // 9c. Studio state: follow it live so every browser renders the same studio
     void (async () => {
       if (!isSyncConfigured()) return;
       const cloud = await fetchStudioState();
-      const localMod = (await get<number>(IDB_STATE_MODIFIED_KEY)) || 0;
-      const needsPush =
-        seeded || importedFromParams || registryDirty || !cloud || localMod > cloud.lastModified;
-      if (needsPush) {
-        // Publish the showcase payloads before announcing their order
-        savedShowcase.forEach((item) => pushShowcaseCloud(asCloudShowcase(item)));
-        persistStudioState();
-      }
-      // Seed a cloud showcase that only exists locally (first upgrade)
-      if (cloud && cloud.showcaseOrder.length === 0 && savedShowcase.length > 0) {
+
+      // Only seed cloud if it is completely missing and an admin is logged in.
+      // Anonymous visitors/clients must NEVER overwrite the cloud studio state!
+      if (!cloud && isAuth) {
         savedShowcase.forEach((item) => pushShowcaseCloud(asCloudShowcase(item)));
         persistStudioState();
       }

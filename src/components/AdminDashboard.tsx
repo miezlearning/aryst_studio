@@ -43,10 +43,10 @@ import {
   CalendarClock,
   RefreshCw,
   Upload,
-  Info,
   User,
   Cloud,
   HardDrive,
+  Sparkles,
 } from "lucide-react";
 import { DeadlineBadge } from "./DeadlineCountdown";
 
@@ -67,10 +67,10 @@ const fromDeadlineInput = (value: string): number | null => {
 const defaultDeadlineInput = (days = 7): string =>
   toDeadlineInput(Date.now() + days * 86_400_000);
 
-// Photo source status of one session: no folder yet, folder without API key, or ready
-type SourceState = "unset" | "nokey" | "ready";
+// Photo source status of one session: sample demo, no folder yet, folder without API key, or ready
+type SourceState = "unset" | "nokey" | "ready" | "sample";
 const sourceStateOf = (proj: ClientProject, hasApiKey: boolean): SourceState =>
-  !proj.folderId ? "unset" : !hasApiKey ? "nokey" : "ready";
+  proj.isSample && !proj.folderId ? "sample" : !proj.folderId ? "unset" : !hasApiKey ? "nokey" : "ready";
 
 // One status control per session. Each state carries its own next action,
 // so an unfinished setup is never a dead label.
@@ -82,12 +82,21 @@ const SourceStatus: React.FC<{
   onOpenSettings: () => void;
   onReload: () => void;
 }> = ({ state, count, isActive, onConfigure, onOpenSettings, onReload }) => {
+  if (state === "sample") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#F4F1EA] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/10 text-[11px] text-[#71717A] dark:text-zinc-400 font-medium">
+        <Sparkles className="w-3 h-3 text-[#FF5A1F] shrink-0" />
+        <span>Sesi Contoh Studio</span>
+      </span>
+    );
+  }
+
   if (state === "unset") {
     return (
       <button
         type="button"
         onClick={onConfigure}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#FF5A1F]/30 bg-[#FFF0EB] text-[#FF5A1F] hover:bg-[#FFE5DB] text-[11px] font-bold transition-colors"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#FF5A1F]/30 bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] hover:bg-[#FFE5DB] dark:hover:bg-[#FF5A1F]/25 text-[11px] font-bold transition-colors"
         title="Pasang tautan folder Google Drive untuk sesi ini"
       >
         <Upload className="w-3 h-3" />
@@ -101,7 +110,7 @@ const SourceStatus: React.FC<{
       <button
         type="button"
         onClick={onOpenSettings}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 text-[11px] font-semibold transition-colors"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-[11px] font-semibold transition-colors"
         title="Folder sudah terpasang, tetapi kunci API belum diisi"
       >
         <Key className="w-3 h-3" />
@@ -111,7 +120,7 @@ const SourceStatus: React.FC<{
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 font-semibold min-w-0">
+    <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold min-w-0">
       <FolderGit2 className="w-3 h-3 shrink-0" />
       <span className="truncate max-w-[150px]">
         {count ? `${count} foto siap` : "Folder terhubung"}
@@ -120,7 +129,7 @@ const SourceStatus: React.FC<{
         <button
           type="button"
           onClick={onReload}
-          className="p-0.5 rounded hover:bg-black/5 text-[#71717A] hover:text-[#FF5A1F] transition-colors"
+          className="p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10 text-[#71717A] dark:text-zinc-400 hover:text-[#FF5A1F] dark:hover:text-[#FF5A1F] transition-colors"
           title="Muat ulang foto dari Google Drive"
         >
           <RefreshCw className="w-3 h-3" />
@@ -134,7 +143,7 @@ const SourceStatus: React.FC<{
 const SessionModeBadge: React.FC<{ proj: ClientProject }> = ({ proj }) =>
   proj.sessionMode === "group" ? (
     <span
-      className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200"
+      className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800/60"
       title={proj.members?.length ? proj.members.join(", ") : "Sesi grup"}
     >
       <span className="inline-flex items-center gap-1">
@@ -143,7 +152,7 @@ const SessionModeBadge: React.FC<{ proj: ClientProject }> = ({ proj }) =>
       </span>
     </span>
   ) : (
-    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F5F2EB] text-[#52525B] border border-black/[0.06] inline-flex items-center gap-1">
+    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#F5F2EB] dark:bg-white/[0.06] text-[#52525B] dark:text-zinc-400 border border-black/[0.06] dark:border-white/10 inline-flex items-center gap-1">
       <User className="w-3 h-3" />
       Perorangan
     </span>
@@ -188,6 +197,14 @@ export const AdminDashboard: React.FC = () => {
   const [r2Error, setR2Error] = useState<string | null>(null);
   const [r2Active, setR2Active] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    return sessionStorage.getItem("aryst_source_banner_dismissed") === "true";
+  });
+
+  const handleDismissBanner = () => {
+    setBannerDismissed(true);
+    sessionStorage.setItem("aryst_source_banner_dismissed", "true");
+  };
 
   // Inspector modal state
   const [inspectingProject, setInspectingProject] = useState<ClientProject | null>(null);
@@ -301,8 +318,8 @@ export const AdminDashboard: React.FC = () => {
   const sourceGaps = useMemo(() => {
     const hasKey = Boolean(globalApiKey);
     return {
-      unset: filteredProjects.filter((p) => sourceStateOf(p, hasKey) === "unset"),
-      noKey: filteredProjects.filter((p) => sourceStateOf(p, hasKey) === "nokey"),
+      unset: filteredProjects.filter((p) => !p.isSample && sourceStateOf(p, hasKey) === "unset"),
+      noKey: filteredProjects.filter((p) => !p.isSample && sourceStateOf(p, hasKey) === "nokey"),
     };
   }, [filteredProjects, globalApiKey]);
 
@@ -730,54 +747,66 @@ function doPost(e) {
             </div>
           </div>
 
-          {/* Photo source setup banner: unfinished sessions are never silent */}
-          {(sourceGaps.unset.length > 0 || sourceGaps.noKey.length > 0) && (
-            <div className="rounded-2xl bg-[#FFF7ED] border border-[#FF5A1F]/25 p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <Info className="w-4 h-4 text-[#C2410C] shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs font-bold text-[#121212]">
+          {/* Photo source setup banner: sleek, dismissible, elegant studio guidance */}
+          {!bannerDismissed && (sourceGaps.unset.length > 0 || sourceGaps.noKey.length > 0) && (
+            <div className="rounded-2xl bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.08] p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/20 dark:border-[#FF5A1F]/30 flex items-center justify-center text-[#FF5A1F] shrink-0 mt-0.5">
+                  <FolderGit2 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#121212] dark:text-white">
                     {sourceGaps.unset.length > 0
-                      ? `${sourceGaps.unset.length} sesi belum punya sumber foto`
-                      : "Folder sudah terpasang, kunci API belum diisi"}
+                      ? sourceGaps.unset.length === 1
+                        ? `Sesi "${sourceGaps.unset[0].clientName}" belum memiliki folder foto`
+                        : `${sourceGaps.unset.length} sesi belum memiliki tautan folder foto`
+                      : "Kunci API Google Drive belum dikonfigurasi"}
                   </p>
-                  <p className="text-[11px] text-[#121212]/80 mt-0.5 font-medium">
+                  <p className="text-[11px] text-[#71717A] dark:text-zinc-400 mt-0.5 leading-relaxed">
                     {sourceGaps.unset.length > 0
-                      ? "Galeri klien tetap kosong sampai tautan folder Google Drive dipasang pada sesi tersebut."
-                      : "Foto belum bisa dimuat sampai kunci API Google Drive diisi pada tab Pengaturan."}
+                      ? "Tautkan folder Google Drive agar foto sesi dapat diakses langsung oleh klien di galeri."
+                      : "Foto belum dapat dimuat dari cloud sampai kunci API Google Drive diisi pada tab Pengaturan."}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                 {sourceGaps.unset.length > 0 && (
                   <button
                     type="button"
                     onClick={() => openEditModal(sourceGaps.unset[0], { focusFolder: true })}
-                    className="btn-mtioon-primary flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold"
+                    className="btn-mtioon-primary flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Tambah Link Folder Drive</span>
+                    <span>{sourceGaps.unset.length === 1 ? "Atur Folder Sesi Ini" : "Atur Folder Drive"}</span>
                   </button>
                 )}
                 {sourceGaps.noKey.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setActiveTab("settings")}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold transition-colors"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white dark:bg-white/[0.06] hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-400 text-xs font-bold transition-colors"
                   >
                     <Key className="w-3.5 h-3.5" />
                     <span>Atur Kunci API</span>
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={handleDismissBanner}
+                  className="p-1.5 rounded-lg text-[#71717A] dark:text-zinc-400 hover:text-[#121212] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                  title="Tutup pemberitahuan ini"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             </div>
           )}
 
           {filteredProjects.length === 0 ? (
-            <div className="p-12 text-center rounded-2xl bg-white border border-black/[0.08] text-[#71717A] text-xs shadow-sm">
-              <Users className="w-8 h-8 mx-auto mb-2 text-[#A1A1AA]" />
-              <p className="font-bold text-[#121212] text-sm mb-1">Tidak Ada Sesi Ditemukan</p>
-              <p className="text-[#71717A] max-w-sm mx-auto">
+            <div className="p-12 text-center rounded-2xl bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.08] text-[#71717A] dark:text-zinc-400 text-xs shadow-sm">
+              <Users className="w-8 h-8 mx-auto mb-2 text-[#A1A1AA] dark:text-zinc-500" />
+              <p className="font-bold text-[#121212] dark:text-white text-sm mb-1">Tidak Ada Sesi Ditemukan</p>
+              <p className="text-[#71717A] dark:text-zinc-400 max-w-sm mx-auto">
                 {searchQuery
                   ? "Coba ubah kata kunci pencarian Anda."
                   : "Belum ada sesi klien yang dibuat. Buat sesi pertama untuk mulai mengumpulkan foto."}

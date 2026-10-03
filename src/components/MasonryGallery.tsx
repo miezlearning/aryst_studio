@@ -35,6 +35,8 @@ export const MasonryGallery: React.FC = () => {
     toggleSelectPhoto,
     setLightboxPhotoId,
     loadPhotos,
+    isAdminAuthenticated,
+    setViewMode,
   } = useProofingStore();
 
   const selectedCount = session.selectedPhotoIds.length;
@@ -267,41 +269,58 @@ export const MasonryGallery: React.FC = () => {
 
       {/* Storyline Grouped Sections Grid */}
       {photos.length === 0 && !searchQuery && activeFilter === "all" ? (
-        <div className="mtioon-card p-8 sm:p-12 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.1] mb-4">
-            <Layers className="w-5 h-5 text-[#71717A] dark:text-[#A1A1AA]" />
+        <div className="mtioon-card p-8 sm:p-12 text-center max-w-lg mx-auto">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/20 dark:border-[#FF5A1F]/30 text-[#FF5A1F] mb-4">
+            <Layers className="w-6 h-6" />
           </div>
-          {!config.folderId ? (
-            <>
-              <p className="font-display font-bold text-sm sm:text-base text-[#121212] dark:text-white">
-                Galeri ini belum dihubungkan ke folder foto
+          {isAdminAuthenticated ? (
+            <div>
+              <h3 className="font-display font-bold text-base sm:text-lg text-[#121212] dark:text-white mb-1.5">
+                {!config.folderId
+                  ? "Sesi Ini Belum Memiliki Folder Google Drive"
+                  : !config.apiKey
+                    ? "Kunci API Google Drive Belum Diisi"
+                    : "Folder Drive Terhubung Tapi Belum Berisi Foto"}
+              </h3>
+              <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-md mx-auto leading-relaxed mb-5">
+                {!config.folderId
+                  ? "Hubungkan tautan folder Google Drive publik pada pengaturan sesi di Dashboard Admin agar galeri foto ini dapat diakses oleh klien."
+                  : !config.apiKey
+                    ? "Kunci API Google Drive diperlukan untuk memuat foto dari cloud. Masukkan kunci API di menu Pengaturan Studio."
+                    : "Pastikan foto telah diunggah ke folder Google Drive dan izin akses folder disetel ke 'Anyone with the link can view'."}
               </p>
-              <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1.5 max-w-md mx-auto">
-                Fotografer belum memasukkan tautan folder Google Drive untuk sesi ini. Foto akan
-                muncul otomatis begitu sumber foto diatur.
-              </p>
-            </>
-          ) : !config.apiKey ? (
-            <>
-              <p className="font-display font-bold text-sm sm:text-base text-[#121212]">
-                Kunci API Drive belum diatur
-              </p>
-              <p className="text-xs text-[#71717A] mt-1.5 max-w-md mx-auto">
-                Folder sudah terhubung, tetapi aplikasi belum bisa membaca isinya karena kunci API
-                Google Drive belum diisi.
-              </p>
-            </>
+              <div className="flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setViewMode("admin")}
+                  className="btn-mtioon-primary px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Buka Dashboard Admin</span>
+                </button>
+              </div>
+            </div>
           ) : (
-            <>
-              <p className="font-display font-bold text-sm sm:text-base text-[#121212]">
-                Belum ada foto di folder sesi ini
+            <div>
+              <h3 className="font-display font-bold text-base sm:text-lg text-[#121212] dark:text-white mb-1.5">
+                Koleksi Foto Sedang Dipersiapkan
+              </h3>
+              <p className="text-xs text-[#71717A] dark:text-zinc-400 max-w-md mx-auto leading-relaxed mb-5">
+                Foto sesi Anda saat ini sedang dalam proses kurasi dan pengunggahan oleh studio. Silakan periksa kembali dalam beberapa saat atau hubungi kami jika Anda memiliki pertanyaan.
               </p>
-              <p className="text-xs text-[#71717A] mt-1.5 max-w-md mx-auto">
-                Folder sudah terhubung namun belum berisi foto yang bisa dimuat. Pastikan foto sudah
-                diunggah ke folder dan izinnya disetel ke{" "}
-                <span className="text-[#121212] font-semibold">Siapa saja yang memiliki tautan</span>.
-              </p>
-            </>
+              {config.clientContact && (
+                <a
+                  href={`https://wa.me/${config.clientContact.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
+                    `Halo, saya ingin menanyakan progres kurasi foto untuk sesi "${config.clientName || config.projectId}".`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-mtioon-primary px-4 py-2 text-xs font-bold inline-flex items-center gap-1.5"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Hubungi Studio di WhatsApp</span>
+                </a>
+              )}
+            </div>
           )}
         </div>
       ) : groupedSections.length === 0 ? (

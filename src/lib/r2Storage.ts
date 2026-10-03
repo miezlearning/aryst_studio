@@ -80,7 +80,8 @@ const encodeKeyPath = (key: string): string =>
  * CORS policy.
  */
 export const uploadHeroVideoR2 = async (blob: Blob, cfg: R2Config): Promise<string> => {
-  const ext = (blob.type.split("/")[1] || "mp4").replace(/[^a-z0-9]/gi, "") || "mp4";
+  const rawExt = (blob.type.split("/")[1] || "mp4").replace(/[^a-z0-9]/gi, "") || "mp4";
+  const ext = rawExt === "quicktime" ? "mov" : rawExt;
   const objectKey = `studio/hero-video-${Date.now()}.${ext}`;
   const host = `${cfg.accountId}.r2.cloudflarestorage.com`;
   const objectUrl = `https://${host}/${encodeKeyPath(cfg.bucket)}/${encodeKeyPath(objectKey)}`;
@@ -100,5 +101,20 @@ export const uploadHeroVideoR2 = async (blob: Blob, cfg: R2Config): Promise<stri
   if (!res.ok) {
     throw new Error(`R2 menolak unggahan (HTTP ${res.status}). Periksa CORS bucket dan izin token.`);
   }
-  return `${cfg.publicBaseUrl}/${objectKey}`;
+  const publicUrl = `${cfg.publicBaseUrl}/${objectKey}`;
+  // Verify the object is actually publicly readable. Without this check a
+  // private bucket would "succeed" while the video fails on every screen.
+  let readable = false;
+  try {
+    const probe = await fetch(publicUrl, { method: "HEAD" });
+    readable = probe.ok;
+  } catch {
+    readable = false;
+  }
+  if (!readable) {
+    throw new Error(
+      "File terupload ke R2, tapi URL publiknya tidak bisa dibaca. Aktifkan Public Development URL di Settings bucket dan pastikan objek bisa dibaca publik, lalu upload ulang."
+    );
+  }
+  return publicUrl;
 };

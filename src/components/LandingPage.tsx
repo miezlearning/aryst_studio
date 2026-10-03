@@ -84,7 +84,6 @@ export const LandingPage: React.FC = () => {
     openClientByCode,
     setViewMode,
     clientProjects,
-    photos,
     showcaseItems,
     isBooted,
   } = useProofingStore();
@@ -146,6 +145,8 @@ export const LandingPage: React.FC = () => {
       ?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
+  // Hanya foto kurasi fotografer: tanpa kurasi, tampilkan empty state
+  // (jangan fallback ke foto sesi).
   const previewShowcase = (() => {
     const list: Array<{ id: string; name?: string; thumbnailUrl: string }> = [];
     const seen = new Set<string>();
@@ -157,19 +158,6 @@ export const LandingPage: React.FC = () => {
           id: item.id,
           name: item.name,
           thumbnailUrl: item.thumbnailUrl,
-        });
-      }
-    }
-
-    // Complement with high-res sample photos so the gallery is rich & complete (8-10 photos)
-    for (const p of photos) {
-      if (list.length >= 10) break;
-      if (p.thumbnailUrl && !seen.has(p.thumbnailUrl)) {
-        seen.add(p.thumbnailUrl);
-        list.push({
-          id: p.id,
-          name: p.name || "Koleksi Studio",
-          thumbnailUrl: p.thumbnailUrl,
         });
       }
     }

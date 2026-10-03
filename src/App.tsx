@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, Suspense } from "react";
 import { useProofingStore } from "@/lib/storage";
 import { Navbar } from "@/components/Navbar";
 import { BrandMark } from "@/components/BrandMark";
@@ -7,12 +7,66 @@ import { MasonryGallery } from "@/components/MasonryGallery";
 import { FloatingDock } from "@/components/FloatingDock";
 import { LightboxModal } from "@/components/LightboxModal";
 import { SubmissionModal } from "@/components/SubmissionModal";
-import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminAuthGate } from "@/components/AdminAuthGate";
 import { PasswordGate } from "@/components/PasswordGate";
 import { DeadlineCountdown } from "@/components/DeadlineCountdown";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
-import { Home, Calendar, ChevronRight } from "lucide-react";
+import { Home, Calendar, ChevronRight, Loader2 } from "lucide-react";
+
+// Heavy admin dashboard loads on demand so the public gallery stays light
+const AdminDashboard = React.lazy(() =>
+  import("@/components/AdminDashboard").then((m) => ({ default: m.AdminDashboard }))
+);
+
+const AdminFallback: React.FC = () => (
+  <div className="flex items-center justify-center py-24" role="status" aria-label="Memuat dashboard">
+    <Loader2 className="w-6 h-6 text-[#FF5A1F] animate-spin" />
+  </div>
+);
+
+// Render crash must never blank the whole page: show a recovery card instead
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  state: { error: Error | null } = { error: null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("[ARYST] render crash ditangkap:", error);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#09090B] flex items-center justify-center p-6 font-sans">
+          <div className="mtioon-card max-w-md w-full rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#141417] shadow-sm p-8 text-center">
+            <p className="text-xs font-bold uppercase tracking-wider text-[#C2410C] dark:text-orange-300 mb-2">
+              ARYST Studio
+            </p>
+            <h1 className="text-xl font-bold text-[#121212] dark:text-white mb-2">
+              Tampilan gagal dimuat
+            </h1>
+            <p className="text-sm text-[#52525B] dark:text-[#A1A1AA] mb-6">
+              Terjadi galat saat merender halaman. Data sesi Anda aman, silakan muat ulang untuk kembali.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="btn-mtioon-primary px-6 py-2.5 text-sm font-bold"
+            >
+              Muat Ulang Halaman
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const getSessionCoverUrl = (proj?: { coverPhotoUrl?: string; sessionType?: string }): string => {
   if (proj?.coverPhotoUrl) return proj.coverPhotoUrl;
@@ -94,7 +148,7 @@ export const App: React.FC = () => {
   const currentProject = clientProjects.find((p) => p.id === activeProjectId);
   const clientNameKey = (currentProject?.clientName || session.clientName || "").trim().toLowerCase();
   const clientOtherSessions = clientProjects.filter(
-    (p) => p.clientName.trim().toLowerCase() === clientNameKey
+    (p) => (p.clientName || "").trim().toLowerCase() === clientNameKey
   );
 
   const currentSessionIndex = clientOtherSessions.findIndex((p) => p.id === activeProjectId);
@@ -107,7 +161,11 @@ export const App: React.FC = () => {
 
   // If in Landing Page mode, render dedicated landing experience
   if (viewMode === "landing") {
-    return <LandingPage />;
+    return (
+      <AppErrorBoundary>
+        <LandingPage />
+      </AppErrorBoundary>
+    );
   }
 
   return (
@@ -115,13 +173,20 @@ export const App: React.FC = () => {
       {/* Offline Alert Bar */}
       <OfflineIndicator />
 
+      <AppErrorBoundary>
       {/* Main Adaptive Floating Navbar */}
       <Navbar />
 
       {/* View Orchestration: Admin View vs Client View */}
       {viewMode === "admin" ? (
         <main className="flex-1 pt-24 sm:pt-28">
-          {!isAdminAuthenticated ? <AdminAuthGate /> : <AdminDashboard />}
+          {!isAdminAuthenticated ? (
+            <AdminAuthGate />
+          ) : (
+            <Suspense fallback={<AdminFallback />}>
+              <AdminDashboard />
+            </Suspense>
+          )}
         </main>
       ) : !isPasswordUnlocked ? (
         <main className="flex-1 pt-24 sm:pt-28">
@@ -361,6 +426,7 @@ export const App: React.FC = () => {
             </footer>
           </div>
       )}
+      </AppErrorBoundary>
     </div>
   );
 };

@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useProofingStore } from "@/lib/storage";
 import { BrandMark } from "@/components/BrandMark";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { animate } from "animejs";
 import {
   Send,
   CheckCircle2,
@@ -88,8 +87,8 @@ export const Navbar: React.FC = () => {
     const q = sessionSearch.toLowerCase().trim();
     return clientProjects.filter(
       (p) =>
-        p.clientName.toLowerCase().includes(q) ||
-        p.projectId.toLowerCase().includes(q)
+        (p.clientName || "").toLowerCase().includes(q) ||
+        (p.projectId || "").toLowerCase().includes(q)
     );
   }, [clientProjects, sessionSearch]);
 
@@ -283,11 +282,7 @@ export const Navbar: React.FC = () => {
     );
   }
 
-  // ── Client navbar & Sidebar powered by Anime.js (Hardware Accelerated GPU) ──
-  const topNavRef = useRef<HTMLElement>(null);
-  const sidebarRef = useRef<HTMLElement>(null);
-  const topNavAnimRef = useRef<any>(null);
-  const sidebarAnimRef = useRef<any>(null);
+  // ── Client navbar & sidebar: pure CSS slide/fade (GPU transform) ──
   const isSidebarActiveRef = useRef(isSidebarActive);
 
   useEffect(() => {
@@ -336,63 +331,9 @@ export const Navbar: React.FC = () => {
     };
   }, [viewMode, setIsSidebarActive]);
 
-  // Anime.js GPU transition driver
-  useEffect(() => {
-    if (viewMode !== "client") return;
-    const showSidebar = isDesktop && isSidebarActive;
-
-    // Cancel any running animations to prevent frame conflicts and stutter
-    if (topNavAnimRef.current) topNavAnimRef.current.pause?.();
-    if (sidebarAnimRef.current) sidebarAnimRef.current.pause?.();
-
-    if (showSidebar) {
-      // 1. Top navbar glides up & fades out
-      if (topNavRef.current) {
-        topNavAnimRef.current = animate(topNavRef.current, {
-          translateY: -40,
-          opacity: 0,
-          duration: 180,
-          ease: "outQuad",
-          onComplete: () => {
-            if (topNavRef.current) topNavRef.current.style.pointerEvents = "none";
-          },
-        });
-      }
-      // 2. Left sidebar glides in from left
-      if (sidebarRef.current) {
-        sidebarRef.current.style.pointerEvents = "auto";
-        sidebarAnimRef.current = animate(sidebarRef.current, {
-          translateX: [-40, 0],
-          opacity: [0, 1],
-          duration: 220,
-          ease: "outQuad",
-        });
-      }
-    } else {
-      // 1. Sidebar glides out to left & fades
-      if (sidebarRef.current) {
-        sidebarAnimRef.current = animate(sidebarRef.current, {
-          translateX: -40,
-          opacity: 0,
-          duration: 160,
-          ease: "outQuad",
-          onComplete: () => {
-            if (sidebarRef.current) sidebarRef.current.style.pointerEvents = "none";
-          },
-        });
-      }
-      // 2. Top navbar glides down into view
-      if (topNavRef.current) {
-        topNavRef.current.style.pointerEvents = "auto";
-        topNavAnimRef.current = animate(topNavRef.current, {
-          translateY: [-40, 0],
-          opacity: [0, 1],
-          duration: 200,
-          ease: "outQuad",
-        });
-      }
-    }
-  }, [viewMode, isDesktop, isSidebarActive]);
+  // Slide/fade between top navbar and sidebar is driven purely by CSS
+  // classes below (same motion concept, no JS animation library).
+  const showSidebar = isDesktop && isSidebarActive;
 
   const sectionStats = useMemo(() => {
     const stats: Record<string, { total: number; selected: number }> = {};
@@ -456,9 +397,11 @@ export const Navbar: React.FC = () => {
       {/* ── 1. Top Navbar (Floating Horizontal Capsule) ────── */}
       <div className="fixed top-4 inset-x-0 z-40 flex justify-center px-4 pointer-events-none">
         <header
-          ref={topNavRef}
-          style={{ transform: "translate3d(0, 0, 0)", opacity: 1 }}
-          className="pointer-events-auto w-full max-w-6xl h-16 rounded-full px-4 sm:px-6 flex items-center justify-between bg-white/95 dark:bg-[#141417]/95 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] will-change-transform transition-colors"
+          className={`pointer-events-auto w-full max-w-6xl h-16 rounded-full px-4 sm:px-6 flex items-center justify-between bg-white/95 dark:bg-[#141417]/95 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] will-change-transform transition-all duration-200 ease-out motion-reduce:transition-none ${
+            showSidebar
+              ? "-translate-y-10 opacity-0 pointer-events-none"
+              : "translate-y-0 opacity-100"
+          }`}
         >
         {/* Brand */}
         <div className="flex items-center gap-3 min-w-0">
@@ -539,13 +482,11 @@ export const Navbar: React.FC = () => {
 
       {/* ── 2. Left Sidebar (Docked Vertical Panel for Desktop) ── */}
       <aside
-        ref={sidebarRef}
-        style={{
-          opacity: 0,
-          pointerEvents: "none",
-          transform: "translate3d(-40px, 0, 0)",
-        }}
-        className="hidden lg:flex fixed z-40 top-6 left-6 bottom-6 w-[286px] h-[calc(100vh-3rem)] rounded-[30px] p-5 flex-col justify-between bg-white/98 dark:bg-[#141417]/98 backdrop-blur-md shadow-[0_20px_50px_-10px_rgba(0,0,0,0.10)] dark:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] border border-black/[0.08] dark:border-white/[0.1] overflow-hidden text-[#121212] dark:text-[#F4F4F6] will-change-transform transition-colors"
+        className={`hidden lg:flex fixed z-40 top-6 left-6 bottom-6 w-[286px] h-[calc(100vh-3rem)] rounded-[30px] p-5 flex-col justify-between bg-white/98 dark:bg-[#141417]/98 backdrop-blur-md shadow-[0_20px_50px_-10px_rgba(0,0,0,0.10)] dark:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] border border-black/[0.08] dark:border-white/[0.1] overflow-hidden text-[#121212] dark:text-[#F4F4F6] will-change-transform transition-all duration-200 ease-out motion-reduce:transition-none ${
+          showSidebar
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-10 opacity-0 pointer-events-none"
+        }`}
       >
         {/* Top Section */}
         <div className="space-y-4">

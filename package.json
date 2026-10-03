@@ -11,7 +11,6 @@
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-slot": "^1.1.2",
-    "animejs": "^4.5.0",
     "aws4fetch": "^1.0.20",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
@@ -21,7 +20,6 @@
     "jszip": "^3.10.2",
     "lucide-react": "^0.475.0",
     "lz-string": "^1.5.0",
-    "motion": "^13.4.6",
     "peerjs": "^1.5.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -277,8 +277,8 @@ export const AdminDashboard: React.FC = () => {
     const query = searchQuery.toLowerCase().trim();
     if (!query) return true;
     return (
-      p.clientName.toLowerCase().includes(query) ||
-      p.projectId.toLowerCase().includes(query) ||
+      (p.clientName || "").toLowerCase().includes(query) ||
+      (p.projectId || "").toLowerCase().includes(query) ||
       (p.sessionType && p.sessionType.toLowerCase().includes(query)) ||
       (p.location && p.location.toLowerCase().includes(query)) ||
       (p.sessionPurpose && p.sessionPurpose.toLowerCase().includes(query)) ||
@@ -607,7 +607,7 @@ function doPost(e) {
       <AdminSidebar activeTab={activeTab} onTabChange={setActiveTab} />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.08]">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-black/[0.08] dark:border-white/[0.08]">
         <div>
           <div className="flex items-center gap-2 mb-1 text-xs">
             <span className="font-extrabold text-[#FF5A1F] uppercase tracking-wider">
@@ -615,21 +615,21 @@ function doPost(e) {
             </span>
             <span className="text-[#A1A1AA]">•</span>
             {isP2PConnected ? (
-              <span className="text-emerald-700 flex items-center gap-1.5 font-bold text-[11px] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              <span className="text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 font-bold text-[11px] bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Sinkron Realtime
               </span>
             ) : (
-              <span className="text-[#71717A] flex items-center gap-1.5 text-[11px] font-medium">
-                <Radio className="w-3 h-3 text-[#71717A]" />
+              <span className="text-[#71717A] dark:text-[#A1A1AA] flex items-center gap-1.5 text-[11px] font-medium">
+                <Radio className="w-3 h-3 text-[#71717A] dark:text-[#A1A1AA]" />
                 Siap Menerima Pilihan
               </span>
             )}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-display font-black text-[#121212] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-display font-black text-[#121212] dark:text-white tracking-tight">
             Dashboard Fotografer
           </h1>
-          <p className="text-xs sm:text-sm text-[#52525B] mt-1 max-w-2xl font-medium">
+          <p className="text-xs sm:text-sm text-[#52525B] dark:text-[#A1A1AA] mt-1 max-w-2xl font-medium">
             Kelola sesi kurasi klien, pantau pilihan foto secara realtime, dan atur sandi galeri.
           </p>
         </div>
@@ -645,7 +645,7 @@ function doPost(e) {
           >
             <Eye className="w-4 h-4 text-[#FF5A1F]" />
             <span>Lihat Galeri Klien</span>
-            <ArrowRight className="w-3.5 h-3.5 text-[#71717A]" />
+            <ArrowRight className="w-3.5 h-3.5 text-[#71717A] dark:text-[#A1A1AA]" />
           </button>
 
           <button
@@ -659,7 +659,7 @@ function doPost(e) {
 
           <button
             onClick={logoutAdmin}
-            className="btn-mtioon-secondary p-2 text-[#71717A] hover:text-rose-600 transition-colors"
+            className="btn-mtioon-secondary p-2 text-[#71717A] dark:text-[#A1A1AA] hover:text-rose-600 dark:hover:text-rose-400 transition-colors"
             title="Kunci & Logout Admin"
           >
             <LogOut className="w-4 h-4" />
@@ -1483,7 +1483,7 @@ function doPost(e) {
                   VITE_FIREBASE_CONFIG di file .env agar berlaku untuk semua perangkat.
                 </p>
                 {fbError ? (
-                  <p className="text-[11px] text-rose-600 mt-1.5">{fbError}</p>
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5">{fbError}</p>
                 ) : null}
               </div>
 
@@ -1543,7 +1543,7 @@ function doPost(e) {
                   variabel VITE_* ikut terpublikasi ke internet.
                 </p>
                 {r2Error ? (
-                  <p className="text-[11px] text-rose-600 mt-1.5">{r2Error}</p>
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400 mt-1.5">{r2Error}</p>
                 ) : null}
               </div>
 

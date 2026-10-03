@@ -66,6 +66,51 @@ export const DEFAULT_HERO_POSTER = "https://assets.mixkit.co/videos/5382/5382-th
 
 const DEFAULT_ADMIN_PIN = "studio2026";
 
+// One boot per page load (see init below)
+let initStarted = false;
+
+// ── Hero video source sharing ─────────────────────────────────
+// A single object URL per uploaded blob, owned here, so the landing and the
+// dashboard preview read the same stable address instead of minting one each.
+let heroBlobUrl: { key: string; url: string } | null = null;
+
+const revokeHeroBlobUrl = () => {
+  if (!heroBlobUrl) return;
+  URL.revokeObjectURL(heroBlobUrl.url);
+  heroBlobUrl = null;
+};
+
+type HeroVideoChange = "upload" | "url" | "clear";
+
+// Tabs share one origin, not one memory: a landing page opened before the
+// upload must learn about it, otherwise it keeps playing the default clip.
+const heroVideoChannel =
+  typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("aryst-hero-video") : null;
+
+function applyHeroVideoChange(kind: HeroVideoChange, url = "") {
+  const next =
+    kind === "upload"
+      ? { heroVideoUrl: "", hasHeroVideoUpload: true }
+      : kind === "url"
+        ? { heroVideoUrl: url, hasHeroVideoUpload: false }
+        : { heroVideoUrl: "", hasHeroVideoUpload: false };
+  useProofingStore.setState((s) => ({ ...next, heroVideoRev: s.heroVideoRev + 1 }));
+}
+
+function notifyHeroVideoChange(kind: HeroVideoChange, url = "") {
+  applyHeroVideoChange(kind, url);
+  heroVideoChannel?.postMessage({ kind, url });
+}
+
+heroVideoChannel?.addEventListener("message", (event: MessageEvent) => {
+  const data = event.data as { kind?: HeroVideoChange; url?: string } | null;
+  if (!data || (data.kind !== "upload" && data.kind !== "url" && data.kind !== "clear")) return;
+  // IndexedDB is already shared across tabs of this origin; only the state
+  // (and the cached object URL) has to catch up here.
+  if (data.kind !== "upload") revokeHeroBlobUrl();
+  applyHeroVideoChange(data.kind, typeof data.url === "string" ? data.url : "");
+});
+
 // ── Selection deadline helpers ────────────────────────────────
 export const isDeadlinePassed = (project?: ClientProject | null): boolean =>
   Boolean(project?.selectionDeadline && Date.now() > project.selectionDeadline);
@@ -296,6 +341,40 @@ const slugify = (name: string): string => {
   return slug || "klien";
 };
 
+// Legacy records predate required fields, so repair them in one place and
+// every render path can trust the shape instead of guarding field by field.
+const normalizeProjectShape = (p: ClientProject): { project: ClientProject; changed: boolean } => {
+  const next: ClientProject = { ...p };
+  let changed = false;
+  if (typeof next.projectId !== "string" || !next.projectId.trim()) {
+    next.projectId = typeof next.id === "string" && next.id ? next.id.toUpperCase() : "TANPA-KODE";
+    changed = true;
+  }
+  if (typeof next.id !== "string" || !next.id) {
+    // Stable fallback derived from the session code, so repeated repairs
+    // (boot, live cloud sync) keep pointing at the same record
+    next.id = next.projectId;
+    changed = true;
+  }
+  if (typeof next.clientName !== "string" || !next.clientName.trim()) {
+    next.clientName = "Klien Terhormat";
+    changed = true;
+  }
+  if (typeof next.folderId !== "string") {
+    next.folderId = "";
+    changed = true;
+  }
+  if (typeof next.maxQuota !== "number" || !Number.isFinite(next.maxQuota) || next.maxQuota <= 0) {
+    next.maxQuota = 20;
+    changed = true;
+  }
+  if (typeof next.clientContact !== "string") {
+    next.clientContact = "";
+    changed = true;
+  }
+  return { project: next, changed };
+};
+
 // Attaches every session to a client record, creating one when the name
 // is new. Also migrates older data: missing clientId, sessionMode and
 // the sample flag used by the landing page.
@@ -312,8 +391,9 @@ const ensureClients = (
   const byKey = new Map(clients.map((c) => [keyOf(c.name), c]));
 
   const nextProjects = projects.map((p) => {
-    const next: ClientProject = { ...p };
-    let dirty = false;
+    const repaired = normalizeProjectShape({ ...p });
+    const next: ClientProject = repaired.project;
+    let dirty = repaired.changed;
 
     if (sampleIds.has(p.id)) {
       const dp = DEFAULT_PROJECTS.find((item) => item.id === p.id);
@@ -340,13 +420,13 @@ const ensureClients = (
     const key = keyOf(next.clientName || "");
     let client = next.clientId ? clients.find((c) => c.id === next.clientId) : byKey.get(key);
     if (!client) {
-      const base = `cli-${slugify(next.clientName)}`;
+      const base = `cli-${slugify(next.clientName || "")}`;
       let id = base;
       let suffix = 2;
       while (clients.some((c) => c.id === id)) id = `${base}-${suffix++}`;
       client = {
         id,
-        name: next.clientName,
+        name: next.clientName || "Klien Terhormat",
         contact: next.clientContact || "",
         password: next.password || "",
         passwordHash: next.passwordHash || "",
@@ -444,6 +524,9 @@ interface ProofingState {
   // Hero background video ("" = default, upload blob takes precedence)
   heroVideoUrl: string;
   hasHeroVideoUpload: boolean;
+  // Bumped on every hero video change (this tab or another tab) so open
+  // screens re-resolve their source even when url/flag values are unchanged
+  heroVideoRev: number;
 
   // Actions
   init: () => Promise<void>;
@@ -586,8 +669,14 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   isBooted: false,
   heroVideoUrl: "",
   hasHeroVideoUpload: false,
+  heroVideoRev: 0,
 
   init: async () => {
+    // Boot runs once. A second call (React StrictMode mounts effects twice in
+    // dev) would hydrate IndexedDB twice and tear down a live cloud sync.
+    if (initStarted || getStore().isBooted) return;
+    initStarted = true;
+
     // 1. Read URL query params
     const params = new URLSearchParams(window.location.search);
     const viewParam = params.get("view");
@@ -678,26 +767,39 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     if (seeded || registryDirty) await set(IDB_PROJECTS_KEY, savedProjects);
     if (registryDirty) await set(IDB_CLIENTS_KEY, clients);
 
-    // 4. If URL specifies a shared project link, import or update it
+    // 4. If URL specifies a shared project link, import or update it.
+    // Matching mirrors openClientByCode: id or projectId, case-insensitive,
+    // so a pasted projectId (e.g. ENG-DIMAS-SARAH) finds the real project
+    // instead of spawning a junk duplicate.
+    const codeParams = [sessionParam, projectParam].filter(
+      (c): c is string => Boolean(c)
+    );
+    const matchCode = (p: ClientProject) =>
+      codeParams.some(
+        (c) =>
+          (p.id || "").toLowerCase() === c.toLowerCase() ||
+          (p.projectId || "").toLowerCase() === c.toLowerCase()
+      );
     let importedFromParams = false;
     if (sessionParam || clientParam || projectParam) {
       importedFromParams = true;
-      const matchIndex = savedProjects.findIndex(
-        (p) => p.id === sessionParam || p.projectId === projectParam
-      );
+      const matchIndex = savedProjects.findIndex(matchCode);
 
       if (matchIndex >= 0) {
         savedProjects[matchIndex] = {
           ...savedProjects[matchIndex],
-          clientName: clientParam || savedProjects[matchIndex].clientName,
-          projectId: projectParam || savedProjects[matchIndex].projectId,
+          clientName:
+            clientParam || savedProjects[matchIndex].clientName || "Klien Terhormat",
+          projectId: projectParam || savedProjects[matchIndex].projectId || "",
           folderId: folderParam || savedProjects[matchIndex].folderId,
           maxQuota: quotaParam ? parseInt(quotaParam, 10) : savedProjects[matchIndex].maxQuota,
           passwordHash: phParam || savedProjects[matchIndex].passwordHash,
           clientContact: contactParam || savedProjects[matchIndex].clientContact,
           webhookUrl: webhookParam || savedProjects[matchIndex].webhookUrl,
         };
-      } else {
+      } else if (viewParam !== "admin") {
+        // Never auto-create sessions from the admin view: an unknown code
+        // there means a mistyped link, not a new client session.
         const newProject: ClientProject = {
           id: sessionParam || `proj-${Date.now()}`,
           clientName: clientParam || "Klien Terhormat",
@@ -717,7 +819,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     // 4. Determine Active Project
     const savedActiveId = await get<string>(IDB_ACTIVE_PROJECT_KEY);
     let targetProject =
-      savedProjects.find((p) => p.id === sessionParam || p.projectId === projectParam) ||
+      savedProjects.find(matchCode) ||
       savedProjects.find((p) => p.id === savedActiveId) ||
       savedProjects[0];
 
@@ -1029,7 +1131,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const trimmed = codeOrUrl.trim().toUpperCase();
     const { clientProjects } = getStore();
     const match = clientProjects.find(
-      (p) => p.projectId.toUpperCase() === trimmed || p.id.toUpperCase() === trimmed
+      (p) =>
+        (p.projectId || "").toUpperCase() === trimmed ||
+        (p.id || "").toUpperCase() === trimmed
     );
 
     if (match) {
@@ -1053,7 +1157,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const newConfig: ProofingConfig = {
       folderId: target.folderId,
       apiKey: target.folderId ? globalApiKey : "",
-      clientName: target.clientName,
+      clientName: target.clientName || "",
       clientContact: target.clientContact || "",
       projectId: target.projectId,
       maxQuota: target.maxQuota,
@@ -1063,7 +1167,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const projectSessionKey = `lumina_session_${target.id}`;
     let projectSession = (await get<ClientSelectionSession>(projectSessionKey)) || {
       projectId: target.projectId,
-      clientName: target.clientName,
+      clientName: target.clientName || "",
       clientContact: target.clientContact || "",
       maxQuota: target.maxQuota,
       selectedPhotoIds: [],
@@ -1126,7 +1230,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const updated = [...clientProjects];
     const nextClients = [...clients];
 
-    const toSave: ClientProject = { ...project };
+    const toSave: ClientProject = normalizeProjectShape({ ...project }).project;
     const clearPassword = Boolean(toSave.clearPassword);
     delete toSave.clearPassword;
 
@@ -1520,7 +1624,8 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   setHeroVideoUrl: async (url: string) => {
     const clean = url.trim();
     await set(IDB_HERO_VIDEO_URL_KEY, clean);
-    setStore({ heroVideoUrl: clean, hasHeroVideoUpload: false });
+    revokeHeroBlobUrl();
+    notifyHeroVideoChange("url", clean);
     persistStudioState();
   },
 
@@ -1529,19 +1634,24 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     // plays smoothly in this browser without requiring an external cloud server
     await set(IDB_HERO_VIDEO_BLOB_KEY, blob);
     await set(IDB_HERO_VIDEO_URL_KEY, "");
-    setStore({ heroVideoUrl: "", hasHeroVideoUpload: true });
+    notifyHeroVideoChange("upload");
 
-    // 2. If Cloudflare R2 is configured, also upload to R2 for public sync
+    // 2. If Cloudflare R2 is configured, also upload to R2 for public sync.
+    // R2 failures are propagated (not silenced): the local copy above keeps
+    // this browser playing, but the user must see the real error so other
+    // devices are not left with a dead URL.
     const r2 = await getR2Config();
     if (r2) {
       try {
         const url = await uploadHeroVideoR2(blob, r2);
         await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
         await set(IDB_HERO_VIDEO_URL_KEY, url);
-        setStore({ heroVideoUrl: url, hasHeroVideoUpload: false });
+        revokeHeroBlobUrl();
+        notifyHeroVideoChange("url", url);
         persistStudioState();
       } catch (err) {
-        console.warn("R2 upload error, falling back to local storage:", err);
+        const detail = err instanceof Error ? err.message : "Unggahan R2 gagal.";
+        throw new Error(`${detail} Video tetap tersimpan di browser ini saja.`);
       }
     }
   },
@@ -1549,7 +1659,8 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   clearHeroVideo: async () => {
     await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
     await set(IDB_HERO_VIDEO_URL_KEY, "");
-    setStore({ heroVideoUrl: "", hasHeroVideoUpload: false });
+    revokeHeroBlobUrl();
+    notifyHeroVideoChange("clear");
     persistStudioState();
   },
 
@@ -1558,7 +1669,17 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     if (heroVideoUrl) return heroVideoUrl;
     try {
       const blob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY);
-      if (blob && blob.size > 0) return URL.createObjectURL(blob);
+      if (blob && blob.size > 0) {
+        // Stable object URL per blob: re-resolving (tab focus, sync, upload
+        // in another tab) must not mint a new URL, or every consumer would
+        // reload the video and flash the skeleton again.
+        const key = `${blob.size}:${blob.type}`;
+        if (!heroBlobUrl || heroBlobUrl.key !== key) {
+          revokeHeroBlobUrl();
+          heroBlobUrl = { key, url: URL.createObjectURL(blob) };
+        }
+        return heroBlobUrl.url;
+      }
     } catch {
       // Fall through to default
     }
@@ -1848,7 +1969,9 @@ const orderKey = (ids: string[]) => ids.join("\u0001");
 
 /** Adopt a newer cloud studio state into the store + local cache (no push back). */
 const adoptStudioState = async (remote: StudioState): Promise<void> => {
-  await set(IDB_PROJECTS_KEY, remote.projects);
+  // Live cloud copies bypass boot, so repair legacy shapes here as well
+  const repairedProjects = (remote.projects || []).map((p) => normalizeProjectShape({ ...p }).project);
+  await set(IDB_PROJECTS_KEY, repairedProjects);
   await set(IDB_CLIENTS_KEY, remote.clients);
   await set(IDB_GLOBAL_KEY, remote.globalApiKey);
   await set(IDB_HERO_VIDEO_URL_KEY, remote.heroVideoUrl);
@@ -1864,7 +1987,7 @@ const adoptStudioState = async (remote: StudioState): Promise<void> => {
   }
   const st = useProofingStore.getState();
   useProofingStore.setState({
-    clientProjects: remote.projects,
+    clientProjects: repairedProjects,
     clients: remote.clients,
     globalApiKey: remote.globalApiKey || st.globalApiKey,
     heroVideoUrl: remote.heroVideoUrl,

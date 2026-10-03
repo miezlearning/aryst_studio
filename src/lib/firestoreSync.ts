@@ -203,7 +203,13 @@ const flushStatePush = () => {
   });
 };
 
-const start = async (next: SyncHandlers): Promise<SyncSource> => {
+// Serialised so two boot paths never interleave teardown with setup:
+// overlapping deleteApp/initializeApp leaves other Firebase services holding
+// a deleted app, which shows up as "app/app-deleted" warnings in the console.
+let startChain: Promise<SyncSource> = Promise.resolve("none");
+let activeConfigJson: string | null = null;
+
+const runStart = async (next: SyncHandlers): Promise<SyncSource> => {
   handlers = next;
   let manual = "";
   try {
@@ -216,6 +222,12 @@ const start = async (next: SyncHandlers): Promise<SyncSource> => {
   const cfg = parseConfig(json);
   source = manual ? "manual" : envCfg ? "env" : "none";
 
+  // Same configuration with a live app: nothing to rebuild. Restarting the
+  // SDK here would drop working subscriptions for no reason.
+  if (app && db && json === activeConfigJson) {
+    return source;
+  }
+
   if (app) {
     try {
       await deleteApp(app);
@@ -224,6 +236,7 @@ const start = async (next: SyncHandlers): Promise<SyncSource> => {
     }
     app = null;
     db = null;
+    activeConfigJson = null;
     activeUnsub?.();
     activeUnsub = null;
   }
@@ -239,13 +252,25 @@ const start = async (next: SyncHandlers): Promise<SyncSource> => {
     if (import.meta.env.VITE_FIRESTORE_EMULATOR === "1") {
       connectFirestoreEmulator(db, "localhost", 8080);
     }
+    activeConfigJson = json;
     handlers.onStatus("connecting");
   } catch (err) {
     app = null;
     db = null;
+    activeConfigJson = null;
     handlers.onStatus("error", err instanceof Error ? err.message : "Konfigurasi Firebase tidak valid");
   }
   return source;
+};
+
+const start = (next: SyncHandlers): Promise<SyncSource> => {
+  handlers = next;
+  const run = startChain.then(
+    () => runStart(next),
+    () => runStart(next)
+  );
+  startChain = run;
+  return run;
 };
 
 export const configureSync = (next: SyncHandlers): Promise<SyncSource> => start(next);

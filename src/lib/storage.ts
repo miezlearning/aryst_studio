@@ -59,6 +59,7 @@ const IDB_STATE_MODIFIED_KEY = "lumina_studio_state_modified";
 export const MAX_SHOWCASE = 4;
 export const MAX_HERO_VIDEO_BYTES = 30 * 1024 * 1024;
 
+export const DEFAULT_HERO_VIDEO_LOCAL = "/hero-video.mp4";
 export const DEFAULT_HERO_VIDEO_HD = "https://assets.mixkit.co/videos/5382/5382-720.mp4";
 export const DEFAULT_HERO_VIDEO_SD = "https://assets.mixkit.co/videos/5382/5382-360.mp4";
 export const DEFAULT_HERO_POSTER = "https://assets.mixkit.co/videos/5382/5382-thumb-720-0.jpg";
@@ -657,6 +658,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       await set(IDB_HERO_VIDEO_URL_KEY, savedHeroVideoUrl);
       stateModified = cloudState.lastModified;
       await set(IDB_STATE_MODIFIED_KEY, stateModified);
+    } else if (cloudState?.heroVideoUrl && !savedHeroVideoUrl) {
+      savedHeroVideoUrl = cloudState.heroVideoUrl;
+      await set(IDB_HERO_VIDEO_URL_KEY, savedHeroVideoUrl);
     }
 
     let seeded = false;
@@ -859,7 +863,8 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       showcaseSubscription?.();
       stateSubscription = subscribeStudioState(async (remote) => {
         const stamp = (await get<number>(IDB_STATE_MODIFIED_KEY)) || 0;
-        if (remote.lastModified <= stamp) return;
+        const currentHero = getStore().heroVideoUrl;
+        if (remote.lastModified <= stamp && (!remote.heroVideoUrl || remote.heroVideoUrl === currentHero)) return;
         await adoptStudioState(remote);
       });
       showcaseSubscription = subscribeShowcaseCloud((docs) => {
@@ -1520,19 +1525,25 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   },
 
   saveHeroVideoUpload: async (blob: Blob) => {
-    // Cloudflare R2 (free tier) stores the file so its public URL plays
-    // in every browser
+    // 1. Immediately store the uploaded video in local IndexedDB so it always
+    // plays smoothly in this browser without requiring an external cloud server
+    await set(IDB_HERO_VIDEO_BLOB_KEY, blob);
+    await set(IDB_HERO_VIDEO_URL_KEY, "");
+    setStore({ heroVideoUrl: "", hasHeroVideoUpload: true });
+
+    // 2. If Cloudflare R2 is configured, also upload to R2 for public sync
     const r2 = await getR2Config();
-    if (!r2) {
-      throw new Error(
-        "Cloudflare R2 belum dikonfigurasi. Buka Pengaturan lalu isi kartu Video Hero (Cloudflare R2)."
-      );
+    if (r2) {
+      try {
+        const url = await uploadHeroVideoR2(blob, r2);
+        await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
+        await set(IDB_HERO_VIDEO_URL_KEY, url);
+        setStore({ heroVideoUrl: url, hasHeroVideoUpload: false });
+        persistStudioState();
+      } catch (err) {
+        console.warn("R2 upload error, falling back to local storage:", err);
+      }
     }
-    const url = await uploadHeroVideoR2(blob, r2);
-    await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
-    await set(IDB_HERO_VIDEO_URL_KEY, url);
-    setStore({ heroVideoUrl: url, hasHeroVideoUpload: false });
-    persistStudioState();
   },
 
   clearHeroVideo: async () => {
@@ -1544,8 +1555,6 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
 
   resolveHeroVideoUrl: async () => {
     const { heroVideoUrl } = getStore();
-    // The cloud URL wins so every browser shows the same hero; the local
-    // blob only serves as a fallback for offline leftovers
     if (heroVideoUrl) return heroVideoUrl;
     try {
       const blob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY);
@@ -1553,7 +1562,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     } catch {
       // Fall through to default
     }
-    return "";
+    return DEFAULT_HERO_VIDEO_LOCAL;
   },
 
   loadPhotos: async (forceReload = false) => {

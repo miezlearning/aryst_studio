@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   useProofingStore,
+  DEFAULT_HERO_VIDEO_LOCAL,
   DEFAULT_HERO_VIDEO_HD,
   DEFAULT_HERO_VIDEO_SD,
   DEFAULT_HERO_POSTER,
@@ -9,8 +10,9 @@ import {
 /**
  * Background Showcase Video for the Hero section.
  * - Displays studio showcase video in background with smooth autoplay & loop (muted)
- * - Fallback chain: uploaded video -> custom URL -> default studio clip -> poster
- * - Layered with warm gradient overlay for high contrast & legibility
+ * - Fallback chain: uploaded video blob -> custom URL -> local /hero-video.mp4 -> Mixkit HD -> poster
+ * - Dynamic autoplay recovery: starts playback immediately on user interaction if initial autoplay policy restricts it
+ * - Layered with subtle gradient overlay for high contrast & legibility without hiding the video
  * - Precision studio grid overlay with radial gradient fade mask
  * - Pure & clean: no distracting control widgets in the hero
  * - Accessible: respects prefers-reduced-motion
@@ -44,7 +46,7 @@ export const HeroVideo: React.FC = () => {
       setCustomSrc(url);
       setMediaReady(false);
       setResolved(true);
-      setBroken((prev) => prev.filter((s) => s !== url && s !== "default"));
+      setBroken([]);
     });
     return () => {
       cancelled = true;
@@ -53,65 +55,96 @@ export const HeroVideo: React.FC = () => {
   }, [heroVideoUrl, hasHeroVideoUpload, resolveHeroVideoUrl]);
 
   const markBroken = useCallback((src: string) => {
-    setMediaReady(false);
+    if (!src) return;
     setBroken((prev) => (prev.includes(src) ? prev : [...prev, src]));
   }, []);
+
+  // Multi-tier fallback chain
+  const activeSrc =
+    customSrc && !broken.includes(customSrc)
+      ? customSrc
+      : !broken.includes(DEFAULT_HERO_VIDEO_LOCAL)
+      ? DEFAULT_HERO_VIDEO_LOCAL
+      : !broken.includes(DEFAULT_HERO_VIDEO_HD)
+      ? DEFAULT_HERO_VIDEO_HD
+      : !broken.includes(DEFAULT_HERO_VIDEO_SD)
+      ? DEFAULT_HERO_VIDEO_SD
+      : "";
+
+  const showVideo = !reducedMotion && Boolean(activeSrc);
+  const showPoster = reducedMotion || !showVideo;
+  const showSkeleton = !resolved || (!reducedMotion && showVideo && !mediaReady);
 
   // Safety net: never leave shimmer forever if autoplay is slow
   useEffect(() => {
     if (!resolved || mediaReady) return;
-    const timer = window.setTimeout(() => setMediaReady(true), 6000);
+    const timer = window.setTimeout(() => setMediaReady(true), 3500);
     return () => window.clearTimeout(timer);
   }, [resolved, mediaReady]);
 
-  const customBroken = Boolean(customSrc) && broken.includes(customSrc);
-  const showCustom = resolved && Boolean(customSrc) && !customBroken;
-  const showDefault = resolved && !showCustom && !broken.includes("default");
-  const showVideo = !reducedMotion && (showCustom || showDefault);
-  const showPoster = reducedMotion || (resolved && !showVideo);
-  const showSkeleton = !resolved || (!reducedMotion && showVideo && !mediaReady);
+  // Robust Autoplay Handling
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !activeSrc) return;
 
-  const attachVideo = useCallback(
-    (el: HTMLVideoElement | null, sourceId: string) => {
-      videoRef.current = el;
-      if (!el) return;
-      el.muted = true;
-      el.defaultMuted = true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.playsInline = true;
 
-      const attemptPlay = () => {
-        if (videoRef.current !== el) return;
-        el.muted = true;
-        const p = el.play();
-        if (p) {
-          p.catch(() => undefined);
-        }
-      };
+    const playVideo = () => {
+      if (!videoRef.current) return;
+      videoRef.current.muted = true;
+      const promise = videoRef.current.play();
+      if (promise !== undefined) {
+        promise
+          .then(() => {
+            setMediaReady(true);
+          })
+          .catch(() => {
+            // Browser autoplay policy prevented automatic playback without interaction.
+            // Bind single-use interaction listeners so video moves immediately
+            const unlockPlayback = () => {
+              if (!videoRef.current) return;
+              videoRef.current.muted = true;
+              videoRef.current
+                .play()
+                .then(() => setMediaReady(true))
+                .catch(() => undefined);
+              window.removeEventListener("pointerdown", unlockPlayback);
+              window.removeEventListener("touchstart", unlockPlayback);
+              window.removeEventListener("scroll", unlockPlayback);
+              window.removeEventListener("wheel", unlockPlayback);
+              window.removeEventListener("keydown", unlockPlayback);
+            };
+            window.addEventListener("pointerdown", unlockPlayback, { passive: true, once: true });
+            window.addEventListener("touchstart", unlockPlayback, { passive: true, once: true });
+            window.addEventListener("scroll", unlockPlayback, { passive: true, once: true });
+            window.addEventListener("wheel", unlockPlayback, { passive: true, once: true });
+            window.addEventListener("keydown", unlockPlayback, { passive: true, once: true });
+          });
+      }
+    };
 
-      attemptPlay();
-      el.oncanplay = attemptPlay;
+    playVideo();
 
-      // Fallback if media network error
-      window.setTimeout(() => {
-        if (
-          videoRef.current === el &&
-          el.readyState === 0 &&
-          el.networkState === 3
-        ) {
-          markBroken(sourceId);
-        }
-      }, 7000);
-    },
-    [markBroken]
-  );
+    const handleLoaded = () => {
+      setMediaReady(true);
+      playVideo();
+    };
+    const handlePlaying = () => {
+      setMediaReady(true);
+    };
 
-  const customRef = useCallback(
-    (el: HTMLVideoElement | null) => attachVideo(el, customSrc || "custom"),
-    [attachVideo, customSrc]
-  );
-  const defaultRef = useCallback(
-    (el: HTMLVideoElement | null) => attachVideo(el, "default"),
-    [attachVideo]
-  );
+    video.addEventListener("loadeddata", handleLoaded);
+    video.addEventListener("canplay", handleLoaded);
+    video.addEventListener("playing", handlePlaying);
+
+    return () => {
+      video.removeEventListener("loadeddata", handleLoaded);
+      video.removeEventListener("canplay", handleLoaded);
+      video.removeEventListener("playing", handlePlaying);
+    };
+  }, [activeSrc]);
 
   return (
     <div
@@ -122,45 +155,21 @@ export const HeroVideo: React.FC = () => {
       {/* ── 1. Video & Poster Layer ────────────────────────────── */}
       <div className="absolute inset-0 will-change-transform">
         {showVideo ? (
-          showCustom ? (
-            <video
-              ref={customRef}
-              key={customSrc}
-              className="w-full h-full object-cover scale-[1.03] transition-opacity duration-1000"
-              src={customSrc}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              disablePictureInPicture
-              onCanPlay={() => setMediaReady(true)}
-              onPlaying={() => setMediaReady(true)}
-              onError={() => markBroken(customSrc)}
-            />
-          ) : (
-            <video
-              ref={defaultRef}
-              key="default"
-              className="w-full h-full object-cover scale-[1.03] transition-opacity duration-1000"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              disablePictureInPicture
-              onCanPlay={() => setMediaReady(true)}
-              onPlaying={() => setMediaReady(true)}
-              onError={() => markBroken("default")}
-            >
-              <source
-                src={DEFAULT_HERO_VIDEO_SD}
-                media="(max-width: 640px)"
-                type="video/mp4"
-              />
-              <source src={DEFAULT_HERO_VIDEO_HD} type="video/mp4" />
-            </video>
-          )
+          <video
+            ref={videoRef}
+            key={activeSrc}
+            className="w-full h-full object-cover scale-[1.03] transition-opacity duration-700"
+            src={activeSrc}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            disablePictureInPicture
+            onCanPlay={() => setMediaReady(true)}
+            onPlaying={() => setMediaReady(true)}
+            onError={() => markBroken(activeSrc)}
+          />
         ) : showPoster ? (
           <img
             src={DEFAULT_HERO_POSTER}
@@ -173,28 +182,28 @@ export const HeroVideo: React.FC = () => {
 
       {/* ── 2. Loading Shimmer Skeleton ───────────────────────── */}
       <div
-        className={`absolute inset-0 bg-[#FAF8F5]/80 dark:bg-[#09090B]/80 backdrop-blur-sm transition-opacity duration-500 ${
+        className={`absolute inset-0 bg-[#FAF8F5]/60 dark:bg-[#09090B]/60 backdrop-blur-sm transition-opacity duration-500 ${
           showSkeleton ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       />
 
       {/* ── 3. Gradient Scrim Overlays ────────────────────────── */}
       {/* Base wash to let the video breathe while guaranteeing text legibility */}
-      <div className="absolute inset-0 bg-[#FAF8F5]/55 dark:bg-[#09090B]/60 transition-colors duration-200" />
+      <div className="absolute inset-0 bg-[#FAF8F5]/25 dark:bg-[#09090B]/35 transition-colors duration-200" />
 
       {/* Radial ambient lighting: brighter at focal center, glowing softly */}
       <div
         className="absolute inset-0 transition-opacity duration-200 dark:hidden"
         style={{
           background:
-            "radial-gradient(ellipse 90% 70% at 50% 38%, rgba(250, 248, 245, 0.72) 0%, rgba(250, 248, 245, 0.52) 55%, rgba(250, 248, 245, 0.88) 100%)",
+            "radial-gradient(ellipse 90% 75% at 50% 38%, rgba(250, 248, 245, 0.20) 0%, rgba(250, 248, 245, 0.45) 55%, rgba(250, 248, 245, 0.88) 100%)",
         }}
       />
       <div
         className="absolute inset-0 transition-opacity duration-200 hidden dark:block"
         style={{
           background:
-            "radial-gradient(ellipse 90% 70% at 50% 38%, rgba(9, 9, 11, 0.7) 0%, rgba(9, 9, 11, 0.45) 55%, rgba(9, 9, 11, 0.94) 100%)",
+            "radial-gradient(ellipse 90% 75% at 50% 38%, rgba(9, 9, 11, 0.20) 0%, rgba(9, 9, 11, 0.45) 55%, rgba(9, 9, 11, 0.90) 100%)",
         }}
       />
 
@@ -208,10 +217,10 @@ export const HeroVideo: React.FC = () => {
       />
 
       {/* Top subtle fade from header */}
-      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/40 to-transparent dark:from-[#09090B]/90 dark:via-[#09090B]/40 transition-colors duration-200" />
+      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FAF8F5]/85 via-[#FAF8F5]/30 to-transparent dark:from-[#09090B]/85 dark:via-[#09090B]/30 to-transparent transition-colors duration-200" />
 
       {/* Bottom seamless blend into canvas paper (#FAF8F5 / #09090B) */}
-      <div className="absolute bottom-0 inset-x-0 h-48 sm:h-64 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/85 to-transparent dark:from-[#09090B] dark:via-[#09090B]/85 to-transparent transition-colors duration-200" />
+      <div className="absolute bottom-0 inset-x-0 h-44 sm:h-60 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/80 to-transparent dark:from-[#09090B] dark:via-[#09090B]/80 to-transparent transition-colors duration-200" />
 
       {/* ── 4. Precision Studio Grid with Gradient Fade ───────── */}
       {/* High-tech creative studio grid with radial gradient mask */}

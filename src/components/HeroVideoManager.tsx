@@ -127,26 +127,24 @@ export const HeroVideoManager: React.FC = () => {
       flashSaved();
     } catch (err) {
       const detail = err instanceof Error && err.message ? ` (${err.message})` : "";
-      setError(
-        `Gagal mengunggah video ke cloud${detail}. Periksa konfigurasi Cloudflare R2 di kartu Pengaturan, atau gunakan URL video.`
-      );
+      setError(`Gagal menyimpan video${detail}.`);
     } finally {
       setIsUploading(false);
     }
   };
 
   const activeSource = hasHeroVideoUpload
-    ? "File upload"
+    ? "File upload lokal"
     : heroVideoUrl
-      ? "URL kustom"
-      : "Default studio";
+      ? "URL kustom (Cloud)"
+      : "Default studio bawaan";
 
   return (
-    <div className="bg-white border border-black/[0.08] rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.1] rounded-2xl p-6 shadow-sm transition-colors">
       <div className="flex flex-col lg:flex-row gap-5">
         {/* Preview */}
         <div className="lg:w-64 shrink-0">
-          <div className="relative rounded-xl overflow-hidden bg-black/5 border border-black/[0.08] aspect-video">
+          <div className="relative rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 border border-black/[0.08] dark:border-white/[0.1] aspect-video">
             <video
               key={previewSrc}
               className="w-full h-full object-cover"
@@ -165,49 +163,52 @@ export const HeroVideoManager: React.FC = () => {
               {activeSource}
             </span>
           </div>
-          <p className="mt-2 text-[11px] text-[#71717A]">
+          <p className="mt-2 text-[11px] text-[#71717A] dark:text-zinc-400">
             {previewBroken
-              ? "Video tidak bisa dimuat di browser ini (host diblokir / bukan file mp4). Coba URL lain atau upload file."
-              : "Arahkan kursor ke preview untuk memutar."}
+              ? "Video tidak bisa dimuat di browser ini. Periksa URL atau coba upload file video."
+              : "Arahkan kursor ke preview untuk memutar cepat."}
           </p>
         </div>
 
         {/* Controls */}
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-bold text-[#121212] flex items-center gap-2">
+          <h2 className="text-base font-bold text-[#121212] dark:text-white flex items-center gap-2">
             <Clapperboard className="w-4 h-4 text-[#FF5A1F]" />
             <span>Video Latar Hero</span>
           </h2>
-          <p className="text-xs text-[#52525B] mt-1 mb-4">
-            Video autoplay tanpa suara di latar hero halaman utama. Upload mendapat
-            prioritas, lalu URL kustom, lalu default studio.
+          <p className="text-xs text-[#52525B] dark:text-zinc-400 mt-1 mb-3">
+            Video sinematik berulang otomatis (autoplay loop, tanpa suara) di latar hero landing page.
           </p>
 
+          <div className="mb-4 p-3 rounded-xl bg-[#F5F2EB]/60 dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] text-[11px] text-[#71717A] dark:text-zinc-400 leading-relaxed">
+            <span className="font-semibold text-[#121212] dark:text-zinc-200">Tips Sinkronisasi:</span> Jika sudah mengunggah video ke Firebase Storage, Google Drive, atau CDN, salin URL langsung file tersebut (.mp4) lalu tempel ke kolom di bawah. URL akan otomatis tersimpan di <strong>Firestore</strong> dan langsung tampil di semua perangkat klien.
+          </div>
+
           {error && (
-            <p className="mb-3 text-xs text-rose-600 font-medium">{error}</p>
+            <p className="mb-3 text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>
           )}
           {saved && !error && (
-            <p className="mb-3 text-xs text-emerald-600 font-semibold flex items-center gap-1">
+            <p className="mb-3 text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
               <Check className="w-3.5 h-3.5" />
-              <span>Tersimpan. Buka halaman utama untuk melihat.</span>
+              <span>Tersimpan! Buka landing page untuk melihat hasilnya.</span>
             </p>
           )}
 
           <form onSubmit={handleSaveUrl} className="flex items-center gap-2 mb-3">
             <div className="relative flex-1">
-              <Link2 className="w-3.5 h-3.5 text-[#71717A] absolute left-3 top-1/2 -translate-y-1/2" />
+              <Link2 className="w-3.5 h-3.5 text-[#71717A] dark:text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="url"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                placeholder="https://.../video.mp4 (opsional)"
-                className="w-full pl-9 pr-3.5 py-2 bg-white border border-black/15 rounded-xl text-xs text-[#121212] placeholder-[#A1A1AA] focus:outline-none focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] transition-colors"
+                placeholder="https://.../video.mp4 (URL Firebase Storage / CDN / Drive)"
+                className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-[#202026] border border-black/15 dark:border-white/10 rounded-xl text-xs text-[#121212] dark:text-[#F4F4F6] placeholder-[#A1A1AA] dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] transition-colors"
               />
             </div>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-2 rounded-xl bg-[#F5F2EB] hover:bg-[#EDE9E0] text-[#121212] text-xs font-semibold transition-colors disabled:opacity-50 shrink-0"
+              className="px-4 py-2 rounded-xl bg-[#F5F2EB] dark:bg-white/[0.08] hover:bg-[#EDE9E0] dark:hover:bg-white/[0.12] text-[#121212] dark:text-white text-xs font-semibold transition-colors disabled:opacity-50 shrink-0"
             >
               {isSaving ? "Menyimpan..." : "Simpan URL"}
             </button>
@@ -225,7 +226,7 @@ export const HeroVideoManager: React.FC = () => {
               ) : (
                 <Upload className="w-3.5 h-3.5" />
               )}
-              <span>{isUploading ? "Mengunggah..." : "Upload Video (maks 30 MB)"}</span>
+              <span>{isUploading ? "Menyimpan..." : "Upload Video Lokal (maks 30 MB)"}</span>
             </button>
             <input
               ref={fileRef}
@@ -241,10 +242,10 @@ export const HeroVideoManager: React.FC = () => {
                   setError(null);
                   clearHeroVideo().then(flashSaved);
                 }}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white hover:bg-black/[0.04] border border-black/10 text-[#71717A] hover:text-[#121212] text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-white/[0.06] hover:bg-black/[0.04] dark:hover:bg-white/[0.1] border border-black/10 dark:border-white/10 text-[#71717A] dark:text-zinc-300 hover:text-[#121212] dark:hover:text-white text-xs font-medium transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Kembalikan Default</span>
+                <span>Reset ke Video Bawaan</span>
               </button>
             )}
           </div>

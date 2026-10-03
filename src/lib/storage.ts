@@ -115,6 +115,36 @@ heroVideoChannel?.addEventListener("message", (event: MessageEvent) => {
   applyHeroVideoChange(data.kind, typeof data.url === "string" ? data.url : "");
 });
 
+// Same cross-tab problem for the landing showcase: the admin tab writes
+// IndexedDB, but a landing page open in another tab keeps its boot-time copy
+// until someone refreshes it. Firestore realtime covers this when sync is
+// live; the channel below covers it always (including fully offline).
+const showcaseChannel =
+  typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("aryst-showcase") : null;
+
+async function applyShowcaseChange() {
+  try {
+    const cached = (await get<ShowcaseItem[]>(IDB_SHOWCASE_KEY)) || [];
+    useProofingStore.setState((s) => ({
+      showcaseItems: cached.slice(0, MAX_SHOWCASE),
+      showcaseRev: s.showcaseRev + 1,
+    }));
+  } catch {
+    useProofingStore.setState((s) => ({ showcaseRev: s.showcaseRev + 1 }));
+  }
+}
+
+function notifyShowcaseChange() {
+  // The mutating tab already updated its own store; just bump the revision
+  // and tell the other tabs to re-read the shared IndexedDB copy.
+  useProofingStore.setState((s) => ({ showcaseRev: s.showcaseRev + 1 }));
+  showcaseChannel?.postMessage({ rev: Date.now() });
+}
+
+showcaseChannel?.addEventListener("message", () => {
+  void applyShowcaseChange();
+});
+
 // ── Selection deadline helpers ────────────────────────────────
 export const isDeadlinePassed = (project?: ClientProject | null): boolean =>
   Boolean(project?.selectionDeadline && Date.now() > project.selectionDeadline);
@@ -520,6 +550,9 @@ interface ProofingState {
 
   // Landing showcase (editable preview photos)
   showcaseItems: ShowcaseItem[];
+  // Bumped on every showcase mutation (and on cross-tab notices) so every
+  // open tab re-renders without a page refresh, even while cloud sync is off.
+  showcaseRev: number;
 
   // True once init() hydrated showcase/hero/projects from IndexedDB
   // (used to hold skeletons instead of flashing default content)
@@ -670,6 +703,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
   config: DEFAULT_CONFIG,
   session: DEFAULT_SESSION,
   showcaseItems: [],
+  showcaseRev: 0,
   isBooted: false,
   heroVideoUrl: "",
   hasHeroVideoUpload: false,
@@ -1588,6 +1622,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const updated: ShowcaseItem[] = [...showcaseItems, item];
     await set(IDB_SHOWCASE_KEY, updated);
     setStore({ showcaseItems: updated });
+    notifyShowcaseChange();
     pushShowcaseCloud(asCloudShowcase(item));
     persistStudioState();
     return true;
@@ -1601,6 +1636,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const updated: ShowcaseItem[] = [...showcaseItems, stored];
     await set(IDB_SHOWCASE_KEY, updated);
     setStore({ showcaseItems: updated });
+    notifyShowcaseChange();
     pushShowcaseCloud(asCloudShowcase(stored));
     persistStudioState();
     return true;
@@ -1610,6 +1646,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const updated = getStore().showcaseItems.filter((item) => item.id !== id);
     await set(IDB_SHOWCASE_KEY, updated);
     setStore({ showcaseItems: updated });
+    notifyShowcaseChange();
     deleteShowcaseCloud(id);
     persistStudioState();
   },
@@ -1622,12 +1659,14 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     [items[idx], items[target]] = [items[target], items[idx]];
     await set(IDB_SHOWCASE_KEY, items);
     setStore({ showcaseItems: items });
+    notifyShowcaseChange();
     persistStudioState();
   },
 
   resetShowcase: async () => {
     await set(IDB_SHOWCASE_KEY, []);
     setStore({ showcaseItems: [] });
+    notifyShowcaseChange();
     void clearShowcaseCloud();
     persistStudioState();
   },

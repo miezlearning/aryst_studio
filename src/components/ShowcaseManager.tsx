@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Upload,
   RotateCcw,
+  RefreshCw,
   Search,
   Images,
   Loader2,
@@ -26,6 +27,7 @@ export const ShowcaseManager: React.FC = () => {
     moveShowcaseItem,
     resetShowcase,
     setViewMode,
+    loadPhotos,
   } = useProofingStore();
 
   const [candidates, setCandidates] = useState<ShowcaseCandidate[]>([]);
@@ -78,8 +80,27 @@ export const ShowcaseManager: React.FC = () => {
     return Array.from(map.entries());
   }, [filtered]);
 
-  const handlePick = async (candidate: ShowcaseCandidate) => {
+  // Re-read Drive photos for the active session, then rebuild the picker
+  // from caches: new files added to Drive appear without a page refresh.
+  // Without a Drive config this just re-reads local caches (never wipes).
+  const handleReloadCandidates = async () => {
     setError(null);
+    setIsLoading(true);
+    try {
+      const st = useProofingStore.getState();
+      if (st.config.folderId && st.config.apiKey) {
+        await loadPhotos(true);
+      }
+      const list = await fetchShowcaseCandidates();
+      setCandidates(list);
+    } catch {
+      setError("Gagal memuat ulang daftar foto.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePick = async (candidate: ShowcaseCandidate) => {    setError(null);
     if (showcaseItems.length >= MAX_SHOWCASE) {
       setError(`Showcase penuh (maks ${MAX_SHOWCASE} foto). Hapus salah satu dulu.`);
       return;
@@ -267,7 +288,18 @@ export const ShowcaseManager: React.FC = () => {
               Klik foto untuk menambahkannya ke showcase halaman utama.
             </p>
           </div>
-          <div className="relative w-full sm:w-64">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={handleReloadCandidates}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#F5F2EB] dark:bg-white/[0.06] hover:bg-[#EDE9E0] dark:hover:bg-white/[0.1] text-[#121212] dark:text-zinc-200 text-xs font-medium transition-colors disabled:opacity-50 shrink-0"
+              title="Muat ulang foto dari Drive untuk sesi aktif"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Muat ulang</span>
+            </button>
+            <div className="relative flex-1 sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717A] dark:text-zinc-400" />
             <input
               type="text"
@@ -276,6 +308,7 @@ export const ShowcaseManager: React.FC = () => {
               placeholder="Cari nama / sesi..."
               className="w-full pl-9 pr-3.5 py-2 bg-white dark:bg-[#202026] border border-black/15 dark:border-white/10 rounded-xl text-xs text-[#121212] dark:text-[#F4F4F6] placeholder-[#A1A1AA] dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] transition-colors"
             />
+            </div>
           </div>
         </div>
 

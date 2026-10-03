@@ -23,35 +23,22 @@ import {
 const iconBtnClass =
   "p-2.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white border border-black/[0.06] dark:border-white/[0.08] transition-colors";
 
-export const Navbar: React.FC = () => {
+const AdminNavbar: React.FC = () => {
   const {
-    session,
-    photos,
-    activeFilter,
-    setActiveFilter,
-    activeSectionFilter,
-    setActiveSectionFilter,
-    isSidebarActive,
-    setIsSidebarActive,
-    setIsSubmissionOpen,
-    viewMode,
-    setViewMode,
     clientProjects,
     activeProjectId,
     switchProject,
     logoutAdmin,
     isP2PConnected,
+    setViewMode,
   } = useProofingStore();
 
   const [isSessionDropdownOpen, setIsSessionDropdownOpen] = useState(false);
   const [sessionSearch, setSessionSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const selectedCount = session.selectedPhotoIds.length;
-  const isFull = selectedCount >= session.maxQuota;
-
   const activeProject =
-    clientProjects.find((p) => p.id === activeProjectId) || clientProjects[0];
+    (clientProjects || []).find((p) => p && p.id === activeProjectId) || clientProjects[0];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -83,19 +70,15 @@ export const Navbar: React.FC = () => {
   }, [isSessionDropdownOpen]);
 
   const filteredProjects = useMemo(() => {
-    if (!sessionSearch.trim()) return clientProjects;
+    if (!sessionSearch.trim()) return clientProjects || [];
     const q = sessionSearch.toLowerCase().trim();
-    return clientProjects.filter(
+    return (clientProjects || []).filter(
       (p) =>
-        (p.clientName || "").toLowerCase().includes(q) ||
-        (p.projectId || "").toLowerCase().includes(q)
+        p &&
+        ((p.clientName || "").toLowerCase().includes(q) ||
+          (p.projectId || "").toLowerCase().includes(q))
     );
   }, [clientProjects, sessionSearch]);
-
-  // Landing has its own header
-  if (viewMode === "landing") {
-    return null;
-  }
 
   const liveDot = isP2PConnected ? (
     <span
@@ -104,11 +87,8 @@ export const Navbar: React.FC = () => {
     />
   ) : null;
 
-  // ── Admin navbar ──────────────────────────────────────────
-  // Slim control bar docked to the right of the sidebar (no duplicate brand).
-  if (viewMode === "admin") {
-    return (
-      <header className="fixed top-4 z-40 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] lg:left-[284px] lg:right-4 lg:w-auto lg:translate-x-0 h-16 flex items-center justify-between gap-3 bg-white/90 dark:bg-[#141417]/90 border border-black/[0.08] dark:border-white/[0.1] rounded-full px-4 sm:px-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.6)] text-[#121212] dark:text-[#F4F4F6] transition-all">
+  return (
+    <header className="fixed top-4 z-40 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] lg:left-[284px] lg:right-4 lg:w-auto lg:translate-x-0 h-16 flex items-center justify-between gap-3 bg-white/90 dark:bg-[#141417]/90 border border-black/[0.08] dark:border-white/[0.1] rounded-full px-4 sm:px-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.6)] text-[#121212] dark:text-[#F4F4F6] transition-all">
         {/* Brand: only on small screens where the sidebar is hidden */}
         <div className="flex lg:hidden items-center gap-2.5 min-w-0">
           <div
@@ -280,10 +260,41 @@ export const Navbar: React.FC = () => {
         </div>
       </header>
     );
-  }
+  };
 
   // ── Client navbar & sidebar: pure CSS slide/fade (GPU transform) ──
-  const isSidebarActiveRef = useRef(isSidebarActive);
+  const ClientNavbar: React.FC = () => {
+    const {
+      session,
+      photos,
+      activeFilter,
+      setActiveFilter,
+      activeSectionFilter,
+      setActiveSectionFilter,
+      isSidebarActive,
+      setIsSidebarActive,
+      setIsSubmissionOpen,
+      viewMode,
+      setViewMode,
+      clientProjects,
+      activeProjectId,
+      isP2PConnected,
+    } = useProofingStore();
+
+    const selectedCount = session.selectedPhotoIds.length;
+    const isFull = selectedCount >= session.maxQuota;
+
+    const activeProject =
+      (clientProjects || []).find((p) => p && p.id === activeProjectId) || clientProjects[0];
+
+    const liveDot = isP2PConnected ? (
+      <span
+        title="Tersambung realtime"
+        className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"
+      />
+    ) : null;
+
+    const isSidebarActiveRef = useRef(isSidebarActive);
 
   useEffect(() => {
     isSidebarActiveRef.current = isSidebarActive;
@@ -715,4 +726,18 @@ export const Navbar: React.FC = () => {
       </aside>
     </>
   );
+};
+
+export const Navbar: React.FC = () => {
+  const { viewMode } = useProofingStore();
+
+  if (viewMode === "landing") {
+    return null;
+  }
+
+  if (viewMode === "admin") {
+    return <AdminNavbar />;
+  }
+
+  return <ClientNavbar />;
 };

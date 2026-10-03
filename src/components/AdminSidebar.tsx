@@ -42,7 +42,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
   return (
     <>
       {/* ── Desktop floating sidebar ─────────────────────────── */}
-      <aside className="hidden lg:flex fixed left-4 top-4 bottom-4 w-64 z-30 rounded-[24px] bg-white/90 dark:bg-[#18181C]/90 border border-black/[0.08] dark:border-white/[0.1] backdrop-blur-md shadow-[0_12px_36px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.5)] p-3.5 flex-col transition-colors">
+      <aside className="hidden lg:flex fixed left-4 top-4 bottom-4 w-64 z-30 rounded-[24px] bg-white/90 dark:bg-[#141417]/90 border border-black/[0.08] dark:border-white/[0.1] backdrop-blur-md shadow-[0_12px_36px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.5)] p-3.5 flex-col transition-colors">
         <div className="flex items-center justify-between px-2 pt-1 pb-4">
           <BrandMark iconClassName="w-7 h-7" textClassName="text-sm font-black" />
           <span className="text-[10px] font-extrabold tracking-widest text-[#FF5A1F] px-2.5 py-1 rounded-full bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/20">
@@ -65,7 +65,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 onClick={() => onTabChange(item.id)}
                 className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
                   isActive
-                    ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+                    ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] shadow-sm"
                     : "text-[#121212]/70 dark:text-zinc-400 hover:text-[#121212] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
                 }`}
               >
@@ -79,7 +79,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold tabular-nums ${
                       isActive
-                        ? "bg-white/20 dark:bg-black/15 text-white dark:text-[#121212]"
+                        ? "bg-white/20 dark:bg-black/15 text-white dark:text-[#09090B]"
                         : "bg-black/[0.06] dark:bg-white/[0.08] text-[#121212]/70 dark:text-zinc-400"
                     }`}
                   >
@@ -139,7 +139,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </aside>
 
       {/* ── Mobile bottom nav ────────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-3 inset-x-3 z-40 rounded-full bg-white/95 dark:bg-[#18181C]/95 border border-black/[0.08] dark:border-white/[0.1] backdrop-blur-md shadow-[0_12px_36px_rgba(0,0,0,0.1)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.5)] px-3 py-2 grid grid-cols-4 transition-colors">
+      <nav className="lg:hidden fixed bottom-3 inset-x-3 z-40 rounded-full bg-white/95 dark:bg-[#141417]/95 border border-black/[0.08] dark:border-white/[0.1] backdrop-blur-md shadow-[0_12px_36px_rgba(0,0,0,0.1)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.5)] px-3 py-2 grid grid-cols-4 transition-colors">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;

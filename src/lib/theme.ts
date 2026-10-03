@@ -36,7 +36,7 @@ export const applyTheme = (theme: Theme): "light" | "dark" => {
   // Update mobile browser chrome color
   const metaThemeColor = document.querySelector('meta[name="theme-color"]');
   if (metaThemeColor) {
-    metaThemeColor.setAttribute("content", resolved === "dark" ? "#0E0E12" : "#FAF8F5");
+    metaThemeColor.setAttribute("content", resolved === "dark" ? "#09090B" : "#FAF8F5");
   }
 
   return resolved;

@@ -31,7 +31,7 @@ export const FloatingDock: React.FC = () => {
           : "opacity-100 translate-y-0"
       }`}
     >
-      <div className="pointer-events-auto max-w-xl w-full bg-white/95 dark:bg-[#18181C]/95 backdrop-blur-md rounded-full sm:rounded-full p-3 sm:py-2.5 sm:px-5 shadow-[0_12px_40px_-6px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_12px_40px_-6px_rgba(0,0,0,0.6)] border border-black/[0.08] dark:border-white/[0.12] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 transition-colors">
+      <div className="pointer-events-auto max-w-xl w-full bg-white/95 dark:bg-[#141417]/95 backdrop-blur-md rounded-full sm:rounded-full p-3 sm:py-2.5 sm:px-5 shadow-[0_12px_40px_-6px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_12px_40px_-6px_rgba(0,0,0,0.7)] border border-black/[0.08] dark:border-white/[0.12] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 transition-colors">
         {/* Progress & Quota Information */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -92,7 +92,7 @@ export const FloatingDock: React.FC = () => {
             onClick={() => setActiveFilter(activeFilter === "selected" ? "all" : "selected")}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 ${
               activeFilter === "selected"
-                ? "bg-[#121212] dark:bg-white border-black dark:border-white text-white dark:text-[#121212]"
+                ? "bg-[#121212] dark:bg-white border-black dark:border-white text-white dark:text-[#09090B] font-bold"
                 : "bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] border-black/[0.08] dark:border-white/[0.08] text-[#52525B] dark:text-[#A1A1AA]"
             }`}
             title="Saring foto terpilih"

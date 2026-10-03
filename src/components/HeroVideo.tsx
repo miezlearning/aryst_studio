@@ -173,28 +173,28 @@ export const HeroVideo: React.FC = () => {
 
       {/* ── 2. Loading Shimmer Skeleton ───────────────────────── */}
       <div
-        className={`absolute inset-0 bg-[#FAF8F5]/80 dark:bg-[#0E0E12]/80 backdrop-blur-sm transition-opacity duration-700 ${
+        className={`absolute inset-0 bg-[#FAF8F5]/80 dark:bg-[#09090B]/80 backdrop-blur-sm transition-opacity duration-500 ${
           showSkeleton ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       />
 
       {/* ── 3. Gradient Scrim Overlays ────────────────────────── */}
       {/* Base wash to let the video breathe while guaranteeing text legibility */}
-      <div className="absolute inset-0 bg-[#FAF8F5]/55 dark:bg-[#0E0E12]/60 transition-colors duration-300" />
+      <div className="absolute inset-0 bg-[#FAF8F5]/55 dark:bg-[#09090B]/60 transition-colors duration-200" />
 
       {/* Radial ambient lighting: brighter at focal center, glowing softly */}
       <div
-        className="absolute inset-0 transition-opacity duration-300 dark:hidden"
+        className="absolute inset-0 transition-opacity duration-200 dark:hidden"
         style={{
           background:
             "radial-gradient(ellipse 90% 70% at 50% 38%, rgba(250, 248, 245, 0.72) 0%, rgba(250, 248, 245, 0.52) 55%, rgba(250, 248, 245, 0.88) 100%)",
         }}
       />
       <div
-        className="absolute inset-0 transition-opacity duration-300 hidden dark:block"
+        className="absolute inset-0 transition-opacity duration-200 hidden dark:block"
         style={{
           background:
-            "radial-gradient(ellipse 90% 70% at 50% 38%, rgba(14, 14, 18, 0.75) 0%, rgba(14, 14, 18, 0.5) 55%, rgba(14, 14, 18, 0.92) 100%)",
+            "radial-gradient(ellipse 90% 70% at 50% 38%, rgba(9, 9, 11, 0.7) 0%, rgba(9, 9, 11, 0.45) 55%, rgba(9, 9, 11, 0.94) 100%)",
         }}
       />
 
@@ -203,15 +203,15 @@ export const HeroVideo: React.FC = () => {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle 500px at 50% 32%, rgba(255, 90, 31, 0.09) 0%, transparent 70%)",
+            "radial-gradient(circle 500px at 50% 32%, rgba(255, 90, 31, 0.08) 0%, transparent 70%)",
         }}
       />
 
       {/* Top subtle fade from header */}
-      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/40 to-transparent dark:from-[#0E0E12]/90 dark:via-[#0E0E12]/40 transition-colors duration-300" />
+      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/40 to-transparent dark:from-[#09090B]/90 dark:via-[#09090B]/40 transition-colors duration-200" />
 
-      {/* Bottom seamless blend into canvas paper (#FAF8F5 / #0E0E12) */}
-      <div className="absolute bottom-0 inset-x-0 h-48 sm:h-64 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/85 to-transparent dark:from-[#0E0E12] dark:via-[#0E0E12]/85 to-transparent transition-colors duration-300" />
+      {/* Bottom seamless blend into canvas paper (#FAF8F5 / #09090B) */}
+      <div className="absolute bottom-0 inset-x-0 h-48 sm:h-64 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/85 to-transparent dark:from-[#09090B] dark:via-[#09090B]/85 to-transparent transition-colors duration-200" />
 
       {/* ── 4. Precision Studio Grid with Gradient Fade ───────── */}
       {/* High-tech creative studio grid with radial gradient mask */}

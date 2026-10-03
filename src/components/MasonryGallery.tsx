@@ -180,12 +180,12 @@ export const MasonryGallery: React.FC = () => {
       {/* Controls Bar: Status Filter & Search */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-4">
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 p-1.5 bg-white dark:bg-[#18181C] rounded-full border border-black/[0.08] dark:border-white/[0.1] shadow-sm overflow-x-auto text-xs font-semibold transition-colors">
+        <div className="flex items-center gap-1.5 p-1.5 bg-white dark:bg-[#141417] rounded-full border border-black/[0.08] dark:border-white/[0.1] shadow-sm overflow-x-auto text-xs font-semibold transition-colors">
           <button
             onClick={() => setActiveFilter("all")}
             className={`px-4 py-1.5 rounded-full transition-all ${
               activeFilter === "all"
-                ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+                ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] shadow-sm font-bold"
                 : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
             }`}
           >
@@ -195,7 +195,7 @@ export const MasonryGallery: React.FC = () => {
             onClick={() => setActiveFilter("selected")}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-all ${
               activeFilter === "selected"
-                ? "bg-[#FF5A1F] text-white shadow-sm"
+                ? "bg-[#FF5A1F] text-white shadow-sm font-bold"
                 : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
             }`}
           >
@@ -214,7 +214,7 @@ export const MasonryGallery: React.FC = () => {
             onClick={() => setActiveFilter("unselected")}
             className={`px-4 py-1.5 rounded-full transition-all ${
               activeFilter === "unselected"
-                ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+                ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] shadow-sm font-bold"
                 : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
             }`}
           >
@@ -230,7 +230,7 @@ export const MasonryGallery: React.FC = () => {
               value={gallerySortOrder}
               onChange={(e) => setGallerySortOrder(e.target.value as "name" | "date")}
               aria-label="Urutan foto"
-              className="appearance-none pl-9 pr-8 py-2 bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.1] shadow-sm rounded-full text-xs font-semibold text-[#121212] dark:text-[#F4F4F6] focus:outline-none focus:border-black/30 dark:focus:border-white/30 transition-all cursor-pointer"
+              className="appearance-none pl-9 pr-8 py-2 bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.1] shadow-sm rounded-full text-xs font-semibold text-[#121212] dark:text-[#F4F4F6] focus:outline-none focus:border-black/30 dark:focus:border-white/30 transition-all cursor-pointer"
             >
               <option value="name">Nomor nama file</option>
               <option value="date">Tanggal upload</option>
@@ -244,7 +244,7 @@ export const MasonryGallery: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari nomor, nama, lokasi..."
-              className="w-full pl-10 pr-8 py-2 bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.1] shadow-sm rounded-full text-xs font-medium text-[#121212] dark:text-[#F4F4F6] placeholder-[#A1A1AA] dark:placeholder-zinc-500 focus:outline-none focus:border-black/30 dark:focus:border-white/30 transition-all"
+              className="w-full pl-10 pr-8 py-2 bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.1] shadow-sm rounded-full text-xs font-medium text-[#121212] dark:text-[#F4F4F6] placeholder-[#A1A1AA] dark:placeholder-zinc-500 focus:outline-none focus:border-black/30 dark:focus:border-white/30 transition-all"
             />
             {searchQuery && (
               <button
@@ -268,15 +268,15 @@ export const MasonryGallery: React.FC = () => {
       {/* Storyline Grouped Sections Grid */}
       {photos.length === 0 && !searchQuery && activeFilter === "all" ? (
         <div className="mtioon-card p-8 sm:p-12 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-black/[0.04] border border-black/[0.06] mb-4">
-            <Layers className="w-5 h-5 text-[#71717A]" />
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-black/[0.04] dark:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.1] mb-4">
+            <Layers className="w-5 h-5 text-[#71717A] dark:text-[#A1A1AA]" />
           </div>
           {!config.folderId ? (
             <>
-              <p className="font-display font-bold text-sm sm:text-base text-[#121212]">
+              <p className="font-display font-bold text-sm sm:text-base text-[#121212] dark:text-white">
                 Galeri ini belum dihubungkan ke folder foto
               </p>
-              <p className="text-xs text-[#71717A] mt-1.5 max-w-md mx-auto">
+              <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1.5 max-w-md mx-auto">
                 Fotografer belum memasukkan tautan folder Google Drive untuk sesi ini. Foto akan
                 muncul otomatis begitu sumber foto diatur.
               </p>
@@ -410,7 +410,7 @@ const StorylineChapterBar: React.FC<StorylineChapterBarProps> = ({
 
   return (
     <div
-      className={`sticky top-20 z-20 mb-8 p-1.5 bg-white/90 dark:bg-[#18181C]/90 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.5)] rounded-full flex items-center gap-1.5 overflow-x-auto transition-all duration-300 ${
+      className={`sticky top-20 z-20 mb-8 p-1.5 bg-white/90 dark:bg-[#141417]/90 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.5)] rounded-full flex items-center gap-1.5 overflow-x-auto transition-all duration-300 ${
         isSidebarActive ? "lg:hidden" : ""
       }`}
     >
@@ -423,7 +423,7 @@ const StorylineChapterBar: React.FC<StorylineChapterBarProps> = ({
         onClick={() => setActiveSectionFilter("all")}
         className={`px-4 py-1.5 rounded-full font-bold text-xs whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ${
           activeSectionFilter === "all"
-            ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+            ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] shadow-sm"
             : "text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
         }`}
       >
@@ -431,7 +431,7 @@ const StorylineChapterBar: React.FC<StorylineChapterBarProps> = ({
         <span
           className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
             activeSectionFilter === "all"
-              ? "bg-white/20 dark:bg-black/15 text-white dark:text-[#121212]"
+              ? "bg-white/20 dark:bg-black/15 text-white dark:text-[#09090B]"
               : "bg-black/[0.05] dark:bg-white/[0.08] text-[#71717A] dark:text-[#A1A1AA]"
           }`}
         >
@@ -505,15 +505,15 @@ const PhotoCard = React.memo<PhotoCardProps>(({
 
   return (
     <div
-      className={`masonry-item group relative rounded-[26px] overflow-hidden bg-white border select-none transition-all duration-300 shadow-[0_4px_16px_rgba(0,0,0,0.03)] hover:-translate-y-1 hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.09)] ${
+      className={`masonry-item group relative rounded-[26px] overflow-hidden bg-white dark:bg-[#141417] border select-none transition-all duration-300 shadow-[0_4px_16px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.6)] hover:-translate-y-1 hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.09)] dark:hover:shadow-[0_16px_36px_-6px_rgba(0,0,0,0.7)] ${
         isSelected
           ? "border-[#FF5A1F] ring-2 ring-[#FF5A1F]/30 shadow-[0_8px_24px_rgba(255,90,31,0.18)]"
-          : "border-black/[0.08] hover:border-black/20"
+          : "border-black/[0.08] dark:border-white/[0.08] hover:border-black/20 dark:hover:border-white/20"
       }`}
     >
       {/* Aspect ratio placeholder before image load to prevent Layout Shift */}
       <div
-        className="relative w-full cursor-pointer overflow-hidden bg-black/[0.03]"
+        className="relative w-full cursor-pointer overflow-hidden bg-black/[0.03] dark:bg-white/[0.04]"
         style={{
           aspectRatio: photo.width && photo.height ? `${photo.width} / ${photo.height}` : "4 / 3",
         }}
@@ -521,13 +521,13 @@ const PhotoCard = React.memo<PhotoCardProps>(({
         onMouseEnter={preloadPreview}
       >
         {!isLoaded && !hasError && (
-          <div className="absolute inset-0 bg-black/[0.04] animate-pulse flex items-center justify-center text-[#A1A1AA] text-xs font-medium">
+          <div className="absolute inset-0 bg-black/[0.04] dark:bg-white/[0.06] animate-pulse flex items-center justify-center text-[#A1A1AA] dark:text-zinc-500 text-xs font-medium">
             {photo.name}
           </div>
         )}
 
         {hasError ? (
-          <div className="absolute inset-0 bg-black/[0.03] flex flex-col items-center justify-center p-4 text-center text-[#71717A]">
+          <div className="absolute inset-0 bg-black/[0.03] dark:bg-white/[0.04] flex flex-col items-center justify-center p-4 text-center text-[#71717A] dark:text-[#A1A1AA]">
             <span className="text-xs mb-1">Gagal memuat gambar</span>
             <span className="text-[10px] text-[#A1A1AA] truncate max-w-full font-medium">
               {photo.name}
@@ -565,7 +565,7 @@ const PhotoCard = React.memo<PhotoCardProps>(({
                 ? "btn-mtioon-primary text-white scale-100 shadow-[0_4px_0_#C2410C,0_8px_20px_rgba(255,90,31,0.35)]"
                 : isLocked || isFull
                 ? "bg-black/60 text-white/70 backdrop-blur-md cursor-not-allowed text-[11px]"
-                : "bg-white/95 hover:bg-white text-[#121212] border border-black/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95"
+                : "bg-white/95 dark:bg-[#1C1C22]/95 hover:bg-white dark:hover:bg-[#25252E] text-[#121212] dark:text-white border border-black/[0.08] dark:border-white/[0.1] shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95"
             }`}
             title={
               isLocked

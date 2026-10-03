@@ -111,7 +111,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#0E0E12] text-[#121212] dark:text-[#F4F4F6] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] transition-colors duration-200">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#09090B] text-[#121212] dark:text-[#F4F4F6] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] transition-colors duration-200">
       {/* Offline Alert Bar */}
       <OfflineIndicator />
 
@@ -136,7 +136,7 @@ export const App: React.FC = () => {
             {/* Client Welcome Brief with Integrated Session Switcher in 1 Single Container */}
             <section className="pt-28 pb-8 px-4 sm:px-6 lg:px-8">
               <div className="max-w-7xl mx-auto">
-                <div className="mtioon-card group relative overflow-hidden rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#18181C] shadow-sm flex flex-col lg:flex-row items-stretch justify-between min-h-[290px] lg:min-h-[310px]">
+                <div className="mtioon-card group relative overflow-hidden rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#141417] shadow-sm flex flex-col lg:flex-row items-stretch justify-between min-h-[290px] lg:min-h-[310px]">
                   {/* Absolute Background Photo Bleed on the Right (Natural Gradient Divider) */}
                   {hasMultipleSessions && nextProject && (
                     <div className="absolute right-0 top-0 bottom-0 w-full lg:w-[66%] xl:w-[60%] h-full overflow-hidden pointer-events-none select-none session-bleed-mask">
@@ -336,7 +336,7 @@ export const App: React.FC = () => {
             <SubmissionModal />
 
             {/* Footer */}
-            <footer className="border-t border-black/[0.06] dark:border-white/[0.08] py-8 px-4 sm:px-6 lg:px-8 text-xs text-[#71717A] dark:text-[#A1A1AA] bg-white/60 dark:bg-[#121216]/60 mt-auto transition-colors">
+            <footer className="border-t border-black/[0.06] dark:border-white/[0.08] py-8 px-4 sm:px-6 lg:px-8 text-xs text-[#71717A] dark:text-[#A1A1AA] bg-white/60 dark:bg-[#09090B]/80 mt-auto transition-colors">
               <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                 <BrandMark iconClassName="w-6 h-6" textClassName="text-base" />
 

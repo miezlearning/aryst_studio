@@ -39,6 +39,7 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
   const trackRef = useRef<HTMLDivElement>(null);
   const [tx, setTx] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Metrics>({
     containerW: 1,
     cardW: 1,
@@ -188,6 +189,7 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     stop();
+    setHoveredId(null);
     drag.current = {
       startX: e.clientX,
       startTx: txRef.current,
@@ -220,45 +222,50 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
         aria-roledescription="carousel"
         aria-label="Koleksi galeri: seret untuk menjelajah"
         onPointerDown={onPointerDown}
-        className={`strip-mask overflow-hidden py-2 select-none ${
+        className={`strip-mask overflow-hidden py-3 select-none ${
           dragging ? "cursor-grabbing" : "cursor-grab"
         }`}
         style={{ touchAction: "pan-y" }}
       >
         <div
           ref={trackRef}
-          className="flex gap-5 w-max"
+          className="flex gap-5 w-max py-2 px-2"
           style={{
             transform: `translate3d(${tx}px, 0, 0)`,
-            perspective: "1200px",
           }}
         >
-          {items.map((photo, i) => {
-            const center =
-              (i * metrics.step + metrics.cardW / 2 + txRef.current) /
-              metrics.containerW;
-            const off = Math.max(-1, Math.min(1, center - 0.5));
-            const focus = 1 - Math.min(1, Math.abs(off));
+          {items.map((photo) => {
+            const isHovered = hoveredId === photo.id;
+            const isSibling = hoveredId !== null && !isHovered;
+
+            const scale = isHovered ? 1.06 : isSibling ? 0.94 : 1.0;
+            const opacity = isSibling ? 0.65 : 1.0;
+            const zIndex = isHovered ? 30 : 5;
+
             return (
               <button
                 key={photo.id}
                 type="button"
+                onMouseEnter={() => {
+                  if (!draggingRef.current) setHoveredId(photo.id);
+                }}
+                onMouseLeave={() => setHoveredId(null)}
                 onClick={() => {
                   if (!drag.current.moved) onPick();
                 }}
                 aria-label="Contoh hasil kurasi: buka form kode sesi galeri"
-                className="group gloss-sweep relative rounded-2xl overflow-hidden bg-white dark:bg-[#18181C] border border-black/[0.07] dark:border-white/[0.1] w-[240px] sm:w-[280px] aspect-[4/5] shrink-0 text-left shadow-[0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F]"
+                className={`group relative rounded-2xl overflow-hidden bg-white dark:bg-[#141417] border w-[240px] sm:w-[280px] aspect-[4/5] shrink-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F] will-change-transform ${
+                  isHovered
+                    ? "border-[#FF5A1F] ring-2 ring-[#FF5A1F]/30 shadow-[0_24px_48px_-8px_rgba(0,0,0,0.28)] dark:shadow-[0_24px_48px_-8px_rgba(0,0,0,0.85)]"
+                    : "border-black/[0.08] dark:border-white/[0.08] shadow-[0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+                }`}
                 style={{
-                  transform: `scale(${0.93 + 0.07 * focus}) rotateY(${
-                    -off * 6
-                  }deg)`,
+                  transform: `scale(${scale})`,
+                  opacity,
+                  zIndex,
                   transition: dragging
                     ? "none"
-                    : "transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease",
-                  boxShadow:
-                    focus > 0.85
-                      ? "0 16px 36px -12px rgba(0, 0, 0, 0.22)"
-                      : undefined,
+                    : "transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, box-shadow 0.35s ease, border-color 0.25s ease",
                 }}
               >
                 <img
@@ -266,8 +273,33 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
                   alt="Contoh hasil kurasi foto"
                   loading="lazy"
                   draggable={false}
-                  className="w-full h-full object-cover pointer-events-none"
+                  className={`w-full h-full object-cover pointer-events-none transition-transform duration-700 ease-out ${
+                    isHovered ? "scale-110" : "scale-100"
+                  }`}
                 />
+
+                {/* Hover Dark Gradient Scrim */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent pointer-events-none transition-opacity duration-300 ${
+                    isHovered ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+
+                {/* Floating Interactive CTA Pill that glides up on hover */}
+                <div
+                  className={`absolute inset-x-3 bottom-3 p-2.5 rounded-xl bg-white/95 dark:bg-[#1C1C22]/95 backdrop-blur-md border border-black/10 dark:border-white/10 flex items-center justify-between shadow-lg pointer-events-none transition-all duration-300 ${
+                    isHovered
+                      ? "opacity-100 translate-y-0"
+                      : "opacity-0 translate-y-2"
+                  }`}
+                >
+                  <span className="text-[11px] font-bold text-[#121212] dark:text-white">
+                    Lihat Contoh Foto
+                  </span>
+                  <span className="w-5 h-5 rounded-full bg-[#FF5A1F] text-white flex items-center justify-center text-xs font-bold shadow-xs">
+                    →
+                  </span>
+                </div>
               </button>
             );
           })}
@@ -295,7 +327,7 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
               onClick={() => stepBy(1)}
               disabled={atStart}
               aria-label="Foto sebelumnya"
-              className="w-9 h-9 rounded-full bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.12] shadow-sm flex items-center justify-center text-[#121212] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors disabled:opacity-35 disabled:pointer-events-none"
+              className="w-9 h-9 rounded-full bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.1] shadow-sm flex items-center justify-center text-[#121212] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors disabled:opacity-35 disabled:pointer-events-none"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -304,7 +336,7 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
               onClick={() => stepBy(-1)}
               disabled={atEnd}
               aria-label="Foto berikutnya"
-              className="w-9 h-9 rounded-full bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.12] shadow-sm flex items-center justify-center text-[#121212] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors disabled:opacity-35 disabled:pointer-events-none"
+              className="w-9 h-9 rounded-full bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.1] shadow-sm flex items-center justify-center text-[#121212] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors disabled:opacity-35 disabled:pointer-events-none"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

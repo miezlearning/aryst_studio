@@ -12,6 +12,73 @@ import {
   Images
 } from "lucide-react";
 
+/**
+ * Isolated, zero-overhead eye pupil tracking.
+ * Manipulates DOM transform directly via requestAnimationFrame on mousemove,
+ * preventing any React re-renders in the parent landing page.
+ */
+const InteractiveEyes: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const leftPupilRef = useRef<HTMLDivElement>(null);
+  const rightPupilRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    let mouseX = 0;
+    let mouseY = 0;
+    let pending = false;
+
+    const updatePupils = () => {
+      pending = false;
+      const el = containerRef.current;
+      if (!el || !leftPupilRef.current || !rightPupilRef.current) return;
+      const rect = el.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const deltaX = mouseX - centerX;
+      const deltaY = mouseY - centerY;
+      const angle = Math.atan2(deltaY, deltaX);
+      const distance = Math.min(5, Math.hypot(deltaX, deltaY) / 30);
+      const px = Math.cos(angle) * distance;
+      const py = Math.sin(angle) * distance;
+
+      leftPupilRef.current.style.transform = `translate(${px}px, ${py}px)`;
+      rightPupilRef.current.style.transform = `translate(${px}px, ${py}px)`;
+    };
+
+    const handleMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      if (!pending) {
+        pending = true;
+        rafRef.current = requestAnimationFrame(updatePupils);
+      }
+    };
+
+    window.addEventListener("mousemove", handleMove, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  return (
+    <div ref={containerRef} className="my-6 flex items-center justify-center gap-2 select-none">
+      <div className="w-12 h-12 rounded-full bg-[#121212] dark:bg-[#1E1E24] flex items-center justify-center relative shadow-sm border border-transparent dark:border-white/[0.1]">
+        <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
+          <div ref={leftPupilRef} className="w-2.5 h-2.5 rounded-full bg-[#121212] will-change-transform" />
+        </div>
+      </div>
+      <div className="w-12 h-12 rounded-full bg-[#121212] dark:bg-[#1E1E24] flex items-center justify-center relative shadow-sm border border-transparent dark:border-white/[0.1]">
+        <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center">
+          <div ref={rightPupilRef} className="w-2.5 h-2.5 rounded-full bg-[#121212] will-change-transform" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const LandingPage: React.FC = () => {
   const {
     openClientByCode,
@@ -38,39 +105,12 @@ export const LandingPage: React.FC = () => {
   // Interactive Bento Card 3: Resolution / Zoom specimen
   const [activeZoom, setActiveZoom] = useState<"100%" | "RAW" | "4K">("100%");
 
-  // Interactive Bento Card 4: Focus pupil tracking
-  const eyesContainerRef = useRef<HTMLDivElement>(null);
-  const [pupilOffset, setPupilOffset] = useState({ x: 0, y: 0 });
-
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Live clock (WIB)
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 15000);
     return () => window.clearInterval(timer);
-  }, []);
-
-  // Pupil cursor tracking
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!eyesContainerRef.current) return;
-      const rect = eyesContainerRef.current.getBoundingClientRect();
-      const eyeCenterX = rect.left + rect.width / 2;
-      const eyeCenterY = rect.top + rect.height / 2;
-
-      const deltaX = e.clientX - eyeCenterX;
-      const deltaY = e.clientY - eyeCenterY;
-      const angle = Math.atan2(deltaY, deltaX);
-      const distance = Math.min(6, Math.hypot(deltaX, deltaY) / 25);
-
-      setPupilOffset({
-        x: Math.cos(angle) * distance,
-        y: Math.sin(angle) * distance,
-      });
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
   const timeStr =
@@ -119,7 +159,7 @@ export const LandingPage: React.FC = () => {
   const primarySample = sampleProjects[0] || { projectId: "WED-2026-RIAN" };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#0E0E12] text-[#121212] dark:text-[#F4F4F6] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] relative transition-colors duration-200">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#09090B] text-[#121212] dark:text-[#F4F4F6] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] relative transition-colors duration-200">
       {/* ── Global Precision Studio Millimeter Grid across all sections ── */}
       <div
         className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
@@ -153,7 +193,7 @@ export const LandingPage: React.FC = () => {
 
       {/* Floating Island Navbar */}
       <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl">
-        <div className="bg-white/90 dark:bg-[#18181C]/90 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] rounded-full px-5 py-2.5 flex items-center justify-between transition-all">
+        <div className="bg-white/90 dark:bg-[#141417]/90 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] rounded-full px-5 py-2.5 flex items-center justify-between transition-all">
           <div
             onDoubleClick={() => setViewMode("admin")}
             className="cursor-pointer"
@@ -210,84 +250,84 @@ export const LandingPage: React.FC = () => {
             <div className="relative inline-block w-full max-w-4xl mx-auto">
               {/* Badge 1: Top-Left */}
               <DraggableCandyChip
-              text="retouch kulit natural"
-              colorClass="bg-[#E5484D]"
-              wrapperClassName="hidden sm:block absolute -top-8 left-2 sm:-left-6 animate-float-1"
-            />
+                text="retouch kulit natural"
+                colorClass="bg-[#E5484D]"
+                wrapperClassName="hidden sm:block absolute -top-8 left-2 sm:-left-6 rotate-[-6deg]"
+              />
 
-            {/* Badge 2: Top-Right */}
-            <DraggableCandyChip
-              text="pilih 25 foto terbaik"
-              colorClass="bg-[#2A8CFF]"
-              wrapperClassName="hidden sm:block absolute -top-10 right-4 sm:right-2 animate-float-2"
-            />
+              {/* Badge 2: Top-Right */}
+              <DraggableCandyChip
+                text="pilih 25 foto terbaik"
+                colorClass="bg-[#2A8CFF]"
+                wrapperClassName="hidden sm:block absolute -top-10 right-4 sm:right-2 rotate-[4deg]"
+              />
 
-            {/* Badge 3: Middle-Right */}
-            <DraggableCandyChip
-              text="color grading hangat"
-              colorClass="bg-[#FEBC2E]"
-              textColor="text-[#121212]"
-              wrapperClassName="hidden lg:block absolute top-28 -right-8 animate-float-3"
-            />
+              {/* Badge 3: Middle-Right */}
+              <DraggableCandyChip
+                text="color grading hangat"
+                colorClass="bg-[#FEBC2E]"
+                textColor="text-[#121212]"
+                wrapperClassName="hidden lg:block absolute top-28 -right-8 rotate-[-3deg]"
+              />
 
-            {/* Badge 4: Middle-Left */}
-            <DraggableCandyChip
-              text="WED-2026-RIAN"
-              colorClass="bg-[#FF5A1F]"
-              wrapperClassName="hidden lg:block absolute top-28 -left-8 animate-float-4"
-            />
+              {/* Badge 4: Middle-Left */}
+              <DraggableCandyChip
+                text="WED-2026-RIAN"
+                colorClass="bg-[#FF5A1F]"
+                wrapperClassName="hidden lg:block absolute top-28 -left-8 rotate-[5deg]"
+              />
 
-            {/* Badge 5: Bottom-Right */}
-            <DraggableCandyChip
-              text="foto candid keluarga"
-              colorClass="bg-[#8B5CF6]"
-              wrapperClassName="hidden sm:block absolute -bottom-5 right-2 sm:right-8 animate-float-5"
-            />
+              {/* Badge 5: Bottom-Right */}
+              <DraggableCandyChip
+                text="foto candid keluarga"
+                colorClass="bg-[#8B5CF6]"
+                wrapperClassName="hidden sm:block absolute -bottom-5 right-2 sm:right-8 rotate-[3deg]"
+              />
 
-            {/* Headline in Sunghyun Sans 900 */}
-            <h1 className="font-display font-[900] text-5xl sm:text-7xl lg:text-[76px] tracking-[-0.04em] text-[#121212] dark:text-white leading-[1.04] mb-6">
-              Pilih momen.
-              <br />
-              Sampaikan rasa.
-            </h1>
-          </div>
+              {/* Headline in Sunghyun Sans 900 */}
+              <h1 className="font-display font-[900] text-5xl sm:text-7xl lg:text-[76px] tracking-[-0.04em] text-[#121212] dark:text-white leading-[1.04] mb-6">
+                Pilih momen.
+                <br />
+                Sampaikan rasa.
+              </h1>
+            </div>
 
-          {/* Sub-headline */}
-          <p className="mt-3 text-base sm:text-lg text-[#52525B] dark:text-[#A1A1AA] max-w-2xl mx-auto leading-relaxed font-medium">
-            Portal privat untuk melihat dan memilih hasil pemotretan Anda. Tandai foto favorit,
-            tulis catatan retouching per frame, lalu kirimkan langsung ke fotografer.
-          </p>
+            {/* Sub-headline */}
+            <p className="mt-3 text-base sm:text-lg text-[#52525B] dark:text-[#A1A1AA] max-w-2xl mx-auto leading-relaxed font-medium">
+              Portal privat untuk melihat dan memilih hasil pemotretan Anda. Tandai foto favorit,
+              tulis catatan retouching per frame, lalu kirimkan langsung ke fotografer.
+            </p>
 
-          {/* Tactile Buttons */}
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={() => handleSearchSession(undefined, primarySample.projectId)}
-              className="btn-mtioon-primary px-7 py-3 text-sm font-bold flex items-center gap-2"
-            >
-              <span>Buka sesi demo</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            {/* Tactile Buttons */}
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => handleSearchSession(undefined, primarySample.projectId)}
+                className="btn-mtioon-primary px-7 py-3 text-sm font-bold flex items-center gap-2"
+              >
+                <span>Buka sesi demo</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
 
-            <button
-              onClick={() => {
-                searchInputRef.current?.focus();
-              }}
-              className="btn-mtioon-secondary px-7 py-3 text-sm font-bold"
-            >
-              Ketik kode sesi
-            </button>
-          </div>
+              <button
+                onClick={() => {
+                  searchInputRef.current?.focus();
+                }}
+                className="btn-mtioon-secondary px-7 py-3 text-sm font-bold"
+              >
+                Ketik kode sesi
+              </button>
+            </div>
 
-          {/* Search Capsule */}
-          <div className="mt-8 max-w-lg mx-auto">
-            <form
-              onSubmit={(e) => handleSearchSession(e)}
-              className="bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.1] shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] rounded-full p-1.5 pl-5 flex items-center gap-2 transition-shadow focus-within:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.1)] focus-within:border-black/20 dark:focus-within:border-white/30"
-            >
-              <KeyRound className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA] shrink-0" />
-              <input
-                ref={searchInputRef}
-                type="text"
+            {/* Search Capsule */}
+            <div className="mt-8 max-w-lg mx-auto">
+              <form
+                onSubmit={(e) => handleSearchSession(e)}
+                className="bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.12] shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] rounded-full p-1.5 pl-5 flex items-center gap-2 transition-shadow focus-within:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.1)] focus-within:border-black/20 dark:focus-within:border-white/30"
+              >
+                <KeyRound className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA] shrink-0" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
                 value={sessionCodeInput}
                 onChange={(e) => {
                   setSessionCodeInput(e.target.value);
@@ -349,7 +389,7 @@ export const LandingPage: React.FC = () => {
                         onClick={() => setActivePresetIndex(idx)}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${
                           idx === activePresetIndex
-                            ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+                            ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] shadow-sm font-bold"
                             : "bg-black/[0.04] dark:bg-white/[0.06] text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
                         }`}
                       >
@@ -429,7 +469,7 @@ export const LandingPage: React.FC = () => {
                             onClick={() => setActiveZoom(z)}
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center justify-center transition-colors ${
                               activeZoom === z
-                                ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212]"
+                                ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] shadow-xs font-bold"
                                 : "text-[#71717A] dark:text-[#A1A1AA] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                             }`}
                           >
@@ -457,40 +497,15 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Bento Card 4: Fokus & Tatapan (Interactive Eyes) */}
-                <div
-                  ref={eyesContainerRef}
-                  className="mtioon-card p-6 flex flex-col justify-between overflow-hidden relative"
-                >
+                <div className="mtioon-card p-6 flex flex-col justify-between overflow-hidden relative">
                   <div className="flex items-center justify-between">
                     <span className="px-2.5 py-0.5 rounded-full bg-black/[0.05] dark:bg-white/[0.06] text-[10.5px] font-semibold text-[#52525B] dark:text-[#A1A1AA]">
                       Fokus & Tatapan
                     </span>
                   </div>
 
-                  {/* Two Interactive Eyes that follow mouse pointer */}
-                  <div className="my-6 flex items-center justify-center gap-2 select-none">
-                    <div className="w-12 h-12 rounded-full bg-[#121212] dark:bg-[#27272D] flex items-center justify-center relative shadow-sm border border-transparent dark:border-white/[0.08]">
-                      <div
-                        className="w-5 h-5 rounded-full bg-white flex items-center justify-center transition-transform duration-75"
-                        style={{
-                          transform: `translate(${pupilOffset.x}px, ${pupilOffset.y}px)`,
-                        }}
-                      >
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#121212]" />
-                      </div>
-                    </div>
-
-                    <div className="w-12 h-12 rounded-full bg-[#121212] dark:bg-[#27272D] flex items-center justify-center relative shadow-sm border border-transparent dark:border-white/[0.08]">
-                      <div
-                        className="w-5 h-5 rounded-full bg-white flex items-center justify-center transition-transform duration-75"
-                        style={{
-                          transform: `translate(${pupilOffset.x}px, ${pupilOffset.y}px)`,
-                        }}
-                      >
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#121212]" />
-                      </div>
-                    </div>
-                  </div>
+                  {/* Two Interactive Eyes that follow mouse pointer without triggering React re-renders */}
+                  <InteractiveEyes />
 
                   <div>
                     <h4 className="font-display font-bold text-sm text-[#121212] dark:text-white">
@@ -568,7 +583,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="mtioon-card p-7 flex flex-col justify-between">
               <div>
-                <span className="w-8 h-8 rounded-full bg-[#121212] dark:bg-white text-white dark:text-[#121212] font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
+                <span className="w-8 h-8 rounded-full bg-[#121212] dark:bg-white text-white dark:text-[#09090B] font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
                   1
                 </span>
                 <h3 className="font-display font-bold text-base text-[#121212] dark:text-white">
@@ -596,7 +611,7 @@ export const LandingPage: React.FC = () => {
 
             <div className="mtioon-card p-7 flex flex-col justify-between">
               <div>
-                <span className="w-8 h-8 rounded-full bg-[#121212] dark:bg-white text-white dark:text-[#121212] font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
+                <span className="w-8 h-8 rounded-full bg-[#121212] dark:bg-white text-white dark:text-[#09090B] font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
                   3
                 </span>
                 <h3 className="font-display font-bold text-base text-[#121212] dark:text-white">
@@ -612,7 +627,7 @@ export const LandingPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-black/[0.06] dark:border-white/[0.08] py-10 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-[#0E0E12]/80 text-xs text-[#71717A] dark:text-[#A1A1AA] transition-colors">
+      <footer className="border-t border-black/[0.06] dark:border-white/[0.08] py-10 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-[#09090B]/80 text-xs text-[#71717A] dark:text-[#A1A1AA] transition-colors">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <BrandMark iconClassName="w-6 h-6" textClassName="text-lg" />
 

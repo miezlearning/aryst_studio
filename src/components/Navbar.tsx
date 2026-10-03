@@ -109,7 +109,7 @@ export const Navbar: React.FC = () => {
   // Slim control bar docked to the right of the sidebar (no duplicate brand).
   if (viewMode === "admin") {
     return (
-      <header className="fixed top-4 z-40 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] lg:left-[284px] lg:right-4 lg:w-auto lg:translate-x-0 h-16 flex items-center justify-between gap-3 bg-white/90 border border-black/[0.08] rounded-full px-4 sm:px-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] transition-all">
+      <header className="fixed top-4 z-40 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] lg:left-[284px] lg:right-4 lg:w-auto lg:translate-x-0 h-16 flex items-center justify-between gap-3 bg-white/90 dark:bg-[#141417]/90 border border-black/[0.08] dark:border-white/[0.1] rounded-full px-4 sm:px-6 backdrop-blur-xl shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.6)] text-[#121212] dark:text-[#F4F4F6] transition-all">
         {/* Brand: only on small screens where the sidebar is hidden */}
         <div className="flex lg:hidden items-center gap-2.5 min-w-0">
           <div
@@ -130,8 +130,8 @@ export const Navbar: React.FC = () => {
               onClick={() => setIsSessionDropdownOpen((prev) => !prev)}
               className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full border text-xs font-semibold transition-colors focus:outline-none ${
                 isSessionDropdownOpen
-                  ? "bg-black/[0.06] border-black/20 text-[#121212]"
-                  : "bg-black/[0.03] hover:bg-black/[0.06] border-black/[0.06] text-[#52525B] hover:text-[#121212]"
+                  ? "bg-black/[0.06] dark:bg-white/[0.1] border-black/20 dark:border-white/20 text-[#121212] dark:text-white"
+                  : "bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] border-black/[0.06] dark:border-white/[0.08] text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
               }`}
               aria-expanded={isSessionDropdownOpen}
               aria-label="Pilih sesi klien aktif"
@@ -142,10 +142,10 @@ export const Navbar: React.FC = () => {
                   : "-"}
               </span>
               <span className="text-left hidden md:block max-w-[140px] leading-tight">
-                <span className="block text-xs font-bold text-[#121212] truncate">
+                <span className="block text-xs font-bold text-[#121212] dark:text-white truncate">
                   {activeProject?.clientName || "Pilih Sesi"}
                 </span>
-                <span className="block text-[10px] text-[#71717A] truncate">
+                <span className="block text-[10px] text-[#71717A] dark:text-[#A1A1AA] truncate">
                   {activeProject?.projectId || ""}
                 </span>
               </span>
@@ -458,7 +458,7 @@ export const Navbar: React.FC = () => {
         <header
           ref={topNavRef}
           style={{ transform: "translate3d(0, 0, 0)", opacity: 1 }}
-          className="pointer-events-auto w-full max-w-6xl h-16 rounded-full px-4 sm:px-6 flex items-center justify-between bg-white/95 dark:bg-[#18181C]/95 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] will-change-transform transition-colors"
+          className="pointer-events-auto w-full max-w-6xl h-16 rounded-full px-4 sm:px-6 flex items-center justify-between bg-white/95 dark:bg-[#141417]/95 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] will-change-transform transition-colors"
         >
         {/* Brand */}
         <div className="flex items-center gap-3 min-w-0">
@@ -510,7 +510,7 @@ export const Navbar: React.FC = () => {
           <button
             onClick={() => setIsSubmissionOpen(true)}
             className={`btn-mtioon-primary flex items-center gap-2 pl-4 pr-2.5 py-2 text-xs font-bold ${
-              isFull ? "bg-[#121212] dark:bg-white dark:text-[#121212] hover:bg-black shadow-[0_4px_0_#000]" : ""
+              isFull ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] hover:bg-black dark:hover:bg-zinc-100 shadow-[0_4px_0_#000] dark:shadow-[0_4px_0_#D4D4D8]" : ""
             }`}
           >
             {isFull ? (
@@ -519,7 +519,7 @@ export const Navbar: React.FC = () => {
               <Send className="w-3.5 h-3.5" />
             )}
             <span className="hidden xs:inline sm:inline">Kirim Seleksi</span>
-            <span className="px-2 py-0.5 rounded-full bg-white/20 dark:bg-black/15 text-white dark:text-[#121212] text-[11px] font-bold tabular-nums">
+            <span className="px-2 py-0.5 rounded-full bg-white/20 dark:bg-black/15 text-white dark:text-[#09090B] text-[11px] font-bold tabular-nums">
               {selectedCount}/{session.maxQuota}
             </span>
           </button>
@@ -545,7 +545,7 @@ export const Navbar: React.FC = () => {
           pointerEvents: "none",
           transform: "translate3d(-40px, 0, 0)",
         }}
-        className="hidden lg:flex fixed z-40 top-6 left-6 bottom-6 w-[286px] h-[calc(100vh-3rem)] rounded-[30px] p-5 flex-col justify-between bg-white/98 dark:bg-[#18181C]/98 backdrop-blur-md shadow-[0_20px_50px_-10px_rgba(0,0,0,0.10)] dark:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.6)] border border-black/[0.08] dark:border-white/[0.1] overflow-hidden text-[#121212] dark:text-[#F4F4F6] will-change-transform transition-colors"
+        className="hidden lg:flex fixed z-40 top-6 left-6 bottom-6 w-[286px] h-[calc(100vh-3rem)] rounded-[30px] p-5 flex-col justify-between bg-white/98 dark:bg-[#141417]/98 backdrop-blur-md shadow-[0_20px_50px_-10px_rgba(0,0,0,0.10)] dark:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.7)] border border-black/[0.08] dark:border-white/[0.1] overflow-hidden text-[#121212] dark:text-[#F4F4F6] will-change-transform transition-colors"
       >
         {/* Top Section */}
         <div className="space-y-4">
@@ -592,7 +592,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Quota Progress Card */}
-          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#202026] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-2">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#1C1C22] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-2">
             <div className="flex items-center justify-between text-xs font-bold">
               <span className="flex items-center gap-1.5 text-[#121212] dark:text-white">
                 {isFull ? (
@@ -608,16 +608,16 @@ export const Navbar: React.FC = () => {
             </div>
 
             {/* Progress bar */}
-            <div className="w-full bg-black/[0.06] rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-black/[0.06] dark:bg-white/[0.1] rounded-full h-2 overflow-hidden">
               <div
                 className={`h-full transition-all duration-300 rounded-full ${
-                  isFull ? "bg-[#121212]" : "bg-[#FF5A1F]"
+                  isFull ? "bg-[#121212] dark:bg-white" : "bg-[#FF5A1F]"
                 }`}
                 style={{ width: `${percentage}%` }}
               />
             </div>
 
-            <div className="flex items-center justify-between text-[11px] font-medium text-[#71717A]">
+            <div className="flex items-center justify-between text-[11px] font-medium text-[#71717A] dark:text-[#A1A1AA]">
               <span>{percentage}% Tercapai</span>
               <span>
                 {session.isLocked
@@ -630,14 +630,14 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Quick Filter Pill Buttons */}
-          <div className="flex items-center gap-1 p-1 bg-black/[0.03] border border-black/[0.05] rounded-full text-[11px] font-semibold">
+          <div className="flex items-center gap-1 p-1 bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.05] dark:border-white/[0.08] rounded-full text-[11px] font-semibold">
             <button
               type="button"
               onClick={() => setActiveFilter("all")}
               className={`flex-1 py-1 rounded-full text-center transition-all ${
                 activeFilter === "all"
-                  ? "bg-white text-[#121212] shadow-sm font-bold"
-                  : "text-[#71717A] hover:text-[#121212]"
+                  ? "bg-white dark:bg-[#141417] text-[#121212] dark:text-white shadow-sm font-bold"
+                  : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
               }`}
             >
               Semua
@@ -648,7 +648,7 @@ export const Navbar: React.FC = () => {
               className={`flex-1 py-1 rounded-full text-center transition-all ${
                 activeFilter === "selected"
                   ? "bg-[#FF5A1F] text-white shadow-sm font-bold"
-                  : "text-[#71717A] hover:text-[#121212]"
+                  : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
               }`}
             >
               Terpilih ({selectedCount})
@@ -658,8 +658,8 @@ export const Navbar: React.FC = () => {
               onClick={() => setActiveFilter("unselected")}
               className={`flex-1 py-1 rounded-full text-center transition-all ${
                 activeFilter === "unselected"
-                  ? "bg-[#121212] text-white shadow-sm font-bold"
-                  : "text-[#71717A] hover:text-[#121212]"
+                  ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] shadow-sm font-bold"
+                  : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
               }`}
             >
               Belum
@@ -739,7 +739,7 @@ export const Navbar: React.FC = () => {
             type="button"
             onClick={() => setIsSubmissionOpen(true)}
             className={`w-full btn-mtioon-primary py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 ${
-              isFull ? "bg-[#121212] dark:bg-white dark:text-[#121212] hover:bg-black shadow-[0_4px_0_#000]" : ""
+              isFull ? "bg-[#121212] dark:bg-white text-white dark:text-[#09090B] hover:bg-black dark:hover:bg-zinc-100 shadow-[0_4px_0_#000] dark:shadow-[0_4px_0_#D4D4D8]" : ""
             }`}
           >
             {isFull ? (
@@ -748,7 +748,7 @@ export const Navbar: React.FC = () => {
               <Send className="w-3.5 h-3.5" />
             )}
             <span>Kirim Seleksi</span>
-            <span className="px-2 py-0.5 rounded-full bg-white/20 dark:bg-black/15 text-white dark:text-[#121212] text-[11px] font-bold tabular-nums">
+            <span className="px-2 py-0.5 rounded-full bg-white/20 dark:bg-black/15 text-white dark:text-[#09090B] text-[11px] font-bold tabular-nums">
               {selectedCount}/{session.maxQuota}
             </span>
           </button>

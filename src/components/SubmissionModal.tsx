@@ -177,9 +177,9 @@ export const SubmissionModal: React.FC = () => {
       }}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl my-auto bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.1] rounded-[32px] p-6 sm:p-8 shadow-2xl text-[#121212] dark:text-[#F4F4F6] transition-colors">
+      <div className="relative w-full max-w-2xl my-auto bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.1] rounded-[32px] p-6 sm:p-8 shadow-2xl text-[#121212] dark:text-[#F4F4F6] transition-colors">
         {/* Header */}
-        <div className="sticky top-0 z-10 -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 px-6 sm:px-8 pt-6 pb-4 mb-6 bg-white dark:bg-[#18181C] border-b border-black/[0.06] dark:border-white/[0.08] rounded-t-[32px] flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-10 -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 px-6 sm:px-8 pt-6 pb-4 mb-6 bg-white dark:bg-[#141417] border-b border-black/[0.06] dark:border-white/[0.08] rounded-t-[32px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#FF5A1F]/10 border border-[#FF5A1F]/20 flex items-center justify-center text-[#FF5A1F]">
               <CheckCircle className="w-5 h-5" />
@@ -236,7 +236,7 @@ export const SubmissionModal: React.FC = () => {
             Pratinjau Foto Terpilih ({selectedCount})
           </h3>
           {selectedPhotos.length === 0 ? (
-            <div className="p-6 text-center rounded-2xl bg-black/[0.02] border border-black/[0.06] text-[#71717A] text-xs">
+            <div className="p-6 text-center rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-[#71717A] dark:text-[#A1A1AA] text-xs">
               Belum ada foto yang dipilih. Silakan kembali ke galeri untuk menandai foto.
             </div>
           ) : (
@@ -244,16 +244,16 @@ export const SubmissionModal: React.FC = () => {
               {selectedPhotos.map((photo, i) => (
                 <div
                   key={photo.id}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-black/[0.02] border border-black/[0.06] text-xs"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] text-xs"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={photo.thumbnailUrl}
                       alt={photo.name}
-                      className="w-10 h-10 rounded-lg object-cover bg-black/[0.05] shrink-0"
+                      className="w-10 h-10 rounded-lg object-cover bg-black/[0.05] dark:bg-white/[0.08] shrink-0"
                     />
                     <div className="truncate">
-                      <p className="font-bold text-[#121212] truncate">{photo.name}</p>
+                      <p className="font-bold text-[#121212] dark:text-white truncate">{photo.name}</p>
                       {photo.section && (
                         <p className="text-[10px] text-[#FF5A1F] truncate flex items-center gap-1 mt-0.5 font-medium">
                           <span>{photo.section}</span>
@@ -267,11 +267,11 @@ export const SubmissionModal: React.FC = () => {
                           Catatan: {session.revisionNotes[photo.id]}
                         </p>
                       ) : (
-                        <p className="text-[11px] text-[#A1A1AA] mt-0.5">Tanpa instruksi khusus</p>
+                        <p className="text-[11px] text-[#A1A1AA] dark:text-zinc-500 mt-0.5">Tanpa instruksi khusus</p>
                       )}
                     </div>
                   </div>
-                  <span className="text-[#71717A] font-bold text-[11px] ml-2 shrink-0">
+                  <span className="text-[#71717A] dark:text-[#A1A1AA] font-bold text-[11px] ml-2 shrink-0">
                     #{i + 1}
                   </span>
                 </div>

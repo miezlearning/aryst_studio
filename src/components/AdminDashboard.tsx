@@ -105,11 +105,11 @@ const SourceStatus: React.FC<{
       <button
         type="button"
         onClick={onConfigure}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[#FF5A1F]/30 bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] hover:bg-[#FFE5DB] dark:hover:bg-[#FF5A1F]/25 text-[11px] font-bold transition-colors"
-        title="Pasang tautan folder Google Drive untuk sesi ini"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 text-[11px] font-bold transition-colors"
+        title="Folder Google Drive belum dipasang untuk sesi ini. Klik untuk memasukkan link folder."
       >
         <Upload className="w-3 h-3" />
-        <span>Tambah Link Folder Drive</span>
+        <span>Tautkan Link Folder Drive</span>
       </button>
     );
   }
@@ -120,10 +120,10 @@ const SourceStatus: React.FC<{
         type="button"
         onClick={onOpenSettings}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-[11px] font-semibold transition-colors"
-        title="Folder sudah terpasang, tetapi kunci API belum diisi"
+        title="Folder sudah ada, tetapi Google Drive API Key belum diisi di Pengaturan Studio"
       >
         <Key className="w-3 h-3" />
-        <span>Atur Kunci API</span>
+        <span>Perlu Kunci API GDrive</span>
       </button>
     );
   }
@@ -197,6 +197,12 @@ export const AdminDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState(globalApiKey);
   const [apiKeySaved, setApiKeySaved] = useState(false);
+
+  useEffect(() => {
+    if (globalApiKey) {
+      setApiKeyInput(globalApiKey);
+    }
+  }, [globalApiKey]);
   const [newPinInput, setNewPinInput] = useState("");
   const [pinSaved, setPinSaved] = useState(false);
   const [fbInput, setFbInput] = useState("");
@@ -337,14 +343,16 @@ export const AdminDashboard: React.FC = () => {
       { key: string; clientName: string; clientContact: string; projects: ClientProject[] }
     >();
 
-    filteredProjects.forEach((proj) => {
-      const key = proj.clientId || proj.clientName.trim().toLowerCase();
+    const safeClients = Array.isArray(clients) ? clients : [];
+    (filteredProjects || []).forEach((proj) => {
+      if (!proj) return;
+      const key = proj.clientId || (proj.clientName || "").trim().toLowerCase() || "klien";
       if (!map.has(key)) {
-        const record = clients.find((c) => c.id === proj.clientId);
+        const record = safeClients.find((c) => c && c.id === proj.clientId);
         map.set(key, {
           key,
-          clientName: record?.name || proj.clientName.trim(),
-          clientContact: record?.contact || "",
+          clientName: record?.name || (proj.clientName || "").trim() || "Klien Terhormat",
+          clientContact: record?.contact || proj.clientContact || "",
           projects: [],
         });
       }

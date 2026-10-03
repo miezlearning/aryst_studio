@@ -43,23 +43,44 @@ class AppErrorBoundary extends React.Component<
     if (this.state.error) {
       return (
         <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#09090B] flex items-center justify-center p-6 font-sans">
-          <div className="mtioon-card max-w-md w-full rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#141417] shadow-sm p-8 text-center">
+          <div className="mtioon-card max-w-lg w-full rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#141417] shadow-sm p-8 text-center">
             <p className="text-xs font-bold uppercase tracking-wider text-[#C2410C] dark:text-orange-300 mb-2">
               ARYST Studio
             </p>
             <h1 className="text-xl font-bold text-[#121212] dark:text-white mb-2">
-              Tampilan gagal dimuat
+              Tampilan Gagal Dimuat
             </h1>
-            <p className="text-sm text-[#52525B] dark:text-[#A1A1AA] mb-6">
-              Terjadi galat saat merender halaman. Data sesi Anda aman, silakan muat ulang untuk kembali.
+            <p className="text-sm text-[#52525B] dark:text-[#A1A1AA] mb-4">
+              Terjadi kendala saat merender komponen. Data sesi Anda tetap aman di cloud.
             </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="btn-mtioon-primary px-6 py-2.5 text-sm font-bold"
-            >
-              Muat Ulang Halaman
-            </button>
+            {this.state.error?.message && (
+              <div className="mb-6 p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5 text-left text-xs font-mono text-rose-600 dark:text-rose-400 break-words">
+                {this.state.error.message}
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="btn-mtioon-primary px-6 py-2.5 text-sm font-bold"
+              >
+                Muat Ulang Halaman
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    sessionStorage.clear();
+                    window.location.href = window.location.pathname;
+                  } catch {
+                    window.location.reload();
+                  }
+                }}
+                className="btn-mtioon-secondary px-5 py-2.5 text-sm font-semibold"
+              >
+                Kembali ke Beranda
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -145,11 +166,11 @@ export const App: React.FC = () => {
   }, [viewMode]);
 
   // Current session & other sessions belonging to this same client
-  const currentProject = clientProjects.find((p) => p.id === activeProjectId);
-  const clientNameKey = (currentProject?.clientName || session.clientName || "").trim().toLowerCase();
-  const clientOtherSessions = clientProjects.filter(
-    (p) => (p.clientName || "").trim().toLowerCase() === clientNameKey
-  );
+  const currentProject = (clientProjects || []).find((p) => p && p.id === activeProjectId);
+  const clientNameKey = (currentProject?.clientName || session?.clientName || "").trim().toLowerCase();
+  const clientOtherSessions = clientNameKey
+    ? (clientProjects || []).filter((p) => p && (p.clientName || "").trim().toLowerCase() === clientNameKey)
+    : [];
 
   const currentSessionIndex = clientOtherSessions.findIndex((p) => p.id === activeProjectId);
   const nextSessionIndex =

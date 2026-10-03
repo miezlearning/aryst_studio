@@ -714,7 +714,8 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const cloudState = await fetchStudioState();
 
     // 3. Local IndexedDB copy
-    let savedApiKey = (await get<string>(IDB_GLOBAL_KEY)) || apiKeyParam || "";
+    const envApiKey = (import.meta.env.VITE_GOOGLE_API_KEY || "").trim();
+    let savedApiKey = (await get<string>(IDB_GLOBAL_KEY)) || apiKeyParam || envApiKey || "";
     let adminPinHash = await resolvePinHash();
     const isAuth = sessionStorage.getItem("lumina_admin_authenticated") === "true";
 
@@ -1969,34 +1970,46 @@ const applyCloudShowcase = () => {
   void set(IDB_SHOWCASE_KEY, items);
 };
 
-const orderKey = (ids: string[]) => ids.join("\u0001");
+const orderKey = (ids?: string[]) => (ids || []).join("\u0001");
 
 /** Adopt a newer cloud studio state into the store + local cache (no push back). */
 const adoptStudioState = async (remote: StudioState): Promise<void> => {
   // Live cloud copies bypass boot, so repair legacy shapes here as well
   const repairedProjects = (remote.projects || []).map((p) => normalizeProjectShape({ ...p }).project);
-  await set(IDB_PROJECTS_KEY, repairedProjects);
-  await set(IDB_CLIENTS_KEY, remote.clients);
-  await set(IDB_GLOBAL_KEY, remote.globalApiKey);
-  await set(IDB_HERO_VIDEO_URL_KEY, remote.heroVideoUrl);
+  const safeClients = Array.isArray(remote.clients) ? remote.clients : [];
+  const ensured = ensureClients(repairedProjects, safeClients);
+  const finalProjects = ensured.projects;
+  const finalClients = ensured.clients;
+
+  await set(IDB_PROJECTS_KEY, finalProjects);
+  await set(IDB_CLIENTS_KEY, finalClients);
+  if (remote.globalApiKey) {
+    await set(IDB_GLOBAL_KEY, remote.globalApiKey);
+  }
+  if (typeof remote.heroVideoUrl === "string") {
+    await set(IDB_HERO_VIDEO_URL_KEY, remote.heroVideoUrl);
+  }
   if (remote.adminPin && looksLikeHash(remote.adminPin)) {
     await set(IDB_ADMIN_PIN_HASH_KEY, remote.adminPin);
   }
-  await set(IDB_STATE_MODIFIED_KEY, remote.lastModified);
-  if (orderKey(remote.showcaseOrder) !== orderKey(cloudShowcaseOrder || [])) {
-    cloudShowcaseOrder = remote.showcaseOrder;
+  await set(IDB_STATE_MODIFIED_KEY, remote.lastModified || Date.now());
+
+  const safeOrder = Array.isArray(remote.showcaseOrder) ? remote.showcaseOrder : [];
+  const currentOrder = Array.isArray(cloudShowcaseOrder) ? cloudShowcaseOrder : [];
+  if (orderKey(safeOrder) !== orderKey(currentOrder)) {
+    cloudShowcaseOrder = safeOrder;
     // A cleared showcase must clear the local one too
-    if (remote.showcaseOrder.length === 0) cloudShowcaseDocs = new Map();
+    if (safeOrder.length === 0) cloudShowcaseDocs = new Map();
     applyCloudShowcase();
   }
   const st = useProofingStore.getState();
   useProofingStore.setState({
-    clientProjects: repairedProjects,
-    clients: remote.clients,
+    clientProjects: finalProjects,
+    clients: finalClients,
     globalApiKey: remote.globalApiKey || st.globalApiKey,
-    heroVideoUrl: remote.heroVideoUrl,
+    heroVideoUrl: typeof remote.heroVideoUrl === "string" ? remote.heroVideoUrl : st.heroVideoUrl,
     adminPin: remote.adminPin && looksLikeHash(remote.adminPin) ? remote.adminPin : st.adminPin,
-    hasHeroVideoUpload: remote.heroVideoUrl ? false : st.hasHeroVideoUpload,
+    hasHeroVideoUpload: (remote.heroVideoUrl || st.heroVideoUrl) ? false : st.hasHeroVideoUpload,
   });
 };
 

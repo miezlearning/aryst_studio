@@ -42,6 +42,15 @@ export const HeroVideo: React.FC = () => {
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
 
+  // On-screen diagnostics (?debug=1): proves which source plays, whether it
+  // advances, and why not, with no DevTools needed.
+  const [debugMode] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("debug") === "1"
+  );
+  const [debugTick, setDebugTick] = useState(0);
+
   // Re-resolve whenever the admin changes the hero video setting, on any tab
   const applySource = useCallback(async () => {
     const url = await resolveHeroVideoUrl();
@@ -106,6 +115,13 @@ export const HeroVideo: React.FC = () => {
 
   // Persistent watchdog: ensures autoplay resumes if paused unintentionally
   const playbackBlocked = useAssuredPlayback(videoRef, showVideo);
+
+  // Debug badge ticker (only with ?debug=1)
+  useEffect(() => {
+    if (!debugMode) return;
+    const timer = window.setInterval(() => setDebugTick((t) => t + 1), 750);
+    return () => window.clearInterval(timer);
+  }, [debugMode]);
 
   // Active Playback Management
   useEffect(() => {
@@ -410,6 +426,16 @@ export const HeroVideo: React.FC = () => {
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Video gagal dimuat. Muat ulang halaman</span>
           </button>
+        </div>
+      ) : null}
+
+      {debugMode ? (
+        <div className="absolute bottom-1 left-1 z-50 pointer-events-none rounded bg-black/85 px-2 py-1 font-mono text-[10px] leading-tight text-lime-300">
+          {(() => {
+            const v = videoRef.current;
+            const src = (v?.currentSrc || activeSrc || "").slice(-42);
+            return `n=${debugTick} src=${src || "(none)"} t=${v ? v.currentTime.toFixed(1) : "-"} paused=${v ? String(v.paused) : "-"} ready=${v ? v.readyState : "-"} show=${String(showVideo)} rm=${String(reducedMotion)} blocked=${String(playbackBlocked)} failed=${String(allSourcesFailed)}`;
+          })()}
         </div>
       ) : null}
     </div>

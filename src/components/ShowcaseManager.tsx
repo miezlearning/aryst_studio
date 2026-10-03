@@ -11,11 +11,36 @@ import {
   Upload,
   RotateCcw,
   RefreshCw,
+  Clock,
   Search,
   Images,
   Loader2,
   Eye,
 } from "lucide-react";
+
+type UploadRowStatus = "queued" | "working" | "done" | "error";
+
+interface UploadRow {
+  id: string;
+  name: string;
+  size: number;
+  status: UploadRowStatus;
+  error?: string;
+  thumb: string;
+}
+
+const formatBytes = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const uploadStatusText: Record<UploadRowStatus, string> = {
+  queued: "Antre",
+  working: "Memproses…",
+  done: "Selesai",
+  error: "Gagal",
+};
 
 export const ShowcaseManager: React.FC = () => {
   const {
@@ -34,6 +59,8 @@ export const ShowcaseManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<UploadRow[]>([]);
+  const [uploadDone, setUploadDone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -83,6 +110,18 @@ export const ShowcaseManager: React.FC = () => {
   // Re-read Drive photos for the active session, then rebuild the picker
   // from caches: new files added to Drive appear without a page refresh.
   // Without a Drive config this just re-reads local caches (never wipes).
+  // Warn before leaving mid-upload: a refresh kills in-flight files, which
+  // is exactly the "must refresh to see it" confusion. Finished files are
+  // already safe in local storage + cloud the moment their row says done.
+  useEffect(() => {
+    if (!isUploading) return;
+    const guard = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, [isUploading]);
+
   const handleReloadCandidates = async () => {
     setError(null);
     setIsLoading(true);
@@ -117,25 +156,77 @@ export const ShowcaseManager: React.FC = () => {
     if (files.length === 0) return;
 
     setError(null);
+    setUploadDone(null);
+    // Release previous thumbnails, then publish one row per file so every
+    // file is visible while queued, processing, done, or failed.
+    uploadQueue.forEach((r) => {
+      if (r.thumb.startsWith("blob:")) URL.revokeObjectURL(r.thumb);
+    });
+    const rows: UploadRow[] = files.map((f, i) => ({
+      id: `uq-${Date.now()}-${i}`,
+      name: f.name,
+      size: f.size,
+      status: "queued",
+      thumb: URL.createObjectURL(f),
+    }));
+    setUploadQueue(rows);
     setIsUploading(true);
+    const setRow = (id: string, patch: Partial<UploadRow>) =>
+      setUploadQueue((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+    const markRemainingSkipped = (reason: string) =>
+      setUploadQueue((prev) =>
+        prev.map((r) =>
+          r.status === "queued" || r.status === "working"
+            ? { ...r, status: "error" as const, error: reason }
+            : r
+        )
+      );
     try {
-      for (const file of files) {
+      let added = 0;
+      // Sequential on purpose: bounded memory, ordered writes, one clear story.
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const row = rows[i];
         if (useProofingStore.getState().showcaseItems.length >= MAX_SHOWCASE) {
           setError(`Showcase penuh (maks ${MAX_SHOWCASE} foto).`);
+          markRemainingSkipped("Dilewati (penuh)");
           break;
         }
-        const { dataUrl } = await downscaleImageFile(file);
-        const ok = await addShowcaseUpload({
-          id: `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          name: file.name,
-          thumbnailUrl: dataUrl,
-          previewUrl: dataUrl,
-          source: "upload",
-        });
-        if (!ok) break;
+        setRow(row.id, { status: "working" });
+        try {
+          const { dataUrl } = await downscaleImageFile(file);
+          const ok = await addShowcaseUpload({
+            id: `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: file.name,
+            thumbnailUrl: dataUrl,
+            previewUrl: dataUrl,
+            source: "upload",
+          });
+          if (row.thumb.startsWith("blob:")) URL.revokeObjectURL(row.thumb);
+          if (!ok) {
+            setRow(row.id, { status: "error", error: "Ditolak", thumb: dataUrl });
+            markRemainingSkipped("Dilewati");
+            break;
+          }
+          added += 1;
+          setRow(row.id, { status: "done", thumb: dataUrl });
+        } catch (err) {
+          if (row.thumb.startsWith("blob:")) URL.revokeObjectURL(row.thumb);
+          setRow(row.id, {
+            status: "error",
+            thumb: "",
+            error: err instanceof Error ? err.message : "Gagal",
+          });
+        }
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal mengunggah gambar.");
+      if (added > 0) {
+        setUploadDone(
+          added === 1
+            ? "1 foto ditambahkan ke showcase dan langsung tampil di landing."
+            : `${added} foto ditambahkan ke showcase dan langsung tampil di landing.`
+        );
+        window.setTimeout(() => setUploadDone(null), 3000);
+      }
     } finally {
       setIsUploading(false);
     }
@@ -208,8 +299,54 @@ export const ShowcaseManager: React.FC = () => {
           </div>
         </div>
 
+        {uploadQueue.length > 0 && (
+          <ul className="mb-3 space-y-1.5" aria-live="polite">
+            {uploadQueue.map((row) => (
+              <li
+                key={row.id}
+                className="flex items-center gap-2.5 rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.03] px-2.5 py-1.5"
+              >
+                {row.thumb ? (
+                  <img
+                    src={row.thumb}
+                    alt=""
+                    className="w-9 h-9 rounded-lg object-cover shrink-0"
+                  />
+                ) : (
+                  <span className="w-9 h-9 rounded-lg bg-black/10 dark:bg-white/10 flex items-center justify-center shrink-0">
+                    <Images className="w-4 h-4 text-[#A1A1AA] dark:text-zinc-500" />
+                  </span>
+                )}
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[11px] font-medium text-[#121212] dark:text-zinc-200 truncate">
+                    {row.name}
+                  </span>
+                  <span className="block text-[10px] text-[#71717A] dark:text-zinc-400">
+                    {formatBytes(row.size)} •{" "}
+                    {row.status === "error" && row.error ? row.error : uploadStatusText[row.status]}
+                  </span>
+                </span>
+                {row.status === "working" ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-[#FF5A1F] shrink-0" />
+                ) : row.status === "done" ? (
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                ) : row.status === "error" ? (
+                  <X className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                ) : (
+                  <Clock className="w-4 h-4 text-[#A1A1AA] dark:text-zinc-500 shrink-0" />
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
         {error && (
           <p className="mb-3 text-xs text-rose-600 dark:text-rose-400 font-medium">{error}</p>
+        )}
+        {uploadDone && !error && (
+          <p className="mb-3 text-xs text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <Check className="w-3.5 h-3.5" />
+            <span>{uploadDone}</span>
+          </p>
         )}
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

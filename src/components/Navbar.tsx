@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useProofingStore } from "@/lib/storage";
 import { BrandMark } from "@/components/BrandMark";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { animate } from "animejs";
 import {
   Send,
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 
 const iconBtnClass =
-  "p-2.5 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#52525B] hover:text-[#121212] border border-black/[0.06] transition-colors";
+  "p-2.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white border border-black/[0.06] dark:border-white/[0.08] transition-colors";
 
 export const Navbar: React.FC = () => {
   const {
@@ -457,7 +458,7 @@ export const Navbar: React.FC = () => {
         <header
           ref={topNavRef}
           style={{ transform: "translate3d(0, 0, 0)", opacity: 1 }}
-          className="pointer-events-auto w-full max-w-6xl h-16 rounded-full px-4 sm:px-6 flex items-center justify-between bg-white/95 backdrop-blur-md border border-black/[0.08] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] will-change-transform"
+          className="pointer-events-auto w-full max-w-6xl h-16 rounded-full px-4 sm:px-6 flex items-center justify-between bg-white/95 dark:bg-[#18181C]/95 backdrop-blur-md border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] will-change-transform transition-colors"
         >
         {/* Brand */}
         <div className="flex items-center gap-3 min-w-0">
@@ -470,8 +471,8 @@ export const Navbar: React.FC = () => {
           </div>
           {(session.projectId || session.clientName) && (
             <>
-              <span className="hidden sm:block w-px h-5 bg-black/[0.08] shrink-0" />
-              <span className="hidden sm:block text-xs font-semibold text-[#71717A] truncate max-w-[180px]">
+              <span className="hidden sm:block w-px h-5 bg-black/[0.08] dark:bg-white/[0.1] shrink-0" />
+              <span className="hidden sm:block text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA] truncate max-w-[180px]">
                 {session.projectId || session.clientName}
               </span>
             </>
@@ -483,7 +484,7 @@ export const Navbar: React.FC = () => {
                   ? `Anggota: ${activeProject.members.join(", ")}`
                   : "Sesi grup dengan kuota bersama"
               }
-              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/[0.04] border border-black/[0.06] text-[10px] font-semibold text-[#52525B]"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-[10px] font-semibold text-[#52525B] dark:text-[#A1A1AA]"
             >
               <Users className="w-3 h-3 text-[#FF5A1F]" />
               <span>
@@ -494,12 +495,12 @@ export const Navbar: React.FC = () => {
           {liveDot}
         </div>
 
-        {/* Actions - Clean & Minimal (NO tacky "Sidebar" button!) */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Actions - Clean & Minimal */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           {session.isLocked && (
             <span
               title="Seleksi dikunci"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/[0.04] border border-black/[0.06] text-xs font-semibold text-[#71717A]"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA]"
             >
               <Lock className="w-3 h-3 text-[#FF5A1F]" />
               <span>Terkunci</span>
@@ -509,7 +510,7 @@ export const Navbar: React.FC = () => {
           <button
             onClick={() => setIsSubmissionOpen(true)}
             className={`btn-mtioon-primary flex items-center gap-2 pl-4 pr-2.5 py-2 text-xs font-bold ${
-              isFull ? "bg-[#121212] hover:bg-black shadow-[0_4px_0_#000]" : ""
+              isFull ? "bg-[#121212] dark:bg-white dark:text-[#121212] hover:bg-black shadow-[0_4px_0_#000]" : ""
             }`}
           >
             {isFull ? (
@@ -518,10 +519,12 @@ export const Navbar: React.FC = () => {
               <Send className="w-3.5 h-3.5" />
             )}
             <span className="hidden xs:inline sm:inline">Kirim Seleksi</span>
-            <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold tabular-nums">
+            <span className="px-2 py-0.5 rounded-full bg-white/20 dark:bg-black/15 text-white dark:text-[#121212] text-[11px] font-bold tabular-nums">
               {selectedCount}/{session.maxQuota}
             </span>
           </button>
+
+          <ThemeToggle />
 
           <button
             onClick={() => setViewMode("landing")}
@@ -542,12 +545,12 @@ export const Navbar: React.FC = () => {
           pointerEvents: "none",
           transform: "translate3d(-40px, 0, 0)",
         }}
-        className="hidden lg:flex fixed z-40 top-6 left-6 bottom-6 w-[286px] h-[calc(100vh-3rem)] rounded-[30px] p-5 flex-col justify-between bg-white/98 backdrop-blur-md shadow-[0_20px_50px_-10px_rgba(0,0,0,0.10)] border border-black/[0.08] overflow-hidden text-[#121212] will-change-transform"
+        className="hidden lg:flex fixed z-40 top-6 left-6 bottom-6 w-[286px] h-[calc(100vh-3rem)] rounded-[30px] p-5 flex-col justify-between bg-white/98 dark:bg-[#18181C]/98 backdrop-blur-md shadow-[0_20px_50px_-10px_rgba(0,0,0,0.10)] dark:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.6)] border border-black/[0.08] dark:border-white/[0.1] overflow-hidden text-[#121212] dark:text-[#F4F4F6] will-change-transform transition-colors"
       >
         {/* Top Section */}
         <div className="space-y-4">
           {/* Header: Brand & Collapse back to top button */}
-          <div className="flex items-center justify-between gap-2 pb-3 border-b border-black/[0.06]">
+          <div className="flex items-center justify-between gap-2 pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
             <div
               onDoubleClick={() => setViewMode("admin")}
               className="cursor-pointer"
@@ -562,7 +565,7 @@ export const Navbar: React.FC = () => {
                 setIsSidebarActive(false);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-black/[0.03] hover:bg-black/[0.07] text-[#71717A] hover:text-[#121212] transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.07] dark:hover:bg-white/[0.12] text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white transition-colors"
               title="Kembalikan ke Navigasi Atas"
             >
               <ArrowUp className="w-3.5 h-3.5" />
@@ -571,7 +574,7 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Client Session Card */}
-          <div className="p-3.5 rounded-2xl bg-black/[0.03] border border-black/[0.04]">
+          <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.04] dark:border-white/[0.06]">
             <div className="flex items-center gap-1.5 mb-1 flex-wrap">
               {activeProject?.sessionType && (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FF5A1F]/15 text-[#FF5A1F]">
@@ -580,22 +583,22 @@ export const Navbar: React.FC = () => {
               )}
               {liveDot}
             </div>
-            <h4 className="font-display font-bold text-sm text-[#121212] truncate">
+            <h4 className="font-display font-bold text-sm text-[#121212] dark:text-white truncate">
               {session.clientName || activeProject?.clientName || "Klien Terhormat"}
             </h4>
-            <p className="text-[11px] text-[#71717A] truncate mt-0.5">
+            <p className="text-[11px] text-[#71717A] dark:text-[#A1A1AA] truncate mt-0.5">
               {activeProject?.location || activeProject?.sessionTitle || activeProject?.projectId}
             </p>
           </div>
 
           {/* Quota Progress Card */}
-          <div className="p-3.5 rounded-2xl bg-white border border-black/[0.06] shadow-sm space-y-2">
+          <div className="p-3.5 rounded-2xl bg-white dark:bg-[#202026] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-2">
             <div className="flex items-center justify-between text-xs font-bold">
-              <span className="flex items-center gap-1.5 text-[#121212]">
+              <span className="flex items-center gap-1.5 text-[#121212] dark:text-white">
                 {isFull ? (
                   <CheckCircle2 className="w-4 h-4 text-[#FF5A1F]" />
                 ) : (
-                  <Camera className="w-4 h-4 text-[#71717A]" />
+                  <Camera className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA]" />
                 )}
                 <span>Kuota Terpilih</span>
               </span>
@@ -684,12 +687,12 @@ export const Navbar: React.FC = () => {
                 }}
                 className={`w-full flex items-center justify-between p-2 rounded-xl text-xs font-semibold transition-all text-left ${
                   activeSectionFilter === "all"
-                    ? "bg-black/[0.07] text-[#121212] font-bold"
-                    : "text-[#52525B] hover:bg-black/[0.03] hover:text-[#121212]"
+                    ? "bg-black/[0.07] dark:bg-white/[0.1] text-[#121212] dark:text-white font-bold"
+                    : "text-[#52525B] dark:text-[#A1A1AA] hover:bg-black/[0.03] dark:hover:bg-white/[0.06] hover:text-[#121212] dark:hover:text-white"
                 }`}
               >
                 <span className="truncate">Semua Bab</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] text-[#71717A] tabular-nums">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-black/[0.05] dark:bg-white/[0.08] text-[#71717A] dark:text-[#A1A1AA] tabular-nums">
                   {photos.length}
                 </span>
               </button>
@@ -705,11 +708,11 @@ export const Navbar: React.FC = () => {
                     className={`w-full flex items-center justify-between p-2 rounded-xl text-xs transition-all text-left ${
                       isCurrent
                         ? "bg-[#FF5A1F]/15 border border-[#FF5A1F]/30 text-[#FF5A1F] font-bold"
-                        : "text-[#52525B] hover:bg-black/[0.03] hover:text-[#121212]"
+                        : "text-[#52525B] dark:text-[#A1A1AA] hover:bg-black/[0.03] dark:hover:bg-white/[0.06] hover:text-[#121212] dark:hover:text-white"
                     }`}
                   >
                     <span className="flex items-center gap-2 truncate min-w-0">
-                      <MapPin className={`w-3 h-3 shrink-0 ${isCurrent ? "text-[#FF5A1F]" : "text-[#71717A]"}`} />
+                      <MapPin className={`w-3 h-3 shrink-0 ${isCurrent ? "text-[#FF5A1F]" : "text-[#71717A] dark:text-[#A1A1AA]"}`} />
                       <span className="truncate">{sec.name}</span>
                     </span>
                     <span
@@ -718,7 +721,7 @@ export const Navbar: React.FC = () => {
                           ? "bg-[#FF5A1F] text-white"
                           : stats.selected > 0
                           ? "bg-[#FF5A1F]/15 text-[#FF5A1F]"
-                          : "bg-black/[0.05] text-[#71717A]"
+                          : "bg-black/[0.05] dark:bg-white/[0.08] text-[#71717A] dark:text-[#A1A1AA]"
                       }`}
                     >
                       {stats.selected}/{stats.total}
@@ -731,12 +734,12 @@ export const Navbar: React.FC = () => {
         )}
 
         {/* Bottom Actions */}
-        <div className="pt-3 border-t border-black/[0.06] space-y-2">
+        <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2">
           <button
             type="button"
             onClick={() => setIsSubmissionOpen(true)}
             className={`w-full btn-mtioon-primary py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2 ${
-              isFull ? "bg-[#121212] hover:bg-black shadow-[0_4px_0_#000]" : ""
+              isFull ? "bg-[#121212] dark:bg-white dark:text-[#121212] hover:bg-black shadow-[0_4px_0_#000]" : ""
             }`}
           >
             {isFull ? (
@@ -745,16 +748,18 @@ export const Navbar: React.FC = () => {
               <Send className="w-3.5 h-3.5" />
             )}
             <span>Kirim Seleksi</span>
-            <span className="px-2 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold tabular-nums">
+            <span className="px-2 py-0.5 rounded-full bg-white/20 dark:bg-black/15 text-white dark:text-[#121212] text-[11px] font-bold tabular-nums">
               {selectedCount}/{session.maxQuota}
             </span>
           </button>
 
-          <div className="flex items-center justify-between text-xs text-[#71717A] pt-1 px-1">
+          <ThemeToggle showLabel className="w-full justify-center py-2 text-xs" />
+
+          <div className="flex items-center justify-between text-xs text-[#71717A] dark:text-[#A1A1AA] pt-1 px-1">
             <button
               type="button"
               onClick={() => setViewMode("landing")}
-              className="flex items-center gap-1.5 hover:text-[#121212] transition-colors"
+              className="flex items-center gap-1.5 hover:text-[#121212] dark:hover:text-white transition-colors"
               title="Halaman Beranda"
             >
               <Home className="w-3.5 h-3.5" />

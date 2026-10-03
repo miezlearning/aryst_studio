@@ -111,7 +111,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#121212] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B]">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#0E0E12] text-[#121212] dark:text-[#F4F4F6] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] transition-colors duration-200">
       {/* Offline Alert Bar */}
       <OfflineIndicator />
 
@@ -136,7 +136,7 @@ export const App: React.FC = () => {
             {/* Client Welcome Brief with Integrated Session Switcher in 1 Single Container */}
             <section className="pt-28 pb-8 px-4 sm:px-6 lg:px-8">
               <div className="max-w-7xl mx-auto">
-                <div className="mtioon-card group relative overflow-hidden rounded-[28px] border border-black/[0.06] bg-white shadow-sm flex flex-col lg:flex-row items-stretch justify-between min-h-[290px] lg:min-h-[310px]">
+                <div className="mtioon-card group relative overflow-hidden rounded-[28px] border border-black/[0.06] dark:border-white/[0.08] bg-white dark:bg-[#18181C] shadow-sm flex flex-col lg:flex-row items-stretch justify-between min-h-[290px] lg:min-h-[310px]">
                   {/* Absolute Background Photo Bleed on the Right (Natural Gradient Divider) */}
                   {hasMultipleSessions && nextProject && (
                     <div className="absolute right-0 top-0 bottom-0 w-full lg:w-[66%] xl:w-[60%] h-full overflow-hidden pointer-events-none select-none session-bleed-mask">
@@ -162,31 +162,31 @@ export const App: React.FC = () => {
                           </span>
                         )}
                         {currentProject?.sessionDate && (
-                          <span className="text-xs text-[#71717A] flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/[0.04] font-medium">
-                            <Calendar className="w-3.5 h-3.5 text-[#52525B]" />
+                          <span className="text-xs text-[#71717A] dark:text-[#A1A1AA] flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] font-medium border border-transparent dark:border-white/[0.04]">
+                            <Calendar className="w-3.5 h-3.5 text-[#52525B] dark:text-[#A1A1AA]" />
                             <span>{currentProject.sessionDate}</span>
                           </span>
                         )}
-                        <span className="text-xs text-[#71717A] font-medium hidden sm:inline-flex items-center gap-1">
+                        <span className="text-xs text-[#71717A] dark:text-[#A1A1AA] font-medium hidden sm:inline-flex items-center gap-1">
                           ✓ Pilihan tersimpan otomatis
                         </span>
                       </div>
 
-                      <h1 className="font-display font-[900] text-3xl sm:text-4xl text-[#121212] tracking-tight">
+                      <h1 className="font-display font-[900] text-3xl sm:text-4xl text-[#121212] dark:text-white tracking-tight">
                         Halo, {session.clientName || "Klien Terhormat"}
                       </h1>
 
                       {(currentProject?.sessionTitle || currentProject?.location) && (
-                        <p className="text-sm text-[#52525B] font-medium">
+                        <p className="text-sm text-[#52525B] dark:text-[#A1A1AA] font-medium">
                           {currentProject?.sessionTitle}
                           {currentProject?.sessionTitle && currentProject?.location && (
                             <span className="text-[#A1A1AA]"> · </span>
                           )}
-                          <span className="text-[#71717A]">{currentProject?.location}</span>
+                          <span className="text-[#71717A] dark:text-[#A1A1AA]">{currentProject?.location}</span>
                         </p>
                       )}
 
-                      <p className="text-sm text-[#52525B]">
+                      <p className="text-sm text-[#52525B] dark:text-[#A1A1AA]">
                         Pilih hingga{" "}
                         <strong className="text-[#FF5A1F] font-bold">{session.maxQuota} foto terbaik</strong>
                         . Klik foto untuk membuka inspeksi 2x dan catatan revisi.
@@ -336,14 +336,14 @@ export const App: React.FC = () => {
             <SubmissionModal />
 
             {/* Footer */}
-            <footer className="border-t border-black/[0.06] py-8 px-4 sm:px-6 lg:px-8 text-xs text-[#71717A] bg-white/60 mt-auto">
+            <footer className="border-t border-black/[0.06] dark:border-white/[0.08] py-8 px-4 sm:px-6 lg:px-8 text-xs text-[#71717A] dark:text-[#A1A1AA] bg-white/60 dark:bg-[#121216]/60 mt-auto transition-colors">
               <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                 <BrandMark iconClassName="w-6 h-6" textClassName="text-base" />
 
-                <div className="flex items-center gap-4 text-xs font-medium text-[#71717A]">
+                <div className="flex items-center gap-4 text-xs font-medium text-[#71717A] dark:text-[#A1A1AA]">
                   <button
                     onClick={() => setViewMode("landing")}
-                    className="flex items-center gap-1.5 text-[#52525B] hover:text-[#121212] transition-colors"
+                    className="flex items-center gap-1.5 text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white transition-colors"
                   >
                     <Home className="w-3.5 h-3.5" />
                     <span>Halaman Utama</span>
@@ -351,7 +351,7 @@ export const App: React.FC = () => {
                   <span>•</span>
                   <span
                     onDoubleClick={() => setViewMode("admin")}
-                    className="cursor-default select-none hover:text-[#121212] transition-colors"
+                    className="cursor-default select-none hover:text-[#121212] dark:hover:text-white transition-colors"
                     title="aryst studio"
                   >
                     &copy; {new Date().getFullYear()} aryst studio

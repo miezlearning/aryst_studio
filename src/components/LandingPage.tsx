@@ -4,6 +4,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { DraggableCandyChip } from "@/components/DraggableCandyChip";
 import { ShowcaseStrip } from "@/components/ShowcaseStrip";
 import { HeroVideo } from "@/components/HeroVideo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   KeyRound,
   ArrowRight,
@@ -118,7 +119,7 @@ export const LandingPage: React.FC = () => {
   const primarySample = sampleProjects[0] || { projectId: "WED-2026-RIAN" };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#121212] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] relative">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#0E0E12] text-[#121212] dark:text-[#F4F4F6] flex flex-col font-sans selection:bg-[#FF5A1F]/20 selection:text-[#E8470B] relative transition-colors duration-200">
       {/* ── Global Precision Studio Millimeter Grid across all sections ── */}
       <div
         className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
@@ -129,8 +130,8 @@ export const LandingPage: React.FC = () => {
           className="absolute inset-0"
           style={{
             backgroundImage: `
-              linear-gradient(to right, rgba(18, 18, 18, 0.045) 1px, transparent 1px),
-              linear-gradient(to bottom, rgba(18, 18, 18, 0.045) 1px, transparent 1px)
+              linear-gradient(to right, var(--grid-line, rgba(18, 18, 18, 0.045)) 1px, transparent 1px),
+              linear-gradient(to bottom, var(--grid-line, rgba(18, 18, 18, 0.045)) 1px, transparent 1px)
             `,
             backgroundSize: "24px 24px",
             backgroundPosition: "center top",
@@ -152,7 +153,7 @@ export const LandingPage: React.FC = () => {
 
       {/* Floating Island Navbar */}
       <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl">
-        <div className="bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] rounded-full px-5 py-2.5 flex items-center justify-between transition-all">
+        <div className="bg-white/90 dark:bg-[#18181C]/90 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.02)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] rounded-full px-5 py-2.5 flex items-center justify-between transition-all">
           <div
             onDoubleClick={() => setViewMode("admin")}
             className="cursor-pointer"
@@ -161,25 +162,27 @@ export const LandingPage: React.FC = () => {
             <BrandMark />
           </div>
 
-          <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-[#52525B]">
-            <a href="#kurasi" className="hover:text-[#121212] transition-colors">
+          <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-[#52525B] dark:text-[#A1A1AA]">
+            <a href="#kurasi" className="hover:text-[#121212] dark:hover:text-white transition-colors">
               Kurasi
             </a>
-            <a href="#fitur" className="hover:text-[#121212] transition-colors">
+            <a href="#fitur" className="hover:text-[#121212] dark:hover:text-white transition-colors">
               Fitur Studio
             </a>
-            <a href="#showcase" className="hover:text-[#121212] transition-colors">
+            <a href="#showcase" className="hover:text-[#121212] dark:hover:text-white transition-colors">
               Galeri
             </a>
-            <a href="#cara-kerja" className="hover:text-[#121212] transition-colors">
+            <a href="#cara-kerja" className="hover:text-[#121212] dark:hover:text-white transition-colors">
               Cara Kerja
             </a>
           </nav>
 
-          <div className="flex items-center gap-2.5">
-            <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-black/[0.04] text-[11px] font-semibold text-[#71717A] tabular-nums">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-[11px] font-semibold text-[#71717A] dark:text-[#A1A1AA] tabular-nums border border-transparent dark:border-white/[0.04]">
               {timeStr}
             </span>
+
+            <ThemeToggle />
 
             <button
               onClick={() => handleSearchSession(undefined, primarySample.projectId)}
@@ -242,7 +245,7 @@ export const LandingPage: React.FC = () => {
             />
 
             {/* Headline in Sunghyun Sans 900 */}
-            <h1 className="font-display font-[900] text-5xl sm:text-7xl lg:text-[76px] tracking-[-0.04em] text-[#121212] leading-[1.04] mb-6">
+            <h1 className="font-display font-[900] text-5xl sm:text-7xl lg:text-[76px] tracking-[-0.04em] text-[#121212] dark:text-white leading-[1.04] mb-6">
               Pilih momen.
               <br />
               Sampaikan rasa.
@@ -250,7 +253,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Sub-headline */}
-          <p className="mt-3 text-base sm:text-lg text-[#52525B] max-w-2xl mx-auto leading-relaxed font-medium">
+          <p className="mt-3 text-base sm:text-lg text-[#52525B] dark:text-[#A1A1AA] max-w-2xl mx-auto leading-relaxed font-medium">
             Portal privat untuk melihat dan memilih hasil pemotretan Anda. Tandai foto favorit,
             tulis catatan retouching per frame, lalu kirimkan langsung ke fotografer.
           </p>
@@ -279,9 +282,9 @@ export const LandingPage: React.FC = () => {
           <div className="mt-8 max-w-lg mx-auto">
             <form
               onSubmit={(e) => handleSearchSession(e)}
-              className="bg-white border border-black/[0.08] shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] rounded-full p-1.5 pl-5 flex items-center gap-2 transition-shadow focus-within:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.1)] focus-within:border-black/20"
+              className="bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.1] shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.5)] rounded-full p-1.5 pl-5 flex items-center gap-2 transition-shadow focus-within:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.1)] focus-within:border-black/20 dark:focus-within:border-white/30"
             >
-              <KeyRound className="w-4 h-4 text-[#71717A] shrink-0" />
+              <KeyRound className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA] shrink-0" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -291,7 +294,7 @@ export const LandingPage: React.FC = () => {
                   if (errorMsg) setErrorMsg(null);
                 }}
                 placeholder="Ketik kode sesi (cth: WED-2026-RIAN)..."
-                className="w-full bg-transparent text-xs sm:text-sm text-[#121212] placeholder-[#A1A1AA] font-sans focus:outline-none"
+                className="w-full bg-transparent text-xs sm:text-sm text-[#121212] dark:text-[#F4F4F6] placeholder-[#A1A1AA] dark:placeholder-zinc-500 font-sans focus:outline-none"
               />
               <button
                 type="submit"
@@ -303,20 +306,20 @@ export const LandingPage: React.FC = () => {
             </form>
 
             {errorMsg && (
-              <div className="mt-3 inline-block px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-xs text-rose-600 font-medium">
+              <div className="mt-3 inline-block px-3.5 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-600 dark:text-rose-400 font-medium">
                 {errorMsg}
               </div>
             )}
 
             {/* Quick Sesi Contoh Chips */}
             {sampleProjects.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-[#71717A]">
-                <span className="font-medium text-[#A1A1AA]">Sesi contoh:</span>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-[#71717A] dark:text-[#A1A1AA]">
+                <span className="font-medium text-[#A1A1AA] dark:text-zinc-500">Sesi contoh:</span>
                 {sampleProjects.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => handleSearchSession(undefined, p.projectId)}
-                    className="px-3 py-1 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#52525B] hover:text-[#121212] border border-black/[0.06] text-[11px] font-semibold transition-all inline-flex items-center gap-1"
+                    className="px-3 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white border border-black/[0.06] dark:border-white/[0.08] text-[11px] font-semibold transition-all inline-flex items-center gap-1"
                   >
                     {(p.password || p.passwordHash) && <Lock className="w-2.5 h-2.5" />}
                     <span>{p.projectId}</span>
@@ -335,7 +338,7 @@ export const LandingPage: React.FC = () => {
             <div className="md:col-span-6 mtioon-card p-7 sm:p-9 flex flex-col justify-between min-h-[480px]">
               <div>
                 <div className="flex items-center justify-between mb-8">
-                  <span className="px-3 py-1 rounded-full bg-black/[0.05] text-[11.5px] font-semibold text-[#52525B]">
+                  <span className="px-3 py-1 rounded-full bg-black/[0.05] dark:bg-white/[0.06] text-[11.5px] font-semibold text-[#52525B] dark:text-[#A1A1AA]">
                     {activePresetIndex + 1} / {presets.length} · {presets[activePresetIndex].label.toLowerCase()}
                   </span>
 
@@ -346,8 +349,8 @@ export const LandingPage: React.FC = () => {
                         onClick={() => setActivePresetIndex(idx)}
                         className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all ${
                           idx === activePresetIndex
-                            ? "bg-[#121212] text-white shadow-sm"
-                            : "bg-black/[0.04] text-[#71717A] hover:text-[#121212]"
+                            ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+                            : "bg-black/[0.04] dark:bg-white/[0.06] text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
                         }`}
                       >
                         {p.name}
@@ -358,17 +361,17 @@ export const LandingPage: React.FC = () => {
 
                 {/* Big Display Word in Sunghyun Sans 900 */}
                 <div className="py-12 sm:py-16 text-center">
-                  <span className="font-display font-[900] text-7xl sm:text-8xl tracking-[-0.04em] text-[#121212] select-none block transition-all duration-300">
+                  <span className="font-display font-[900] text-7xl sm:text-8xl tracking-[-0.04em] text-[#121212] dark:text-white select-none block transition-all duration-300">
                     {presets[activePresetIndex].name}
                   </span>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-black/[0.06]">
-                <h3 className="font-display font-bold text-lg sm:text-xl text-[#121212] tracking-tight">
+              <div className="pt-6 border-t border-black/[0.06] dark:border-white/[0.08]">
+                <h3 className="font-display font-bold text-lg sm:text-xl text-[#121212] dark:text-white tracking-tight">
                   Karakter warna sesuai selera.
                 </h3>
-                <p className="mt-1.5 text-xs sm:text-sm text-[#71717A] leading-relaxed font-normal">
+                <p className="mt-1.5 text-xs sm:text-sm text-[#71717A] dark:text-[#A1A1AA] leading-relaxed font-normal">
                   Pahami mood visual hasil akhir foto Anda. Tentukan arah tone warna hangat, bersih,
                   maupun hitam putih klasik sebelum foto masuk dapur cetak.
                 </p>
@@ -380,14 +383,14 @@ export const LandingPage: React.FC = () => {
               {/* Bento Card 2: Catatan Revisi Per Frame */}
               <div className="mtioon-card p-7 sm:p-8 flex flex-col justify-between">
                 <div>
-                  <h2 className="font-display font-[900] text-4xl sm:text-5xl text-[#121212] tracking-tight">
+                  <h2 className="font-display font-[900] text-4xl sm:text-5xl text-[#121212] dark:text-white tracking-tight">
                     Catatan detail.
                   </h2>
 
                   <div className="mt-6 mb-5">
                     <div
                       onClick={() => handleSearchSession(undefined, primarySample.projectId)}
-                      className="cursor-pointer bg-black/[0.04] hover:bg-black/[0.07] border border-black/[0.05] rounded-full px-5 py-3 flex items-center justify-between text-xs sm:text-sm text-[#52525B] transition-colors"
+                      className="cursor-pointer bg-black/[0.04] dark:bg-white/[0.05] hover:bg-black/[0.07] dark:hover:bg-white/[0.08] border border-black/[0.05] dark:border-white/[0.08] rounded-full px-5 py-3 flex items-center justify-between text-xs sm:text-sm text-[#52525B] dark:text-[#A1A1AA] transition-colors"
                     >
                       <span className="flex items-center gap-1.5 truncate">
                         <span className="truncate">&ldquo;Rapikan rambut samping & kulit lebih hangat&rdquo;</span>
@@ -399,10 +402,10 @@ export const LandingPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-display font-bold text-base sm:text-lg text-[#121212] tracking-tight">
+                  <h3 className="font-display font-bold text-base sm:text-lg text-[#121212] dark:text-white tracking-tight">
                     Tepat sasaran di setiap foto.
                   </h3>
-                  <p className="mt-1 text-xs sm:text-sm text-[#71717A] leading-relaxed font-normal">
+                  <p className="mt-1 text-xs sm:text-sm text-[#71717A] dark:text-[#A1A1AA] leading-relaxed font-normal">
                     Setiap foto memiliki kolom instruksi khusus. Anda tidak perlu lagi repot membuat
                     tangkapan layar ponsel satu per satu untuk menunjukkan bagian yang ingin dipoles.
                   </p>
@@ -415,7 +418,7 @@ export const LandingPage: React.FC = () => {
                 <div className="mtioon-card p-6 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full bg-black/[0.05] text-[10.5px] font-semibold text-[#52525B]">
+                      <span className="px-2.5 py-0.5 rounded-full bg-black/[0.05] dark:bg-white/[0.06] text-[10.5px] font-semibold text-[#52525B] dark:text-[#A1A1AA]">
                         Resolusi Penuh
                       </span>
 
@@ -424,10 +427,10 @@ export const LandingPage: React.FC = () => {
                           <button
                             key={z}
                             onClick={() => setActiveZoom(z)}
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center justify-center ${
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center justify-center transition-colors ${
                               activeZoom === z
-                                ? "bg-[#121212] text-white"
-                                : "text-[#71717A] hover:bg-black/[0.05]"
+                                ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212]"
+                                : "text-[#71717A] dark:text-[#A1A1AA] hover:bg-black/[0.05] dark:hover:bg-white/[0.06]"
                             }`}
                           >
                             {z}
@@ -437,17 +440,17 @@ export const LandingPage: React.FC = () => {
                     </div>
 
                     <div className="my-6 text-center select-none">
-                      <span className="font-display font-[900] text-5xl sm:text-6xl tracking-tight text-[#121212]">
+                      <span className="font-display font-[900] text-5xl sm:text-6xl tracking-tight text-[#121212] dark:text-white">
                         {activeZoom}
                       </span>
                     </div>
                   </div>
 
                   <div>
-                    <h4 className="font-display font-bold text-sm text-[#121212]">
+                    <h4 className="font-display font-bold text-sm text-[#121212] dark:text-white">
                       Inspeksi tanpa kompresi.
                     </h4>
-                    <p className="mt-1 text-[11px] text-[#71717A] leading-normal font-normal">
+                    <p className="mt-1 text-[11px] text-[#71717A] dark:text-[#A1A1AA] leading-normal font-normal">
                       Periksa ketajaman fokus lensa dan detail ekspresi wajah secara jernih.
                     </p>
                   </div>
@@ -459,14 +462,14 @@ export const LandingPage: React.FC = () => {
                   className="mtioon-card p-6 flex flex-col justify-between overflow-hidden relative"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-black/[0.05] text-[10.5px] font-semibold text-[#52525B]">
+                    <span className="px-2.5 py-0.5 rounded-full bg-black/[0.05] dark:bg-white/[0.06] text-[10.5px] font-semibold text-[#52525B] dark:text-[#A1A1AA]">
                       Fokus & Tatapan
                     </span>
                   </div>
 
                   {/* Two Interactive Eyes that follow mouse pointer */}
                   <div className="my-6 flex items-center justify-center gap-2 select-none">
-                    <div className="w-12 h-12 rounded-full bg-[#121212] flex items-center justify-center relative shadow-sm">
+                    <div className="w-12 h-12 rounded-full bg-[#121212] dark:bg-[#27272D] flex items-center justify-center relative shadow-sm border border-transparent dark:border-white/[0.08]">
                       <div
                         className="w-5 h-5 rounded-full bg-white flex items-center justify-center transition-transform duration-75"
                         style={{
@@ -477,7 +480,7 @@ export const LandingPage: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="w-12 h-12 rounded-full bg-[#121212] flex items-center justify-center relative shadow-sm">
+                    <div className="w-12 h-12 rounded-full bg-[#121212] dark:bg-[#27272D] flex items-center justify-center relative shadow-sm border border-transparent dark:border-white/[0.08]">
                       <div
                         className="w-5 h-5 rounded-full bg-white flex items-center justify-center transition-transform duration-75"
                         style={{
@@ -490,10 +493,10 @@ export const LandingPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <h4 className="font-display font-bold text-sm text-[#121212]">
+                    <h4 className="font-display font-bold text-sm text-[#121212] dark:text-white">
                       Fokus tajam pada tatapan.
                     </h4>
-                    <p className="mt-1 text-[11px] text-[#71717A] leading-normal font-normal">
+                    <p className="mt-1 text-[11px] text-[#71717A] dark:text-[#A1A1AA] leading-normal font-normal">
                       Pastikan ekspresi mata terbuka sempurna sebelum foto dimasukkan ke album fisik.
                     </p>
                   </div>
@@ -507,18 +510,18 @@ export const LandingPage: React.FC = () => {
         <section id="showcase" className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
             <div>
-              <span className="px-3 py-1 rounded-full bg-[#FF5A1F]/10 text-[#FF5A1F] text-xs font-bold">
+              <span className="px-3 py-1 rounded-full bg-[#FF5A1F]/10 text-[#FF5A1F] text-xs font-bold border border-[#FF5A1F]/20">
                 Koleksi Galeri
               </span>
-              <h2 className="mt-2 font-display font-[900] text-2xl sm:text-3xl text-[#121212] tracking-tight">
+              <h2 className="mt-2 font-display font-[900] text-2xl sm:text-3xl text-[#121212] dark:text-white tracking-tight">
                 Standar Kualitas Visual & Kurasi
               </h2>
-              <p className="text-xs sm:text-sm text-[#71717A] mt-1 max-w-xl font-normal">
+              <p className="text-xs sm:text-sm text-[#71717A] dark:text-[#A1A1AA] mt-1 max-w-xl font-normal">
                 Setiap foto disajikan dalam resolusi tinggi untuk mempermudah pemilihan detail dan ekspresi terbaik.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#71717A]">
+              <span className="text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA]">
                 Resolusi Penuh • Inspeksi 2x
               </span>
             </div>
@@ -529,17 +532,17 @@ export const LandingPage: React.FC = () => {
               {[0, 1, 2, 3].map((i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className="skeleton relative rounded-2xl aspect-[4/5] bg-black/[0.06]"
+                  className="skeleton relative rounded-2xl aspect-[4/5] bg-black/[0.06] dark:bg-white/[0.06]"
                 />
               ))}
             </div>
           ) : previewShowcase.length === 0 ? (
             <div className="mtioon-card p-10 text-center">
               <Images className="w-8 h-8 text-[#A1A1AA] mx-auto mb-3" />
-              <p className="text-sm font-bold text-[#121212]">
+              <p className="text-sm font-bold text-[#121212] dark:text-white">
                 Belum ada foto yang dimuat
               </p>
-              <p className="text-xs text-[#71717A] mt-1 font-normal">
+              <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1 font-normal">
                 Foto akan muncul otomatis setelah galeri sesi diisi.
               </p>
             </div>
@@ -551,13 +554,13 @@ export const LandingPage: React.FC = () => {
         {/* 3-Step Clean Workflow */}
         <section id="cara-kerja" className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
           <div className="text-center max-w-xl mx-auto mb-12">
-            <span className="px-3 py-1 rounded-full bg-black/[0.04] text-[#52525B] text-xs font-semibold">
+            <span className="px-3 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-[#52525B] dark:text-[#A1A1AA] text-xs font-semibold">
               Alur Kerja
             </span>
-            <h2 className="mt-2 font-display font-[900] text-3xl text-[#121212] tracking-tight">
+            <h2 className="mt-2 font-display font-[900] text-3xl text-[#121212] dark:text-white tracking-tight">
               Tiga Langkah Mudah
             </h2>
-            <p className="mt-1 text-sm text-[#71717A] font-normal">
+            <p className="mt-1 text-sm text-[#71717A] dark:text-[#A1A1AA] font-normal">
               Dari memasukkan kode hingga konfirmasi daftar foto pilihan.
             </p>
           </div>
@@ -565,13 +568,13 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="mtioon-card p-7 flex flex-col justify-between">
               <div>
-                <span className="w-8 h-8 rounded-full bg-[#121212] text-white font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
+                <span className="w-8 h-8 rounded-full bg-[#121212] dark:bg-white text-white dark:text-[#121212] font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
                   1
                 </span>
-                <h3 className="font-display font-bold text-base text-[#121212]">
+                <h3 className="font-display font-bold text-base text-[#121212] dark:text-white">
                   Buka Galeri Privat
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm text-[#71717A] leading-relaxed font-normal">
+                <p className="mt-2 text-xs sm:text-sm text-[#71717A] dark:text-[#A1A1AA] leading-relaxed font-normal">
                   Gunakan tautan langsung atau ketikkan kode sesi yang diberikan. Masukkan kata sandi jika sesi Anda diproteksi.
                 </p>
               </div>
@@ -582,10 +585,10 @@ export const LandingPage: React.FC = () => {
                 <span className="w-8 h-8 rounded-full bg-[#FF5A1F] text-white font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
                   2
                 </span>
-                <h3 className="font-display font-bold text-base text-[#121212]">
+                <h3 className="font-display font-bold text-base text-[#121212] dark:text-white">
                   Tandai & Beri Catatan
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm text-[#71717A] leading-relaxed font-normal">
+                <p className="mt-2 text-xs sm:text-sm text-[#71717A] dark:text-[#A1A1AA] leading-relaxed font-normal">
                   Pilih foto favorit hingga batas kuota paket. Perbesar foto untuk inspeksi 2x dan sematkan catatan retouching spesifik.
                 </p>
               </div>
@@ -593,13 +596,13 @@ export const LandingPage: React.FC = () => {
 
             <div className="mtioon-card p-7 flex flex-col justify-between">
               <div>
-                <span className="w-8 h-8 rounded-full bg-[#121212] text-white font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
+                <span className="w-8 h-8 rounded-full bg-[#121212] dark:bg-white text-white dark:text-[#121212] font-display font-black text-sm flex items-center justify-center mb-4 shadow-sm">
                   3
                 </span>
-                <h3 className="font-display font-bold text-base text-[#121212]">
+                <h3 className="font-display font-bold text-base text-[#121212] dark:text-white">
                   Kirim ke Fotografer
                 </h3>
-                <p className="mt-2 text-xs sm:text-sm text-[#71717A] leading-relaxed font-normal">
+                <p className="mt-2 text-xs sm:text-sm text-[#71717A] dark:text-[#A1A1AA] leading-relaxed font-normal">
                   Kirimkan daftar foto pilihan dan instruksi revisi langsung via WhatsApp atau ekspor berkas manifest rapi.
                 </p>
               </div>
@@ -609,18 +612,18 @@ export const LandingPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-black/[0.06] py-10 px-4 sm:px-6 lg:px-8 bg-white/50 text-xs text-[#71717A]">
+      <footer className="border-t border-black/[0.06] dark:border-white/[0.08] py-10 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-[#0E0E12]/80 text-xs text-[#71717A] dark:text-[#A1A1AA] transition-colors">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <BrandMark iconClassName="w-6 h-6" textClassName="text-lg" />
 
-          <div className="flex items-center gap-4 text-xs font-semibold text-[#71717A]">
+          <div className="flex items-center gap-4 text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA]">
             <span>Privasi Terjaga</span>
             <span>•</span>
             <span>Tipografi Sunghyun Sans</span>
             <span>•</span>
             <span
               onDoubleClick={() => setViewMode("admin")}
-              className="cursor-default select-none hover:text-[#121212] transition-colors"
+              className="cursor-default select-none hover:text-[#121212] dark:hover:text-white transition-colors"
               title="aryst studio"
             >
               &copy; {new Date().getFullYear()} aryst studio

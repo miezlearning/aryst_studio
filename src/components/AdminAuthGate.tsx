@@ -41,20 +41,20 @@ export const AdminAuthGate: React.FC = () => {
 
         {/* Lock Icon */}
         <div className="flex justify-center mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-[#FFF0EB] border border-[#FF5A1F]/20 flex items-center justify-center text-[#FF5A1F] shadow-[0_8px_20px_rgba(255,90,31,0.15)]">
+          <div className="w-14 h-14 rounded-2xl bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/20 flex items-center justify-center text-[#FF5A1F] shadow-[0_8px_20px_rgba(255,90,31,0.15)]">
             <Lock className="w-6 h-6 stroke-[2.2]" />
           </div>
         </div>
 
         {/* Header */}
         <div className="text-center mb-7">
-          <div className="inline-block px-3 py-1 rounded-full bg-[#F5F2EB] text-[#121212]/70 text-[11px] font-bold tracking-wide uppercase mb-2">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#F5F2EB] dark:bg-white/[0.06] text-[#121212]/70 dark:text-zinc-300 text-[11px] font-bold tracking-wide uppercase mb-2">
             Akses Panel Kontrol
           </div>
-          <h2 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-[#121212]">
+          <h2 className="text-2xl sm:text-3xl font-display font-black tracking-tight text-[#121212] dark:text-white">
             Masuk Fotografer
           </h2>
-          <p className="text-xs sm:text-sm text-[#121212]/60 mt-2 max-w-xs mx-auto leading-relaxed font-medium">
+          <p className="text-xs sm:text-sm text-[#121212]/60 dark:text-zinc-400 mt-2 max-w-xs mx-auto leading-relaxed font-medium">
             Masukkan PIN Master Admin untuk mengelola sesi klien, kuota, Google Drive, dan Cloudflare R2.
           </p>
         </div>
@@ -62,7 +62,7 @@ export const AdminAuthGate: React.FC = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-[#121212]/80 mb-2 flex items-center gap-1.5">
+            <label className="block text-xs font-bold text-[#121212]/80 dark:text-zinc-200 mb-2 flex items-center gap-1.5">
               <KeyRound className="w-3.5 h-3.5 text-[#FF5A1F]" />
               <span>PIN Master Admin</span>
             </label>
@@ -78,12 +78,12 @@ export const AdminAuthGate: React.FC = () => {
                 onKeyUp={(e) => setCapsLockOn(e.getModifierState("CapsLock"))}
                 autoFocus
                 placeholder="PIN Master (Default: studio2026)"
-                className="w-full pl-5 pr-12 py-3.5 bg-[#F5F2EB] border border-black/10 rounded-full text-sm font-medium text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                className="w-full pl-5 pr-12 py-3.5 bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-sm font-medium text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#26262E] transition-all"
               />
               <button
                 type="button"
                 onClick={() => setShowPin(!showPin)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40 hover:text-[#121212] transition-colors p-1"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-zinc-400 hover:text-[#121212] dark:hover:text-white transition-colors p-1"
                 title={showPin ? "Sembunyikan PIN" : "Tampilkan PIN"}
               >
                 {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -98,13 +98,13 @@ export const AdminAuthGate: React.FC = () => {
                 <span>Caps Lock menyala. Periksa huruf besar/kecil sebelum mengirim PIN.</span>
               </p>
             )}
-            <p className="text-[11px] text-[#121212]/50 mt-2 px-1 font-medium">
-              Petunjuk: PIN bawaan adalah <span className="text-[#FF5A1F] font-bold px-1.5 py-0.5 rounded-full bg-[#FFF0EB] border border-[#FF5A1F]/20">studio2026</span>
+            <p className="text-[11px] text-[#121212]/50 dark:text-zinc-400 mt-2 px-1 font-medium">
+              Petunjuk: PIN bawaan adalah <span className="text-[#FF5A1F] font-bold px-1.5 py-0.5 rounded-full bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/20">studio2026</span>
             </p>
           </div>
 
           {error && (
-            <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+            <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-medium">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
               <span>{error}</span>
             </div>
@@ -120,10 +120,10 @@ export const AdminAuthGate: React.FC = () => {
         </form>
 
         {/* Footer Link */}
-        <div className="mt-8 pt-5 border-t border-black/[0.06] text-center">
+        <div className="mt-8 pt-5 border-t border-black/[0.06] dark:border-white/[0.08] text-center">
           <button
             onClick={() => setViewMode("landing")}
-            className="text-xs text-[#121212]/60 hover:text-[#121212] font-semibold transition-colors inline-flex items-center gap-1.5 py-1"
+            className="text-xs text-[#121212]/60 dark:text-zinc-400 hover:text-[#121212] dark:hover:text-white font-semibold transition-colors inline-flex items-center gap-1.5 py-1"
           >
             <Home className="w-3.5 h-3.5" />
             <span>Kembali ke Halaman Utama</span>

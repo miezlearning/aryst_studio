@@ -180,13 +180,13 @@ export const MasonryGallery: React.FC = () => {
       {/* Controls Bar: Status Filter & Search */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-4">
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 p-1.5 bg-white rounded-full border border-black/[0.08] shadow-sm overflow-x-auto text-xs font-semibold">
+        <div className="flex items-center gap-1.5 p-1.5 bg-white dark:bg-[#18181C] rounded-full border border-black/[0.08] dark:border-white/[0.1] shadow-sm overflow-x-auto text-xs font-semibold transition-colors">
           <button
             onClick={() => setActiveFilter("all")}
             className={`px-4 py-1.5 rounded-full transition-all ${
               activeFilter === "all"
-                ? "bg-[#121212] text-white shadow-sm"
-                : "text-[#71717A] hover:text-[#121212]"
+                ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+                : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
             }`}
           >
             Semua ({photos.length})
@@ -196,7 +196,7 @@ export const MasonryGallery: React.FC = () => {
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full transition-all ${
               activeFilter === "selected"
                 ? "bg-[#FF5A1F] text-white shadow-sm"
-                : "text-[#71717A] hover:text-[#121212]"
+                : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
             }`}
           >
             <span>Terpilih</span>
@@ -204,7 +204,7 @@ export const MasonryGallery: React.FC = () => {
               className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                 activeFilter === "selected"
                   ? "bg-white/20 text-white"
-                  : "bg-black/[0.05] text-[#52525B]"
+                  : "bg-black/[0.05] dark:bg-white/[0.08] text-[#52525B] dark:text-[#A1A1AA]"
               }`}
             >
               {selectedCount}/{session.maxQuota}
@@ -214,8 +214,8 @@ export const MasonryGallery: React.FC = () => {
             onClick={() => setActiveFilter("unselected")}
             className={`px-4 py-1.5 rounded-full transition-all ${
               activeFilter === "unselected"
-                ? "bg-[#121212] text-white shadow-sm"
-                : "text-[#71717A] hover:text-[#121212]"
+                ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+                : "text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
             }`}
           >
             Belum Dipilih ({Math.max(0, photos.length - selectedCount)})
@@ -230,7 +230,7 @@ export const MasonryGallery: React.FC = () => {
               value={gallerySortOrder}
               onChange={(e) => setGallerySortOrder(e.target.value as "name" | "date")}
               aria-label="Urutan foto"
-              className="appearance-none pl-9 pr-8 py-2 bg-white border border-black/[0.08] shadow-sm rounded-full text-xs font-semibold text-[#121212] focus:outline-none focus:border-black/30 transition-all cursor-pointer"
+              className="appearance-none pl-9 pr-8 py-2 bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.1] shadow-sm rounded-full text-xs font-semibold text-[#121212] dark:text-[#F4F4F6] focus:outline-none focus:border-black/30 dark:focus:border-white/30 transition-all cursor-pointer"
             >
               <option value="name">Nomor nama file</option>
               <option value="date">Tanggal upload</option>
@@ -238,18 +238,18 @@ export const MasonryGallery: React.FC = () => {
           </div>
 
           <div className="relative min-w-[200px] md:w-64">
-            <Search className="w-4 h-4 text-[#71717A] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#71717A] dark:text-[#A1A1AA] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari nomor, nama, lokasi..."
-              className="w-full pl-10 pr-8 py-2 bg-white border border-black/[0.08] shadow-sm rounded-full text-xs font-medium text-[#121212] placeholder-[#A1A1AA] focus:outline-none focus:border-black/30 transition-all"
+              className="w-full pl-10 pr-8 py-2 bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.1] shadow-sm rounded-full text-xs font-medium text-[#121212] dark:text-[#F4F4F6] placeholder-[#A1A1AA] dark:placeholder-zinc-500 focus:outline-none focus:border-black/30 dark:focus:border-white/30 transition-all"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-[#71717A] hover:text-[#121212]"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white"
               >
                 ✕
               </button>
@@ -329,12 +329,12 @@ export const MasonryGallery: React.FC = () => {
                 {/* Chapter Section Header Banner */}
                 <div className="mtioon-card p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-full bg-black/[0.05] border border-black/[0.06] flex items-center justify-center text-[#121212] font-display font-black text-sm shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-black/[0.05] dark:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center text-[#121212] dark:text-white font-display font-black text-sm shrink-0">
                       {String(groupIdx + 1).padStart(2, "0")}
                     </div>
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-display font-[900] text-base sm:text-lg text-[#121212] tracking-tight">
+                        <h3 className="font-display font-[900] text-base sm:text-lg text-[#121212] dark:text-white tracking-tight">
                           {group.name}
                         </h3>
                         {group.location && (
@@ -345,7 +345,7 @@ export const MasonryGallery: React.FC = () => {
                         )}
                       </div>
                       {group.description && (
-                        <p className="text-xs text-[#71717A] mt-1 font-normal">
+                        <p className="text-xs text-[#71717A] dark:text-[#A1A1AA] mt-1 font-normal">
                           {group.description}
                         </p>
                       )}
@@ -354,7 +354,7 @@ export const MasonryGallery: React.FC = () => {
 
                   {/* Section Photo Counter */}
                   <div className="flex items-center gap-2 self-end sm:self-auto text-xs font-semibold">
-                    <span className="px-3 py-1 rounded-full bg-black/[0.04] border border-black/[0.06] text-[#52525B]">
+                    <span className="px-3 py-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08] text-[#52525B] dark:text-[#A1A1AA]">
                       <span className="text-[#FF5A1F] font-bold">{secSelectedCount}</span> dari {group.photos.length} Terpilih
                     </span>
                   </div>
@@ -410,11 +410,11 @@ const StorylineChapterBar: React.FC<StorylineChapterBarProps> = ({
 
   return (
     <div
-      className={`sticky top-20 z-20 mb-8 p-1.5 bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] rounded-full flex items-center gap-1.5 overflow-x-auto transition-all duration-300 ${
+      className={`sticky top-20 z-20 mb-8 p-1.5 bg-white/90 dark:bg-[#18181C]/90 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.1] shadow-[0_8px_30px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.5)] rounded-full flex items-center gap-1.5 overflow-x-auto transition-all duration-300 ${
         isSidebarActive ? "lg:hidden" : ""
       }`}
     >
-      <div className="flex items-center gap-1.5 px-3.5 py-1 text-[#71717A] font-bold text-[11px] shrink-0 uppercase tracking-wider">
+      <div className="flex items-center gap-1.5 px-3.5 py-1 text-[#71717A] dark:text-[#A1A1AA] font-bold text-[11px] shrink-0 uppercase tracking-wider">
         <Layers className="w-3.5 h-3.5 text-[#FF5A1F]" />
         <span>Bab:</span>
       </div>
@@ -423,16 +423,16 @@ const StorylineChapterBar: React.FC<StorylineChapterBarProps> = ({
         onClick={() => setActiveSectionFilter("all")}
         className={`px-4 py-1.5 rounded-full font-bold text-xs whitespace-nowrap transition-all shrink-0 flex items-center gap-1.5 ${
           activeSectionFilter === "all"
-            ? "bg-[#121212] text-white shadow-sm"
-            : "text-[#52525B] hover:text-[#121212] hover:bg-black/[0.04]"
+            ? "bg-[#121212] dark:bg-white text-white dark:text-[#121212] shadow-sm"
+            : "text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
         }`}
       >
         <span>Semua Bab</span>
         <span
           className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
             activeSectionFilter === "all"
-              ? "bg-white/20 text-white"
-              : "bg-black/[0.05] text-[#71717A]"
+              ? "bg-white/20 dark:bg-black/15 text-white dark:text-[#121212]"
+              : "bg-black/[0.05] dark:bg-white/[0.08] text-[#71717A] dark:text-[#A1A1AA]"
           }`}
         >
           {photosCount}
@@ -449,7 +449,7 @@ const StorylineChapterBar: React.FC<StorylineChapterBarProps> = ({
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full font-bold text-xs whitespace-nowrap transition-all shrink-0 ${
               isCurrent
                 ? "bg-[#FF5A1F] text-white shadow-sm"
-                : "text-[#52525B] hover:text-[#121212] hover:bg-black/[0.04] border border-black/[0.06]"
+                : "text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.08]"
             }`}
           >
             <MapPin className={`w-3 h-3 ${isCurrent ? "text-white" : "text-[#FF5A1F]"}`} />

@@ -9,8 +9,8 @@ export const BrandMarkIcon: React.FC<{ className?: string }> = ({ className }) =
     className={cn("shrink-0", className)}
     aria-hidden="true"
   >
-    <rect width="64" height="64" rx="18" fill="#121212" />
-    <circle cx="32" cy="32" r="16" stroke="#FAF8F5" strokeWidth="3" />
+    <rect width="64" height="64" rx="18" fill="#121212" className="fill-[#121212] dark:fill-[#27272A] transition-colors" />
+    <circle cx="32" cy="32" r="16" stroke="#FAF8F5" strokeWidth="3" className="stroke-[#FAF8F5] dark:stroke-[#52525B]" />
     <circle cx="32" cy="32" r="7" fill="#FF5A1F" />
     <circle cx="43" cy="21" r="3" fill="#FFFFFF" opacity="0.8" />
   </svg>
@@ -25,7 +25,7 @@ export const BrandMark: React.FC<{
     <BrandMarkIcon className={cn("w-7 h-7 sm:w-8 sm:h-8", iconClassName)} />
     <span
       className={cn(
-        "font-display font-[900] tracking-tight text-xl sm:text-2xl text-[#121212] leading-none",
+        "font-display font-[900] tracking-tight text-xl sm:text-2xl text-[#121212] dark:text-white leading-none transition-colors",
         textClassName
       )}
     >

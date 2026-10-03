@@ -173,21 +173,28 @@ export const HeroVideo: React.FC = () => {
 
       {/* ── 2. Loading Shimmer Skeleton ───────────────────────── */}
       <div
-        className={`absolute inset-0 bg-[#FAF8F5]/80 backdrop-blur-sm transition-opacity duration-700 ${
+        className={`absolute inset-0 bg-[#FAF8F5]/80 dark:bg-[#0E0E12]/80 backdrop-blur-sm transition-opacity duration-700 ${
           showSkeleton ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       />
 
       {/* ── 3. Gradient Scrim Overlays ────────────────────────── */}
-      {/* Base warm wash to let the video breathe while guaranteeing dark text legibility */}
-      <div className="absolute inset-0 bg-[#FAF8F5]/55" />
+      {/* Base wash to let the video breathe while guaranteeing text legibility */}
+      <div className="absolute inset-0 bg-[#FAF8F5]/55 dark:bg-[#0E0E12]/60 transition-colors duration-300" />
 
       {/* Radial ambient lighting: brighter at focal center, glowing softly */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 transition-opacity duration-300 dark:hidden"
         style={{
           background:
             "radial-gradient(ellipse 90% 70% at 50% 38%, rgba(250, 248, 245, 0.72) 0%, rgba(250, 248, 245, 0.52) 55%, rgba(250, 248, 245, 0.88) 100%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 transition-opacity duration-300 hidden dark:block"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 70% at 50% 38%, rgba(14, 14, 18, 0.75) 0%, rgba(14, 14, 18, 0.5) 55%, rgba(14, 14, 18, 0.92) 100%)",
         }}
       />
 
@@ -196,15 +203,15 @@ export const HeroVideo: React.FC = () => {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(circle 500px at 50% 32%, rgba(255, 90, 31, 0.08) 0%, transparent 70%)",
+            "radial-gradient(circle 500px at 50% 32%, rgba(255, 90, 31, 0.09) 0%, transparent 70%)",
         }}
       />
 
       {/* Top subtle fade from header */}
-      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/40 to-transparent" />
+      <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#FAF8F5]/90 via-[#FAF8F5]/40 to-transparent dark:from-[#0E0E12]/90 dark:via-[#0E0E12]/40 transition-colors duration-300" />
 
-      {/* Bottom seamless blend into canvas paper (#FAF8F5) */}
-      <div className="absolute bottom-0 inset-x-0 h-48 sm:h-64 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/85 to-transparent" />
+      {/* Bottom seamless blend into canvas paper (#FAF8F5 / #0E0E12) */}
+      <div className="absolute bottom-0 inset-x-0 h-48 sm:h-64 bg-gradient-to-t from-[#FAF8F5] via-[#FAF8F5]/85 to-transparent dark:from-[#0E0E12] dark:via-[#0E0E12]/85 to-transparent transition-colors duration-300" />
 
       {/* ── 4. Precision Studio Grid with Gradient Fade ───────── */}
       {/* High-tech creative studio grid with radial gradient mask */}
@@ -212,8 +219,8 @@ export const HeroVideo: React.FC = () => {
         className="absolute inset-0"
         style={{
           backgroundImage: `
-            linear-gradient(to right, rgba(18, 18, 18, 0.06) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(18, 18, 18, 0.06) 1px, transparent 1px)
+            linear-gradient(to right, var(--grid-hero, rgba(18, 18, 18, 0.06)) 1px, transparent 1px),
+            linear-gradient(to bottom, var(--grid-hero, rgba(18, 18, 18, 0.06)) 1px, transparent 1px)
           `,
           backgroundSize: "24px 24px",
           backgroundPosition: "center top",
@@ -236,10 +243,10 @@ export const HeroVideo: React.FC = () => {
       >
         {/* Subtle center alignment ticks */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 pointer-events-none">
-          <div className="absolute top-1/2 left-0 w-2 h-[1px] bg-[#121212]/20" />
-          <div className="absolute top-1/2 right-0 w-2 h-[1px] bg-[#121212]/20" />
-          <div className="absolute top-0 left-1/2 h-2 w-[1px] bg-[#121212]/20" />
-          <div className="absolute bottom-0 left-1/2 h-2 w-[1px] bg-[#121212]/20" />
+          <div className="absolute top-1/2 left-0 w-2 h-[1px] bg-[#121212]/20 dark:bg-white/30" />
+          <div className="absolute top-1/2 right-0 w-2 h-[1px] bg-[#121212]/20 dark:bg-white/30" />
+          <div className="absolute top-0 left-1/2 h-2 w-[1px] bg-[#121212]/20 dark:bg-white/30" />
+          <div className="absolute bottom-0 left-1/2 h-2 w-[1px] bg-[#121212]/20 dark:bg-white/30" />
         </div>
       </div>
     </div>

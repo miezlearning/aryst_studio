@@ -51,11 +51,13 @@
     --canvas: #FAF8F5;
     --canvas-card: #FFFFFF;
     --canvas-subtle: #F4F1EA;
+    --canvas-border: rgba(0, 0, 0, 0.06);
     --ink: #121212;
     --ink-secondary: #52525B;
     --ink-muted: #71717A;
     --brand: #FF5A1F;
     --brand-dark: #C2410C;
+    --grid-line: rgba(18, 18, 18, 0.045);
 
     --background: 40 25% 97%;
     --foreground: 0 0% 7%;
@@ -87,6 +89,47 @@
 
     --radius: 1.25rem;
   }
+
+  .dark {
+    --canvas: #0E0E12;
+    --canvas-card: #18181C;
+    --canvas-subtle: #222228;
+    --canvas-border: rgba(255, 255, 255, 0.08);
+    --ink: #F4F4F6;
+    --ink-secondary: #A1A1AA;
+    --ink-muted: #71717A;
+    --brand: #FF5A1F;
+    --brand-dark: #E8470B;
+    --grid-line: rgba(255, 255, 255, 0.05);
+
+    --background: 240 10% 6%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 10%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 16 100% 56%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 6% 16%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 6% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 16 100% 56%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
+    --ring: 16 100% 56%;
+  }
 }
 
 body, h1, h2, h3, h4, h5, h6, button, input, select, textarea {
@@ -97,9 +140,15 @@ body, h1, h2, h3, h4, h5, h6, button, input, select, textarea {
 
 body {
   margin: 0;
-  background-color: #FAF8F5;
-  color: #121212;
+  background-color: var(--canvas, #FAF8F5);
+  color: var(--ink, #121212);
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark body {
+  background-color: #0E0E12;
+  color: #F4F4F6;
 }
 
 /* Custom Sleek Scrollbar */
@@ -109,7 +158,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #FAF8F5;
+  background: var(--canvas, #FAF8F5);
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #0E0E12;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -117,22 +170,40 @@ body {
   border-radius: 4px;
 }
 
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3F3F46;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #A1A1AA;
 }
 
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #52525B;
+}
+
 /* Mtioon Distinctive Card & Pill Aesthetics */
 .mtioon-card {
-  background: #FFFFFF;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--canvas-card, #FFFFFF);
+  border: 1px solid var(--canvas-border, rgba(0, 0, 0, 0.06));
   border-radius: 28px;
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, border-color 0.3s ease;
+}
+
+html.dark .mtioon-card {
+  background: #18181C;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.5), 0 2px 8px -1px rgba(0, 0, 0, 0.3);
 }
 
 .mtioon-card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.06), 0 4px 12px -2px rgba(0, 0, 0, 0.03);
+}
+
+html.dark .mtioon-card-hover:hover {
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.7), 0 4px 16px -2px rgba(0, 0, 0, 0.4);
 }
 
 /* Mtioon 3D Tactile Buttons */
@@ -172,15 +243,31 @@ body {
   user-select: none;
 }
 
+html.dark .btn-mtioon-secondary {
+  background: #27272D;
+  color: #F4F4F6;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 3px 0 #141418, 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
 .btn-mtioon-secondary:hover {
   transform: translateY(-1px);
   background: #FCFCFB;
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.05);
 }
 
+html.dark .btn-mtioon-secondary:hover {
+  background: #32323A;
+  box-shadow: 0 4px 0 #141418, 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
 .btn-mtioon-secondary:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+html.dark .btn-mtioon-secondary:active {
+  box-shadow: 0 1px 0 #141418;
 }
 
 .btn-mtioon-black {
@@ -195,15 +282,30 @@ body {
   user-select: none;
 }
 
+html.dark .btn-mtioon-black {
+  background: #F4F4F6;
+  color: #121212;
+  box-shadow: 0 3px 0 #C4C4C8, 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
 .btn-mtioon-black:hover {
   background: #000000;
   transform: translateY(-1px);
   box-shadow: 0 4px 0 #000000, 0 10px 24px rgba(0, 0, 0, 0.2);
 }
 
+html.dark .btn-mtioon-black:hover {
+  background: #FFFFFF;
+  box-shadow: 0 4px 0 #C4C4C8, 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
 .btn-mtioon-black:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 #000000;
+}
+
+html.dark .btn-mtioon-black:active {
+  box-shadow: 0 1px 0 #C4C4C8;
 }
 
 /* 3D Extruded Candy Badges / Chips */

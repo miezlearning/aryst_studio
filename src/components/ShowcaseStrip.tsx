@@ -247,7 +247,7 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
                   if (!drag.current.moved) onPick();
                 }}
                 aria-label="Contoh hasil kurasi: buka form kode sesi galeri"
-                className="group gloss-sweep relative rounded-2xl overflow-hidden bg-white border border-black/[0.07] w-[240px] sm:w-[280px] aspect-[4/5] shrink-0 text-left shadow-[0_4px_16px_rgba(0,0,0,0.04)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F]"
+                className="group gloss-sweep relative rounded-2xl overflow-hidden bg-white dark:bg-[#18181C] border border-black/[0.07] dark:border-white/[0.1] w-[240px] sm:w-[280px] aspect-[4/5] shrink-0 text-left shadow-[0_4px_16px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.4)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5A1F]"
                 style={{
                   transform: `scale(${0.93 + 0.07 * focus}) rotateY(${
                     -off * 6
@@ -277,7 +277,7 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
       {canSlide && (
         <div className="mt-4 flex items-center gap-3">
           <div
-            className="relative h-1 flex-1 rounded-full bg-black/[0.08] overflow-hidden"
+            className="relative h-1 flex-1 rounded-full bg-black/[0.08] dark:bg-white/[0.1] overflow-hidden"
             role="progressbar"
             aria-label="Posisi galeri"
             aria-valuemin={0}
@@ -295,7 +295,7 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
               onClick={() => stepBy(1)}
               disabled={atStart}
               aria-label="Foto sebelumnya"
-              className="w-9 h-9 rounded-full bg-white border border-black/[0.08] shadow-sm flex items-center justify-center text-[#121212] hover:bg-black/[0.04] transition-colors disabled:opacity-35 disabled:pointer-events-none"
+              className="w-9 h-9 rounded-full bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.12] shadow-sm flex items-center justify-center text-[#121212] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors disabled:opacity-35 disabled:pointer-events-none"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -304,7 +304,7 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
               onClick={() => stepBy(-1)}
               disabled={atEnd}
               aria-label="Foto berikutnya"
-              className="w-9 h-9 rounded-full bg-white border border-black/[0.08] shadow-sm flex items-center justify-center text-[#121212] hover:bg-black/[0.04] transition-colors disabled:opacity-35 disabled:pointer-events-none"
+              className="w-9 h-9 rounded-full bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.12] shadow-sm flex items-center justify-center text-[#121212] dark:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors disabled:opacity-35 disabled:pointer-events-none"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

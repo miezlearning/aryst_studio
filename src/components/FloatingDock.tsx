@@ -31,21 +31,21 @@ export const FloatingDock: React.FC = () => {
           : "opacity-100 translate-y-0"
       }`}
     >
-      <div className="pointer-events-auto max-w-xl w-full bg-white/95 backdrop-blur-md rounded-full sm:rounded-full p-3 sm:py-2.5 sm:px-5 shadow-[0_12px_40px_-6px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04)] border border-black/[0.08] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div className="pointer-events-auto max-w-xl w-full bg-white/95 dark:bg-[#18181C]/95 backdrop-blur-md rounded-full sm:rounded-full p-3 sm:py-2.5 sm:px-5 shadow-[0_12px_40px_-6px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_12px_40px_-6px_rgba(0,0,0,0.6)] border border-black/[0.08] dark:border-white/[0.12] animate-fade-in flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 transition-colors">
         {/* Progress & Quota Information */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1.5">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#121212] flex items-center gap-1.5">
+              <span className="text-xs font-bold text-[#121212] dark:text-white flex items-center gap-1.5">
                 {isComplete ? (
                   <CheckCircle2 className="w-4 h-4 text-[#FF5A1F]" />
                 ) : (
-                  <Camera className="w-4 h-4 text-[#52525B]" />
+                  <Camera className="w-4 h-4 text-[#52525B] dark:text-[#A1A1AA]" />
                 )}
                 <span>Kuota:</span>
                 <span className="text-[#FF5A1F]">{selectedCount}</span>
                 <span className="text-[#A1A1AA]">/</span>
-                <span className="text-[#71717A]">{maxQuota} Foto</span>
+                <span className="text-[#71717A] dark:text-[#A1A1AA]">{maxQuota} Foto</span>
               </span>
             </div>
 
@@ -55,19 +55,19 @@ export const FloatingDock: React.FC = () => {
                   <Lock className="w-3 h-3" /> Dikunci
                 </span>
               ) : isComplete ? (
-                <span className="text-[#121212] font-bold">Siap Dikirim!</span>
+                <span className="text-[#121212] dark:text-white font-bold">Siap Dikirim!</span>
               ) : (
-                <span className="text-[#71717A]">Sisa {remaining} foto</span>
+                <span className="text-[#71717A] dark:text-[#A1A1AA]">Sisa {remaining} foto</span>
               )}
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-black/[0.06] rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-black/[0.06] dark:bg-white/[0.1] rounded-full h-1.5 overflow-hidden">
             <div
               className={`h-full transition-all duration-300 rounded-full ${
                 isComplete
-                  ? "bg-[#121212]"
+                  ? "bg-[#121212] dark:bg-white"
                   : "bg-[#FF5A1F]"
               }`}
               style={{ width: `${percentage}%` }}
@@ -92,8 +92,8 @@ export const FloatingDock: React.FC = () => {
             onClick={() => setActiveFilter(activeFilter === "selected" ? "all" : "selected")}
             className={`px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 ${
               activeFilter === "selected"
-                ? "bg-[#121212] border-black text-white"
-                : "bg-black/[0.03] hover:bg-black/[0.06] border-black/[0.08] text-[#52525B]"
+                ? "bg-[#121212] dark:bg-white border-black dark:border-white text-white dark:text-[#121212]"
+                : "bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] border-black/[0.08] dark:border-white/[0.08] text-[#52525B] dark:text-[#A1A1AA]"
             }`}
             title="Saring foto terpilih"
           >

@@ -177,18 +177,18 @@ export const SubmissionModal: React.FC = () => {
       }}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
     >
-      <div className="relative w-full max-w-2xl my-auto bg-white border border-black/[0.08] rounded-[32px] p-6 sm:p-8 shadow-2xl text-[#121212]">
+      <div className="relative w-full max-w-2xl my-auto bg-white dark:bg-[#18181C] border border-black/[0.08] dark:border-white/[0.1] rounded-[32px] p-6 sm:p-8 shadow-2xl text-[#121212] dark:text-[#F4F4F6] transition-colors">
         {/* Header */}
-        <div className="sticky top-0 z-10 -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 px-6 sm:px-8 pt-6 pb-4 mb-6 bg-white border-b border-black/[0.06] rounded-t-[32px] flex items-center justify-between gap-3">
+        <div className="sticky top-0 z-10 -mx-6 -mt-6 sm:-mx-8 sm:-mt-8 px-6 sm:px-8 pt-6 pb-4 mb-6 bg-white dark:bg-[#18181C] border-b border-black/[0.06] dark:border-white/[0.08] rounded-t-[32px] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#FF5A1F]/10 border border-[#FF5A1F]/20 flex items-center justify-center text-[#FF5A1F]">
               <CheckCircle className="w-5 h-5" />
             </div>
             <div>
-              <h2 id="submission-modal-title" className="font-display font-[900] text-lg text-[#121212] tracking-tight">
+              <h2 id="submission-modal-title" className="font-display font-[900] text-lg text-[#121212] dark:text-white tracking-tight">
                 Kirim Pilihan Foto
               </h2>
-              <p className="text-xs text-[#71717A]">
+              <p className="text-xs text-[#71717A] dark:text-[#A1A1AA]">
                 Kirim daftar foto pilihan dan catatan revisi Anda langsung ke fotografer.
               </p>
             </div>
@@ -196,22 +196,22 @@ export const SubmissionModal: React.FC = () => {
 
           <button
             onClick={() => setIsSubmissionOpen(false)}
-            className="p-2 rounded-full bg-black/[0.04] hover:bg-black/[0.08] text-[#52525B] hover:text-[#121212] border border-black/[0.06] transition-colors"
+            className="p-2 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-[#52525B] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white border border-black/[0.06] dark:border-white/[0.08] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Quota Status Alert */}
-        <div className="mb-6 p-4 rounded-2xl bg-black/[0.03] border border-black/[0.06] flex items-center justify-between">
+        <div className="mb-6 p-4 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#121212]">Status Kuota:</span>
+              <span className="text-xs font-semibold text-[#121212] dark:text-white">Status Kuota:</span>
               <span className="px-2.5 py-0.5 rounded-full bg-[#FF5A1F]/10 border border-[#FF5A1F]/20 text-[#FF5A1F] text-xs font-bold">
                 {selectedCount} dari {session.maxQuota} Foto Terpilih
               </span>
             </div>
-            <p className="text-[11px] text-[#71717A] mt-1 font-medium">
+            <p className="text-[11px] text-[#71717A] dark:text-[#A1A1AA] mt-1 font-medium">
               Klien: {session.clientName} • Project: {session.projectId}
             </p>
           </div>
@@ -221,7 +221,7 @@ export const SubmissionModal: React.FC = () => {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
               session.isLocked
                 ? "bg-[#FF5A1F]/10 border-[#FF5A1F]/30 text-[#FF5A1F]"
-                : "bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.08] text-[#52525B]"
+                : "bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] border-black/[0.08] dark:border-white/[0.08] text-[#52525B] dark:text-[#A1A1AA]"
             }`}
             title={session.isLocked ? "Buka kunci seleksi" : "Kunci seleksi agar tidak berubah"}
           >
@@ -310,16 +310,16 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleCopyLightroom}
               disabled={selectedCount === 0}
-              className="flex items-start gap-3 p-4 rounded-2xl bg-black/[0.02] hover:bg-black/[0.05] border border-black/[0.07] text-[#121212] text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-start gap-3 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] border border-black/[0.07] dark:border-white/[0.08] text-[#121212] dark:text-[#F4F4F6] text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="w-8 h-8 rounded-full bg-black/[0.06] flex items-center justify-center text-[#121212] shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-full bg-black/[0.06] dark:bg-white/[0.08] flex items-center justify-center text-[#121212] dark:text-white shrink-0 group-hover:scale-105 transition-transform">
                 <Copy className="w-4 h-4" />
               </div>
               <div>
-                <span className="block text-xs font-bold text-[#121212]">
+                <span className="block text-xs font-bold text-[#121212] dark:text-white">
                   {copiedType === "lightroom" ? "✓ Tersalin ke Clipboard!" : "Salin Daftar Foto"}
                 </span>
-                <span className="block text-[11px] text-[#71717A] mt-0.5">
+                <span className="block text-[11px] text-[#71717A] dark:text-[#A1A1AA] mt-0.5">
                   Salin teks nama foto untuk dicari langsung di editor foto.
                 </span>
               </div>
@@ -329,31 +329,31 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleTransmitWebhook}
               disabled={selectedCount === 0 || isTransmitting}
-              className="flex items-start gap-3 p-4 rounded-2xl bg-black/[0.02] hover:bg-black/[0.05] border border-black/[0.07] text-[#121212] text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2"
+              className="flex items-start gap-3 p-4 rounded-2xl bg-black/[0.02] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] border border-black/[0.07] dark:border-white/[0.08] text-[#121212] dark:text-[#F4F4F6] text-left transition-all group disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2"
             >
-              <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 {isTransmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-600 dark:text-indigo-400" />
                 ) : (
                   <FileSpreadsheet className="w-4 h-4" />
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between">
-                  <span className="block text-xs font-bold text-[#121212]">
+                  <span className="block text-xs font-bold text-[#121212] dark:text-white">
                     Simpan ke Lembar Kerja Studio
                   </span>
                   {transmitStatus === "success" && (
-                    <span className="text-[11px] text-emerald-600 font-bold">✓ Terkirim</span>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">✓ Terkirim</span>
                   )}
                 </div>
-                <span className="block text-[11px] text-[#71717A] mt-0.5">
+                <span className="block text-[11px] text-[#71717A] dark:text-[#A1A1AA] mt-0.5">
                   Kirimkan data pilihan Anda langsung ke sistem arsip fotografer.
                 </span>
                 {transmitMessage && (
                   <p
                     className={`text-[11px] mt-2 font-medium ${
-                      transmitStatus === "success" ? "text-emerald-600" : "text-rose-600"
+                      transmitStatus === "success" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                     }`}
                   >
                     {transmitMessage}
@@ -368,7 +368,7 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleDownloadCSV}
               disabled={selectedCount === 0}
-              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.08] text-xs font-semibold text-[#121212] transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] border border-black/[0.08] dark:border-white/[0.08] text-xs font-semibold text-[#121212] dark:text-[#F4F4F6] transition-colors disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Unduh CSV</span>
@@ -376,7 +376,7 @@ export const SubmissionModal: React.FC = () => {
             <button
               onClick={handleDownloadJSON}
               disabled={selectedCount === 0}
-              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-black/[0.03] hover:bg-black/[0.06] border border-black/[0.08] text-xs font-semibold text-[#121212] transition-colors disabled:opacity-50"
+              className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-black/[0.03] dark:bg-white/[0.06] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] border border-black/[0.08] dark:border-white/[0.08] text-xs font-semibold text-[#121212] dark:text-[#F4F4F6] transition-colors disabled:opacity-50"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>Unduh JSON</span>
@@ -388,7 +388,7 @@ export const SubmissionModal: React.FC = () => {
         <div className="text-center pt-2">
           <button
             onClick={() => setIsSubmissionOpen(false)}
-            className="text-xs font-medium text-[#71717A] hover:text-[#121212] transition-colors"
+            className="text-xs font-medium text-[#71717A] dark:text-[#A1A1AA] hover:text-[#121212] dark:hover:text-white transition-colors"
           >
             Kembali ke Kurasi Foto
           </button>

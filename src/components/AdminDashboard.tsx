@@ -653,20 +653,20 @@ function doPost(e) {
       {/* Studio Overview Metrics (Clean White Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 my-6">
         <div className="mtioon-card p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A]">Total Sesi Klien</p>
-          <p className="text-2xl sm:text-3xl font-black text-[#121212] mt-1.5">{clientProjects.length}</p>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A] dark:text-zinc-400">Total Sesi Klien</p>
+          <p className="text-2xl sm:text-3xl font-black text-[#121212] dark:text-white mt-1.5">{clientProjects.length}</p>
         </div>
 
         <div className="mtioon-card p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A]">Sesi Dilindungi Sandi</p>
-          <p className="text-2xl sm:text-3xl font-black text-[#121212] mt-1.5">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A] dark:text-zinc-400">Sesi Dilindungi Sandi</p>
+          <p className="text-2xl sm:text-3xl font-black text-[#121212] dark:text-white mt-1.5">
             {clientProjects.filter((p) => Boolean(p.password || p.passwordHash)).length}
           </p>
         </div>
 
         <div className="mtioon-card p-5">
-          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A]">Sesi Aktif di Preview</p>
-          <p className="text-base sm:text-lg font-bold text-[#121212] mt-2 truncate">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#71717A] dark:text-zinc-400">Sesi Aktif di Preview</p>
+          <p className="text-base sm:text-lg font-bold text-[#121212] dark:text-white mt-2 truncate">
             {clientProjects.find((p) => p.id === activeProjectId)?.clientName || "Belum dipilih"}
           </p>
         </div>
@@ -678,23 +678,23 @@ function doPost(e) {
           {/* Search Bar & View Mode Switcher */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717A]" />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717A] dark:text-zinc-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari sesi berdasarkan nama klien atau kode project..."
-                className="w-full pl-10 pr-4 py-2 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                className="w-full pl-10 pr-4 py-2 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#26262E] transition-all"
               />
             </div>
 
-            <div className="flex items-center gap-1 bg-white border border-black/[0.06] rounded-full p-1 self-end sm:self-auto">
+            <div className="flex items-center gap-1 bg-white dark:bg-[#141417] border border-black/[0.06] dark:border-white/[0.08] rounded-full p-1 self-end sm:self-auto transition-colors">
               <button
                 onClick={() => setViewLayout("by_client")}
                 className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 ${
                   viewLayout === "by_client"
-                    ? "bg-[#121212] text-[#FFFFFF] font-bold"
-                    : "text-[#121212]/60 hover:text-[#121212] font-semibold"
+                    ? "bg-[#121212] dark:bg-white text-[#FFFFFF] dark:text-[#09090B] font-bold shadow-xs"
+                    : "text-[#121212]/60 dark:text-zinc-400 hover:text-[#121212] dark:hover:text-white font-semibold"
                 }`}
                 title="Kelompokkan Sesi per Klien"
               >
@@ -706,8 +706,8 @@ function doPost(e) {
                 onClick={() => setViewLayout("table")}
                 className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 ${
                   viewLayout === "table"
-                    ? "bg-[#121212] text-[#FFFFFF] font-bold"
-                    : "text-[#121212]/60 hover:text-[#121212] font-semibold"
+                    ? "bg-[#121212] dark:bg-white text-[#FFFFFF] dark:text-[#09090B] font-bold shadow-xs"
+                    : "text-[#121212]/60 dark:text-zinc-400 hover:text-[#121212] dark:hover:text-white font-semibold"
                 }`}
                 title="Tampilan Tabel Pro"
               >
@@ -719,8 +719,8 @@ function doPost(e) {
                 onClick={() => setViewLayout("grid")}
                 className={`px-3 py-1.5 rounded-full text-xs transition-all flex items-center gap-1.5 ${
                   viewLayout === "grid"
-                    ? "bg-[#121212] text-[#FFFFFF] font-bold"
-                    : "text-[#121212]/60 hover:text-[#121212] font-semibold"
+                    ? "bg-[#121212] dark:bg-white text-[#FFFFFF] dark:text-[#09090B] font-bold shadow-xs"
+                    : "text-[#121212]/60 dark:text-zinc-400 hover:text-[#121212] dark:hover:text-white font-semibold"
                 }`}
                 title="Tampilan Kartu"
               >
@@ -800,17 +800,17 @@ function doPost(e) {
                 return (
                   <div
                     key={group.key}
-                    className="rounded-2xl border border-black/[0.08] bg-white overflow-hidden shadow-sm"
+                    className="rounded-2xl border border-black/[0.08] dark:border-white/[0.08] bg-white dark:bg-[#141417] overflow-hidden shadow-sm transition-colors"
                   >
                     {/* Client Group Header */}
-                    <div className="p-4 sm:p-5 bg-[#F4F1EA] border-b border-black/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="p-4 sm:p-5 bg-[#F4F1EA] dark:bg-white/[0.04] border-b border-black/[0.06] dark:border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-[#FFF0EB] border border-[#FF5A1F]/20 flex items-center justify-center font-bold text-[#FF5A1F] text-base shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/20 flex items-center justify-center font-bold text-[#FF5A1F] text-base shrink-0">
                           {group.clientName.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-base font-bold text-[#121212] tracking-tight">
+                            <h3 className="text-base font-bold text-[#121212] dark:text-white tracking-tight">
                               {group.clientName}
                             </h3>
                             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FF5A1F]/10 text-[#FF5A1F] border border-[#FF5A1F]/20">
@@ -818,8 +818,8 @@ function doPost(e) {
                             </span>
                           </div>
                           {group.clientContact && (
-                            <p className="text-xs text-[#71717A] mt-0.5 flex items-center gap-1.5 font-medium">
-                              <Phone className="w-3 h-3 text-[#71717A]" />
+                            <p className="text-xs text-[#71717A] dark:text-zinc-400 mt-0.5 flex items-center gap-1.5 font-medium">
+                              <Phone className="w-3 h-3 text-[#71717A] dark:text-zinc-400" />
                               <span>{group.clientContact}</span>
                             </p>
                           )}
@@ -836,7 +836,7 @@ function doPost(e) {
                     </div>
 
                     {/* Sessions List within Client */}
-                    <div className="divide-y divide-black/[0.06]">
+                    <div className="divide-y divide-black/[0.06] dark:divide-white/[0.08]">
                       {group.projects.map((proj) => {
                         const isActive = proj.id === activeProjectId;
                         const hasPassword = Boolean(proj.password || proj.passwordHash);
@@ -845,8 +845,8 @@ function doPost(e) {
                         return (
                           <div
                             key={proj.id}
-                            className={`p-4 sm:p-5 transition-colors hover:bg-black/[0.02] flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
-                              isActive ? "bg-[#FFF0EB]/40" : ""
+                            className={`p-4 sm:p-5 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02] flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${
+                              isActive ? "bg-[#FFF0EB]/40 dark:bg-[#FF5A1F]/10" : ""
                             }`}
                           >
                             <div className="space-y-2 flex-1 min-w-0">
@@ -856,14 +856,14 @@ function doPost(e) {
                                   {proj.sessionType || "Sesi Foto"}
                                 </span>
                                 <SessionModeBadge proj={proj} />
-                                <h4 className="text-sm sm:text-base font-bold text-[#121212] truncate">
+                                <h4 className="text-sm sm:text-base font-bold text-[#121212] dark:text-white truncate">
                                   {proj.sessionTitle || proj.projectId}
                                 </h4>
-                                <span className="text-[11px] font-mono text-[#71717A]">
+                                <span className="text-[11px] font-mono text-[#71717A] dark:text-zinc-400">
                                   ({proj.projectId})
                                 </span>
                                 {isActive && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                                     Aktif di Preview
                                   </span>
                                 )}
@@ -873,30 +873,30 @@ function doPost(e) {
                               {/* Venue & Purpose (Esensi Sesi) */}
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
                                 {proj.location && (
-                                  <div className="flex items-center gap-1.5 text-[#52525B]">
+                                  <div className="flex items-center gap-1.5 text-[#52525B] dark:text-zinc-300">
                                     <MapPin className="w-3.5 h-3.5 text-[#FF5A1F] shrink-0" />
-                                    <span className="text-[#71717A] font-medium">Tempat:</span>
+                                    <span className="text-[#71717A] dark:text-zinc-400 font-medium">Tempat:</span>
                                     <span className="font-medium truncate">{proj.location}</span>
                                   </div>
                                 )}
                                 {(proj.sessionPurpose || proj.notes) && (
-                                  <div className="flex items-center gap-1.5 text-[#52525B]">
+                                  <div className="flex items-center gap-1.5 text-[#52525B] dark:text-zinc-300">
                                     <Target className="w-3.5 h-3.5 text-[#FF5A1F] shrink-0" />
-                                    <span className="text-[#71717A] font-medium">Tujuan / Esensi:</span>
+                                    <span className="text-[#71717A] dark:text-zinc-400 font-medium">Tujuan / Esensi:</span>
                                     <span className="font-medium truncate">{proj.sessionPurpose || proj.notes}</span>
                                   </div>
                                 )}
                               </div>
 
                               {/* Meta info tags */}
-                              <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#71717A] pt-1">
+                              <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#71717A] dark:text-zinc-400 pt-1">
                                 <span className="flex items-center gap-1">
-                                  <Camera className="w-3 h-3 text-[#71717A]" />
-                                  <span>Kuota: <strong className="text-[#121212]">{proj.maxQuota} foto</strong></span>
+                                  <Camera className="w-3 h-3 text-[#71717A] dark:text-zinc-400" />
+                                  <span>Kuota: <strong className="text-[#121212] dark:text-white">{proj.maxQuota} foto</strong></span>
                                 </span>
                                 {proj.sessionDate && (
                                   <span className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3 text-[#71717A]" />
+                                    <Calendar className="w-3 h-3 text-[#71717A] dark:text-zinc-400" />
                                     <span>{proj.sessionDate}</span>
                                   </span>
                                 )}
@@ -907,7 +907,7 @@ function doPost(e) {
                                     <span>Dilindungi Sandi</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 text-[#71717A]">
+                                  <span className="inline-flex items-center gap-1 text-[#71717A] dark:text-zinc-400">
                                     <Unlock className="w-3 h-3" />
                                     <span>Publik</span>
                                   </span>
@@ -936,7 +936,7 @@ function doPost(e) {
                             <div className="flex items-center gap-1.5 shrink-0 self-start lg:self-center">
                               <button
                                 onClick={() => setInspectingProject(proj)}
-                                className="px-3 py-1.5 rounded-xl bg-[#FFF0EB] hover:bg-[#FFE5DB] border border-[#FF5A1F]/30 text-[#FF5A1F] font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"
+                                className="px-3 py-1.5 rounded-xl bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 hover:bg-[#FFE5DB] dark:hover:bg-[#FF5A1F]/25 border border-[#FF5A1F]/30 text-[#FF5A1F] font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"
                                 title="Lihat foto yang dipilih klien"
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
@@ -945,10 +945,10 @@ function doPost(e) {
 
                               <button
                                 onClick={() => handlePreviewAsClient(proj.id)}
-                                className="px-3 py-1.5 rounded-xl bg-[#F5F2EB] hover:bg-[#EDE9E0] text-[#121212] border border-black/5 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                                className="px-3 py-1.5 rounded-xl bg-[#F5F2EB] dark:bg-white/[0.06] hover:bg-[#EDE9E0] dark:hover:bg-white/[0.1] text-[#121212] dark:text-zinc-200 border border-black/5 dark:border-white/10 text-xs font-semibold transition-colors flex items-center gap-1.5"
                                 title="Buka galeri klien untuk sesi ini"
                               >
-                                <Eye className="w-3.5 h-3.5 text-[#71717A]" />
+                                <Eye className="w-3.5 h-3.5 text-[#71717A] dark:text-zinc-400" />
                                 <span>Buka Galeri</span>
                               </button>
 
@@ -957,7 +957,7 @@ function doPost(e) {
                                 className={`p-2 rounded-xl border text-xs transition-colors ${
                                   isCopied
                                     ? "bg-emerald-600 text-[#FFFFFF] border-emerald-600 font-bold"
-                                    : "bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border-black/10"
+                                    : "bg-white dark:bg-white/[0.06] hover:bg-black/[0.04] dark:hover:bg-white/[0.1] text-[#71717A] dark:text-zinc-300 hover:text-[#121212] dark:hover:text-white border-black/10 dark:border-white/10"
                                 }`}
                                 title="Salin tautan galeri klien"
                               >
@@ -966,7 +966,7 @@ function doPost(e) {
 
                               <button
                                 onClick={() => openEditModal(proj)}
-                                className="p-2 rounded-xl bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
+                                className="p-2 rounded-xl bg-white dark:bg-white/[0.06] hover:bg-black/[0.04] dark:hover:bg-white/[0.1] text-[#71717A] dark:text-zinc-300 hover:text-[#121212] dark:hover:text-white border border-black/10 dark:border-white/10 transition-colors"
                                 title="Edit sesi"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -979,7 +979,7 @@ function doPost(e) {
                                       deleteProject(proj.id);
                                     }
                                   }}
-                                  className="p-2 rounded-xl bg-white hover:bg-rose-50 text-[#71717A] hover:text-rose-600 border border-black/10 transition-colors"
+                                  className="p-2 rounded-xl bg-white dark:bg-white/[0.06] hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[#71717A] dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 border border-black/10 dark:border-white/10 transition-colors"
                                   title="Hapus sesi"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -999,7 +999,7 @@ function doPost(e) {
             <div className="overflow-x-auto mtioon-card">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="border-b border-black/[0.06] bg-[#F4F1EA] text-[#121212]/60 font-semibold uppercase tracking-wider text-[11px]">
+                  <tr className="border-b border-black/[0.06] dark:border-white/[0.08] bg-[#F4F1EA] dark:bg-white/[0.04] text-[#121212]/60 dark:text-zinc-400 font-semibold uppercase tracking-wider text-[11px]">
                     <th className="py-3 px-4">Klien & Tipe Sesi</th>
                     <th className="py-3 px-4">Tempat & Tujuan Sesi</th>
                     <th className="py-3 px-4">Sumber Foto</th>
@@ -1008,7 +1008,7 @@ function doPost(e) {
                     <th className="py-3 px-4 text-right">Aksi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-black/[0.06]">
+                <tbody className="divide-y divide-black/[0.06] dark:divide-white/[0.08]">
                   {filteredProjects.map((proj) => {
                     const isActive = proj.id === activeProjectId;
                     const hasPassword = Boolean(proj.password || proj.passwordHash);
@@ -1017,33 +1017,33 @@ function doPost(e) {
                     return (
                       <tr
                         key={proj.id}
-                        className={`hover:bg-black/[0.02] transition-colors ${
-                          isActive ? "bg-[#FFF0EB]/40" : ""
+                        className={`hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors ${
+                          isActive ? "bg-[#FFF0EB]/40 dark:bg-[#FF5A1F]/10" : ""
                         }`}
                       >
                         {/* Klien & Tipe Sesi */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-[#121212] text-sm">
+                            <span className="font-bold text-[#121212] dark:text-white text-sm">
                               {proj.clientName}
                             </span>
                             {proj.sessionType && (
-                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF0EB] text-[#FF5A1F] border border-[#FF5A1F]/20">
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border border-[#FF5A1F]/20">
                                 {proj.sessionType}
                               </span>
                             )}
                             <SessionModeBadge proj={proj} />
                             {isActive && (
-                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                                 Aktif
                               </span>
                             )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className="text-[#121212]/80 font-medium text-xs">
+                            <span className="text-[#121212]/80 dark:text-zinc-300 font-medium text-xs">
                               {proj.sessionTitle || proj.projectId}
                             </span>
-                            <span className="text-[#121212]/60 font-mono text-[11px]">
+                            <span className="text-[#121212]/60 dark:text-zinc-400 font-mono text-[11px]">
                               ({proj.projectId})
                             </span>
                             <DeadlineBadge deadline={proj.selectionDeadline} />
@@ -1053,14 +1053,14 @@ function doPost(e) {
                         {/* Tempat & Tujuan Sesi */}
                         <td className="py-3 px-4 max-w-xs">
                           {proj.location && (
-                            <div className="flex items-center gap-1 text-[#121212]/80 truncate">
-                              <MapPin className="w-3 h-3 text-[#C2410C] shrink-0" />
+                            <div className="flex items-center gap-1 text-[#121212]/80 dark:text-zinc-300 truncate">
+                              <MapPin className="w-3 h-3 text-[#FF5A1F] shrink-0" />
                               <span className="truncate">{proj.location}</span>
                             </div>
                           )}
                           {(proj.sessionPurpose || proj.notes) && (
-                            <div className="flex items-center gap-1 text-[#121212]/60 truncate mt-0.5 text-[11px]">
-                              <Target className="w-3 h-3 text-[#121212]/60 shrink-0" />
+                            <div className="flex items-center gap-1 text-[#121212]/60 dark:text-zinc-400 truncate mt-0.5 text-[11px]">
+                              <Target className="w-3 h-3 text-[#FF5A1F] shrink-0" />
                               <span className="truncate">{proj.sessionPurpose || proj.notes}</span>
                             </div>
                           )}
@@ -1079,19 +1079,19 @@ function doPost(e) {
                         </td>
 
                         {/* Kuota */}
-                        <td className="py-3 px-4 font-semibold text-[#121212]/80">
+                        <td className="py-3 px-4 font-semibold text-[#121212]/80 dark:text-zinc-200">
                           {proj.maxQuota} foto
                         </td>
 
                         {/* Proteksi Sandi */}
                         <td className="py-3 px-4">
                           {hasPassword ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[#FFF0EB] text-[#FF5A1F] border border-[#FF5A1F]/20 font-medium">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border border-[#FF5A1F]/20 font-medium">
                               <Lock className="w-3 h-3" />
                               <span>Dilindungi</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[#F4F1EA] text-[#121212]/60 border border-black/[0.06] font-medium">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] bg-[#F4F1EA] dark:bg-white/[0.06] text-[#121212]/60 dark:text-zinc-400 border border-black/[0.06] dark:border-white/[0.08] font-medium">
                               <Unlock className="w-3 h-3" />
                               <span>Publik</span>
                             </span>
@@ -1103,7 +1103,7 @@ function doPost(e) {
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => setInspectingProject(proj)}
-                              className="px-2.5 py-1.5 rounded-full bg-[#FFF0EB] hover:bg-[#FFE5DB] border border-[#FF5A1F]/30 text-[#FF5A1F] font-semibold text-xs transition-colors flex items-center gap-1"
+                              className="px-2.5 py-1.5 rounded-full bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 hover:bg-[#FFE5DB] dark:hover:bg-[#FF5A1F]/25 border border-[#FF5A1F]/30 text-[#FF5A1F] font-semibold text-xs transition-colors flex items-center gap-1"
                               title="Lihat foto yang dipilih klien"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
@@ -1115,7 +1115,7 @@ function doPost(e) {
                               className={`p-1.5 rounded-full border text-xs transition-colors ${
                                 isCopied
                                   ? "bg-emerald-600 text-[#FFFFFF] border-emerald-600"
-                                  : "bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border-black/10"
+                                  : "bg-white dark:bg-white/[0.06] hover:bg-black/[0.04] dark:hover:bg-white/[0.1] text-[#71717A] dark:text-zinc-300 hover:text-[#121212] dark:hover:text-white border-black/10 dark:border-white/10"
                               }`}
                               title="Salin tautan galeri klien"
                             >
@@ -1124,7 +1124,7 @@ function doPost(e) {
 
                             <button
                               onClick={() => handlePreviewAsClient(proj.id)}
-                              className="p-1.5 rounded-full bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
+                              className="p-1.5 rounded-full bg-white dark:bg-white/[0.06] hover:bg-black/[0.04] dark:hover:bg-white/[0.1] text-[#71717A] dark:text-zinc-300 hover:text-[#121212] dark:hover:text-white border border-black/10 dark:border-white/10 transition-colors"
                               title="Buka galeri klien ini"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -1132,7 +1132,7 @@ function doPost(e) {
 
                             <button
                               onClick={() => openEditModal(proj)}
-                              className="p-1.5 rounded-full bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
+                              className="p-1.5 rounded-full bg-white dark:bg-white/[0.06] hover:bg-black/[0.04] dark:hover:bg-white/[0.1] text-[#71717A] dark:text-zinc-300 hover:text-[#121212] dark:hover:text-white border border-black/10 dark:border-white/10 transition-colors"
                               title="Edit sesi"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -1145,7 +1145,7 @@ function doPost(e) {
                                     deleteProject(proj.id);
                                   }
                                 }}
-                                className="p-1.5 rounded-full bg-white hover:bg-rose-50 text-[#71717A] hover:text-rose-600 border border-black/10 transition-colors"
+                                className="p-1.5 rounded-full bg-white dark:bg-white/[0.06] hover:bg-rose-50 dark:hover:bg-rose-950/40 text-[#71717A] dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 border border-black/10 dark:border-white/10 transition-colors"
                                 title="Hapus sesi"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
@@ -1178,62 +1178,62 @@ function doPost(e) {
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-2">
-                        <span className="font-bold text-[11px] px-2 py-0.5 rounded-full bg-[#FFF0EB] text-[#FF5A1F] border border-[#FF5A1F]/20">
+                        <span className="font-bold text-[11px] px-2 py-0.5 rounded-full bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border border-[#FF5A1F]/20 dark:border-[#FF5A1F]/30">
                           {proj.sessionType || "Sesi Foto"}
                         </span>
                         <SessionModeBadge proj={proj} />
 
                         {hasPassword ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#FFF0EB] text-[#FF5A1F] border border-[#FF5A1F]/20 font-medium">
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border border-[#FF5A1F]/20 dark:border-[#FF5A1F]/30 font-medium">
                             <Lock className="w-3 h-3" />
                             <span>Dilindungi Sandi</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#F4F1EA] text-[#121212]/60 border border-black/[0.06] font-medium">
+                          <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-[#F4F1EA] dark:bg-white/[0.06] text-[#121212]/60 dark:text-zinc-400 border border-black/[0.06] dark:border-white/10 font-medium">
                             <Unlock className="w-3 h-3" />
                             <span>Publik</span>
                           </span>
                         )}
                       </div>
 
-                      <h3 className="text-lg font-bold text-[#121212] tracking-tight">
+                      <h3 className="text-lg font-bold text-[#121212] dark:text-white tracking-tight">
                         {proj.clientName}
                       </h3>
                       {proj.sessionTitle && (
-                        <p className="text-xs font-semibold text-[#121212]/80 mt-0.5">
+                        <p className="text-xs font-semibold text-[#121212]/80 dark:text-zinc-300 mt-0.5">
                           {proj.sessionTitle}
                         </p>
                       )}
 
                       <div className="mt-3 space-y-1.5 text-xs">
                         {proj.location && (
-                          <div className="flex items-center gap-1.5 text-[#121212]/80">
-                            <MapPin className="w-3.5 h-3.5 text-[#C2410C] shrink-0" />
-                            <span className="text-[#121212]/60">Tempat:</span>
+                          <div className="flex items-center gap-1.5 text-[#121212]/80 dark:text-zinc-300">
+                            <MapPin className="w-3.5 h-3.5 text-[#FF5A1F] shrink-0" />
+                            <span className="text-[#121212]/60 dark:text-zinc-400">Tempat:</span>
                             <span className="truncate font-medium">{proj.location}</span>
                           </div>
                         )}
                         {(proj.sessionPurpose || proj.notes) && (
-                          <div className="flex items-center gap-1.5 text-[#121212]/80">
-                            <Target className="w-3.5 h-3.5 text-[#C2410C] shrink-0" />
-                            <span className="text-[#121212]/60">Tujuan:</span>
+                          <div className="flex items-center gap-1.5 text-[#121212]/80 dark:text-zinc-300">
+                            <Target className="w-3.5 h-3.5 text-[#FF5A1F] shrink-0" />
+                            <span className="text-[#121212]/60 dark:text-zinc-400">Tujuan:</span>
                             <span className="truncate font-medium">{proj.sessionPurpose || proj.notes}</span>
                           </div>
                         )}
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-black/[0.06] flex items-center justify-between gap-2 text-xs text-[#121212]/60">
+                      <div className="mt-4 pt-3 border-t border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-2 text-xs text-[#121212]/60 dark:text-zinc-400">
                         <div className="flex items-center gap-2">
                           <span>Kuota: </span>
-                          <strong className="text-[#121212]">{proj.maxQuota} foto</strong>
+                          <strong className="text-[#121212] dark:text-white">{proj.maxQuota} foto</strong>
                           <DeadlineBadge deadline={proj.selectionDeadline} />
                         </div>
-                        <span className="text-[11px] text-[#121212]/60 shrink-0">
+                        <span className="text-[11px] text-[#121212]/60 dark:text-zinc-400 shrink-0">
                           {proj.sessionDate || formatDate(proj.createdAt)}
                         </span>
                       </div>
 
-                      <div className="mt-2 text-[11px] flex items-center gap-1.5 text-[#121212]/60">
+                      <div className="mt-2 text-[11px] flex items-center gap-1.5 text-[#121212]/60 dark:text-zinc-400">
                         <SourceStatus
                           state={sourceStateOf(proj, Boolean(globalApiKey))}
                           count={photoCounts[proj.id]}
@@ -1245,10 +1245,10 @@ function doPost(e) {
                       </div>
                     </div>
 
-                    <div className="mt-5 pt-3 border-t border-black/[0.06] space-y-2">
+                    <div className="mt-5 pt-3 border-t border-black/[0.06] dark:border-white/[0.08] space-y-2">
                       <button
                         onClick={() => setInspectingProject(proj)}
-                        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-full bg-[#FFF0EB] hover:bg-[#FFE5DB] border border-[#FF5A1F]/30 text-[#FF5A1F] font-semibold text-xs transition-colors"
+                        className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-full bg-[#FFF0EB] hover:bg-[#FFE5DB] dark:bg-[#FF5A1F]/15 dark:hover:bg-[#FF5A1F]/25 border border-[#FF5A1F]/30 text-[#FF5A1F] font-semibold text-xs transition-colors"
                       >
                         <CheckCircle className="w-4 h-4" />
                         <span>Lihat Seleksi Klien</span>
@@ -1260,7 +1260,7 @@ function doPost(e) {
                           className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-full text-xs font-semibold border transition-colors ${
                             isCopied
                               ? "bg-emerald-600 text-[#FFFFFF] border-emerald-600"
-                              : "bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border-black/10"
+                              : "bg-white hover:bg-black/[0.04] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-[#71717A] hover:text-[#121212] dark:text-zinc-300 dark:hover:text-white border-black/10 dark:border-white/10"
                           }`}
                         >
                           {isCopied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
@@ -1269,7 +1269,7 @@ function doPost(e) {
 
                         <button
                           onClick={() => handlePreviewAsClient(proj.id)}
-                          className="p-2 rounded-full bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
+                          className="p-2 rounded-full bg-white hover:bg-black/[0.04] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-[#71717A] hover:text-[#121212] dark:text-zinc-300 dark:hover:text-white border border-black/10 dark:border-white/10 transition-colors"
                           title="Buka galeri klien ini"
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -1277,7 +1277,7 @@ function doPost(e) {
 
                         <button
                           onClick={() => openEditModal(proj)}
-                          className="p-2 rounded-full bg-white hover:bg-black/[0.04] text-[#71717A] hover:text-[#121212] border border-black/10 transition-colors"
+                          className="p-2 rounded-full bg-white hover:bg-black/[0.04] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-[#71717A] hover:text-[#121212] dark:text-zinc-300 dark:hover:text-white border border-black/10 dark:border-white/10 transition-colors"
                           title="Edit sesi"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -1290,7 +1290,7 @@ function doPost(e) {
                                 deleteProject(proj.id);
                               }
                             }}
-                            className="p-2 rounded-full bg-white hover:bg-rose-50 text-[#71717A] hover:text-rose-600 border border-black/10 transition-colors"
+                            className="p-2 rounded-full bg-white hover:bg-rose-50 dark:bg-white/[0.06] dark:hover:bg-rose-950/40 text-[#71717A] hover:text-rose-600 dark:text-zinc-300 dark:hover:text-rose-400 border border-black/10 dark:border-white/10 transition-colors"
                             title="Hapus sesi"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1319,17 +1319,17 @@ function doPost(e) {
         <div className="max-w-2xl space-y-5">
           {/* Admin Master PIN */}
           <div className="mtioon-card p-6">
-            <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+            <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
               <Lock className="w-4 h-4 text-[#C2410C]" />
               <span>PIN Master Admin</span>
             </h2>
-            <p className="text-xs text-[#121212]/60 mb-4 leading-relaxed">
+            <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-4 leading-relaxed">
               PIN ini melindungi akses ke Dashboard Admin agar klien tidak dapat membuka konfigurasi studio Anda.
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>PIN Master Baru</span>
                 </label>
@@ -1338,7 +1338,7 @@ function doPost(e) {
                   value={newPinInput}
                   onChange={(e) => setNewPinInput(e.target.value)}
                   placeholder="Contoh: studio2026"
-                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                 />
               </div>
 
@@ -1354,17 +1354,17 @@ function doPost(e) {
 
           {/* Global Google Drive API Key */}
           <div className="mtioon-card p-6">
-            <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+            <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
               <Sliders className="w-4 h-4 text-[#C2410C]" />
               <span>Kredensial Global Google Drive</span>
             </h2>
-            <p className="text-xs text-[#121212]/60 mb-4 leading-relaxed">
+            <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-4 leading-relaxed">
               Kunci API ini digunakan secara otomatis untuk folder Google Drive publik klien tanpa perlu memasukkan kunci berulang kali.
             </p>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Google Drive API Key v3</span>
                 </label>
@@ -1373,9 +1373,9 @@ function doPost(e) {
                   value={apiKeyInput}
                   onChange={(e) => setApiKeyInput(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                  className="w-full px-3.5 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                 />
-                <p className="text-[11px] text-[#121212]/60 mt-1.5 flex items-center gap-1">
+                <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1.5 flex items-center gap-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                   <span>
                     Tersimpan di cloud, ikut tampil di semua peramban Anda.
@@ -1395,11 +1395,11 @@ function doPost(e) {
 
           {/* Cloud sync (Firestore) */}
           <div className="mtioon-card p-6">
-            <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+            <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
               <Cloud className="w-4 h-4 text-[#C2410C]" />
               <span>Sinkronisasi Cloud (Firestore)</span>
             </h2>
-            <p className="text-xs text-[#121212]/60 mb-4 leading-relaxed">
+            <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-4 leading-relaxed">
               Pilihan klien disimpan di Firebase Firestore, sehingga Anda dapat
               melihatnya dari perangkat mana pun dan tautan sesi tetap membawa
               data terbaru walau dibuka di peramban yang berbeda.
@@ -1409,12 +1409,12 @@ function doPost(e) {
               <div
                 className={`flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-semibold ${
                   syncStatus === "live"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60"
                     : syncStatus === "connecting"
-                      ? "bg-[#FFF0EB] text-[#FF5A1F] border-[#FF5A1F]/20"
+                      ? "bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 text-[#FF5A1F] border-[#FF5A1F]/20 dark:border-[#FF5A1F]/30"
                       : syncStatus === "error"
-                        ? "bg-rose-50 text-rose-700 border-rose-200"
-                        : "bg-[#F4F1EA] text-[#121212]/60 border-black/[0.06]"
+                        ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/60"
+                        : "bg-[#F4F1EA] dark:bg-white/[0.04] text-[#121212]/60 dark:text-zinc-400 border-black/[0.06] dark:border-white/10"
                 }`}
                 data-testid="sync-status"
               >
@@ -1437,7 +1437,7 @@ function doPost(e) {
               </div>
 
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Konfigurasi Web App (JSON)</span>
                 </label>
@@ -1446,9 +1446,9 @@ function doPost(e) {
                   value={fbInput}
                   onChange={(e) => setFbInput(e.target.value)}
                   placeholder={'{"apiKey": "AIza...", "authDomain": "...", "projectId": "..."}'}
-                  className="w-full px-3.5 py-2 text-xs font-mono bg-[#F5F2EB] border border-black/10 rounded-[20px] text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all resize-y"
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-[20px] text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all resize-y"
                 />
-                <p className="text-[11px] text-[#121212]/60 mt-1.5 leading-relaxed">
+                <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1.5 leading-relaxed">
                   Firebase Console -&gt; Pengaturan proyek -&gt; Aplikasi saya -&gt;
                   SDK web -&gt; konfigurasi. Anda juga dapat mengisi
                   VITE_FIREBASE_CONFIG di file .env agar berlaku untuk semua perangkat.
@@ -1479,11 +1479,11 @@ function doPost(e) {
           </div>
 
           <div className="mtioon-card p-6">
-            <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
+            <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
               <HardDrive className="w-4 h-4 text-[#C2410C]" />
               <span>Video Hero (Cloudflare R2)</span>
             </h2>
-            <p className="text-xs text-[#121212]/60 mb-4 leading-relaxed">
+            <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-4 leading-relaxed">
               Wajib diisi untuk mengunggah video hero: file disimpan di bucket R2
               (gratis tanpa kartu kredit: 10GB penyimpanan, biaya kirim data $0)
               sehingga bisa diputar di semua peramban. Tanpa konfigurasi ini,
@@ -1493,7 +1493,7 @@ function doPost(e) {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Key className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Konfigurasi R2 (JSON)</span>
                 </label>
@@ -1504,9 +1504,9 @@ function doPost(e) {
                   placeholder={
                     '{"accountId": "...", "bucket": "...", "accessKeyId": "...", "secretAccessKey": "...", "publicBaseUrl": "https://pub-xxxx.r2.dev"}'
                   }
-                  className="w-full px-3.5 py-2 text-xs font-mono bg-[#F5F2EB] border border-black/10 rounded-[20px] text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all resize-y"
+                  className="w-full px-3.5 py-2 text-xs font-mono bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-[20px] text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all resize-y"
                 />
-                <p className="text-[11px] text-[#121212]/60 mt-1.5 leading-relaxed">
+                <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1.5 leading-relaxed">
                   Cloudflare Console -&gt; R2: buat bucket, lalu Manage R2 API
                   Tokens (izin Read &amp; Write, scope bucket + prefix studio/)
                   dan salin Public Development URL dari Settings bucket. Simpan
@@ -1543,23 +1543,23 @@ function doPost(e) {
       {/* TAB 3: GAS GUIDE */}
       {activeTab === "gas_guide" && (
         <div className="max-w-3xl mtioon-card p-6">
-          <h2 className="text-base font-bold text-[#121212] mb-1 flex items-center gap-2">
-            <Code2 className="w-4 h-4 text-[#121212]/60" />
+          <h2 className="text-base font-bold text-[#121212] dark:text-white mb-1 flex items-center gap-2">
+            <Code2 className="w-4 h-4 text-[#121212]/60 dark:text-zinc-400" />
             <span>Panduan Integrasi Google Sheets (Apps Script)</span>
           </h2>
-          <p className="text-xs text-[#121212]/60 mb-5 leading-relaxed">
+          <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mb-5 leading-relaxed">
             Terima pilihan foto klien langsung ke spreadsheet Google Sheets studio Anda secara otomatis dan gratis.
           </p>
 
           <div className="space-y-4">
-            <ol className="list-decimal list-inside space-y-1.5 text-xs text-[#121212]/80">
+            <ol className="list-decimal list-inside space-y-1.5 text-xs text-[#121212]/80 dark:text-zinc-300">
               <li>Buat Google Spreadsheet baru di Google Drive Anda.</li>
               <li>Buka menu <b>Extensions &gt; Apps Script</b>.</li>
               <li>Salin dan tempel kode di bawah ini:</li>
             </ol>
 
             <div className="relative">
-              <pre className="p-4 rounded-2xl bg-[#F4F1EA] border border-black/[0.06] text-[11px] text-[#121212]/80 overflow-x-auto max-h-60 leading-relaxed font-normal">
+              <pre className="p-4 rounded-2xl bg-[#F4F1EA] dark:bg-[#1C1C22] border border-black/[0.06] dark:border-white/10 text-[11px] text-[#121212]/80 dark:text-zinc-200 overflow-x-auto max-h-60 leading-relaxed font-normal">
                 {gasScriptCode}
               </pre>
               <button
@@ -1570,7 +1570,7 @@ function doPost(e) {
               </button>
             </div>
 
-            <ol start={4} className="list-decimal list-inside space-y-1.5 text-xs text-[#121212]/80">
+            <ol start={4} className="list-decimal list-inside space-y-1.5 text-xs text-[#121212]/80 dark:text-zinc-300">
               <li>Klik tombol <b>Deploy &gt; New deployment</b>.</li>
               <li>Pilih tipe <b>Web App</b>.</li>
               <li>Atur <b>Execute as: Me</b> dan <b>Who has access: Anyone</b>.</li>
@@ -1595,19 +1595,19 @@ function doPost(e) {
           }}
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center px-4 overflow-y-auto animate-fade-in"
         >
-          <div className="relative w-full max-w-3xl my-auto bg-white rounded-[28px] p-6 shadow-2xl">
-            <div className="sticky top-0 z-10 -mx-6 -mt-6 px-6 pt-5 pb-3 mb-3 bg-white border-b border-black/[0.06] rounded-t-[28px] flex items-center justify-between gap-3">
+          <div className="relative w-full max-w-3xl my-auto bg-white dark:bg-[#141417] border border-black/[0.08] dark:border-white/[0.1] rounded-[28px] p-6 shadow-2xl">
+            <div className="sticky top-0 z-10 -mx-6 -mt-6 px-6 pt-5 pb-3 mb-3 bg-white dark:bg-[#141417] border-b border-black/[0.06] dark:border-white/[0.08] rounded-t-[28px] flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-[#121212]">
+                <h3 className="text-base font-bold text-[#121212] dark:text-white">
                   {editingProject ? "Edit Sesi Klien" : "Buat Sesi Galeri Klien Baru"}
                 </h3>
-                <p className="text-xs text-[#121212]/60 mt-0.5">
+                <p className="text-xs text-[#121212]/60 dark:text-zinc-400 mt-0.5">
                   Atur mode sesi, sumber foto, kuota, dan akses galeri klien.
                 </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-full bg-[#F4F1EA] hover:bg-[#EDE9E0] text-[#121212]/60 hover:text-[#121212] transition-colors"
+                className="p-1.5 rounded-full bg-[#F4F1EA] hover:bg-[#EDE9E0] dark:bg-white/[0.08] dark:hover:bg-white/[0.14] text-[#121212]/60 hover:text-[#121212] dark:text-zinc-400 dark:hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1616,7 +1616,7 @@ function doPost(e) {
             <form onSubmit={handleSaveProjectForm} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Nama Klien / Pasangan</span>
                   </label>
@@ -1626,12 +1626,12 @@ function doPost(e) {
                     value={formClientName}
                     onChange={(e) => setFormClientName(e.target.value)}
                     placeholder="Contoh: Rian & Amanda"
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>ID / Kode Project</span>
                   </label>
@@ -1641,14 +1641,14 @@ function doPost(e) {
                     value={formProjectId}
                     onChange={(e) => setFormProjectId(e.target.value)}
                     placeholder="WED-2026-RIAN"
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                 </div>
               </div>
 
               {/* Mode Sesi: perorangan atau grup */}
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Mode Sesi</span>
                 </label>
@@ -1658,15 +1658,15 @@ function doPost(e) {
                     onClick={() => setFormSessionMode("individual")}
                     className={`text-left px-3 py-2 rounded-lg border transition-colors ${
                       formSessionMode === "individual"
-                        ? "bg-[#FFF0EB] border-[#FF5A1F]/40 text-[#121212]"
-                        : "bg-[#F5F2EB] border-black/10 text-[#121212]/60 hover:border-black/20"
+                        ? "bg-[#FFF0EB] border-[#FF5A1F]/40 text-[#121212] dark:bg-[#FF5A1F]/15 dark:border-[#FF5A1F]/40 dark:text-white"
+                        : "bg-[#F5F2EB] dark:bg-white/[0.04] border-black/10 dark:border-white/10 text-[#121212]/60 dark:text-zinc-400 hover:border-black/20 dark:hover:border-white/20"
                     }`}
                   >
                     <span className="text-xs font-semibold flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5" />
                       Perorangan
                     </span>
-                    <span className="text-[11px] text-[#121212]/60 block mt-0.5">
+                    <span className="text-[11px] text-[#121212]/60 dark:text-zinc-400 block mt-0.5">
                       Satu penerima, kuota pilihannya sendiri
                     </span>
                   </button>
@@ -1675,15 +1675,15 @@ function doPost(e) {
                     onClick={() => setFormSessionMode("group")}
                     className={`text-left px-3 py-2 rounded-lg border transition-colors ${
                       formSessionMode === "group"
-                        ? "bg-[#FFF0EB] border-[#FF5A1F]/40 text-[#121212]"
-                        : "bg-[#F5F2EB] border-black/10 text-[#121212]/60 hover:border-black/20"
+                        ? "bg-[#FFF0EB] border-[#FF5A1F]/40 text-[#121212] dark:bg-[#FF5A1F]/15 dark:border-[#FF5A1F]/40 dark:text-white"
+                        : "bg-[#F5F2EB] dark:bg-white/[0.04] border-black/10 dark:border-white/10 text-[#121212]/60 dark:text-zinc-400 hover:border-black/20 dark:hover:border-white/20"
                     }`}
                   >
                     <span className="text-xs font-semibold flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5" />
                       Grup
                     </span>
-                    <span className="text-[11px] text-[#121212]/60 block mt-0.5">
+                    <span className="text-[11px] text-[#121212]/60 dark:text-zinc-400 block mt-0.5">
                       Beberapa anggota, satu daftar bersama
                     </span>
                   </button>
@@ -1695,28 +1695,28 @@ function doPost(e) {
                       value={formMembers}
                       onChange={(e) => setFormMembers(e.target.value)}
                       placeholder="Nama anggota, pisahkan koma: Rina, Budi, Citra"
-                      className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                      className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                     />
-                    <p className="text-[11px] text-[#121212]/60 mt-1">
+                    <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1">
                       Kuota dan daftar pilihan dipakai bersama oleh seluruh anggota sesi ini.
                     </p>
                   </div>
                 ) : (
-                  <p className="text-[11px] text-[#121212]/60 mt-1.5">
+                  <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1.5">
                     Sesi untuk satu penerima dengan kuota pilihannya sendiri.
                   </p>
                 )}
               </div>
 
               {/* Sumber Foto: tautan folder Drive, tervalidasi sebelum disimpan */}
-              <div className="rounded-2xl border border-black/[0.06] bg-[#F4F1EA] p-3 space-y-2">
+              <div className="rounded-2xl border border-black/[0.06] dark:border-white/[0.08] bg-[#F4F1EA] dark:bg-[#1C1C22]/80 p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
-                  <label className="text-xs font-semibold text-[#121212]/80 flex items-center gap-1.5">
+                  <label className="text-xs font-semibold text-[#121212]/80 dark:text-zinc-300 flex items-center gap-1.5">
                     <FolderGit2 className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Sumber Foto (Google Drive)</span>
                   </label>
                   {formFolderId.trim() !== "" && Boolean(globalApiKey) && (
-                    <span className="text-[11px] text-emerald-700 font-medium">
+                    <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
                       {editingProject && photoCounts[editingProject.id]
                         ? `${photoCounts[editingProject.id]} foto siap`
                         : "Terhubung"}
@@ -1725,12 +1725,12 @@ function doPost(e) {
                 </div>
 
                 {!formFolderId.trim() ? (
-                  <p className="text-[11px] text-[#C2410C] bg-[#FFF0EB] border border-[#FF5A1F]/25 rounded-md px-2.5 py-2">
+                  <p className="text-[11px] text-[#C2410C] dark:text-[#FF5A1F] bg-[#FFF0EB] dark:bg-[#FF5A1F]/15 border border-[#FF5A1F]/25 dark:border-[#FF5A1F]/30 rounded-md px-2.5 py-2">
                     Belum ada foto. Tempel tautan folder Google Drive di bawah agar galeri
                     klien terisi.
                   </p>
                 ) : !globalApiKey ? (
-                  <p className="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-md px-2.5 py-2 flex items-center justify-between gap-2">
+                  <p className="text-[11px] text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-md px-2.5 py-2 flex items-center justify-between gap-2">
                     <span>Kunci API Google Drive belum diisi.</span>
                     <button
                       type="button"
@@ -1749,7 +1749,7 @@ function doPost(e) {
                     value={formFolderId}
                     onChange={(e) => setFormFolderId(e.target.value)}
                     placeholder="https://drive.google.com/drive/folders/..."
-                    className="flex-1 px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="flex-1 px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                   <button
                     type="button"
@@ -1765,16 +1765,16 @@ function doPost(e) {
                 {probeResult && (
                   <p
                     className={`text-[11px] flex items-start gap-1.5 ${
-                      probeResult.ok ? "text-emerald-700" : "text-rose-600"
+                      probeResult.ok ? "text-emerald-700 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                     }`}
                   >
                     <span>{probeResult.message}</span>
                   </p>
                 )}
 
-                <p className="text-[11px] text-[#121212]/60">
+                <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400">
                   Izin folder harus{" "}
-                  <span className="text-[#121212]/60">Anyone with the link can view</span>. Bisa
+                  <span className="text-[#121212]/80 dark:text-zinc-300 font-medium">Anyone with the link can view</span>. Bisa
                   ditempel tautan maupun ID folder.
                 </p>
               </div>
@@ -1782,14 +1782,14 @@ function doPost(e) {
               {/* Tipe Sesi & Tanggal Pelaksanaan */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Camera className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Tipe / Kategori Sesi Foto</span>
                   </label>
                   <select
                     value={formSessionType}
                     onChange={(e) => setFormSessionType(e.target.value)}
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   >
                     <option value="Pernikahan">Pernikahan (Wedding Day)</option>
                     <option value="Prewedding">Prewedding</option>
@@ -1803,7 +1803,7 @@ function doPost(e) {
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Tanggal Sesi (Opsional)</span>
                   </label>
@@ -1812,14 +1812,14 @@ function doPost(e) {
                     value={formSessionDate}
                     onChange={(e) => setFormSessionDate(e.target.value)}
                     placeholder="Contoh: 14 Maret 2026"
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                 </div>
               </div>
 
               {/* Batas Waktu Pilihan Foto (Deadline) */}
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                   <CalendarClock className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Batas Waktu Pilihan Foto</span>
                 </label>
@@ -1828,7 +1828,7 @@ function doPost(e) {
                     type="datetime-local"
                     value={formDeadline}
                     onChange={(e) => setFormDeadline(e.target.value)}
-                    className="flex-1 min-w-[190px] px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="flex-1 min-w-[190px] px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                   <div className="flex flex-wrap gap-1.5">
                     {[3, 7, 14].map((days) => (
@@ -1836,7 +1836,7 @@ function doPost(e) {
                         key={days}
                         type="button"
                         onClick={() => setFormDeadline(defaultDeadlineInput(days))}
-                        className="px-2.5 py-1.5 rounded-full bg-[#F5F2EB] hover:bg-[#EDE9E0] border border-black/10 text-[#121212]/80 text-[11px] font-semibold transition-colors"
+                        className="px-2.5 py-1.5 rounded-full bg-[#F5F2EB] hover:bg-[#EDE9E0] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] border border-black/10 dark:border-white/10 text-[#121212]/80 dark:text-zinc-300 text-[11px] font-semibold transition-colors"
                       >
                         +{days} hari
                       </button>
@@ -1844,13 +1844,13 @@ function doPost(e) {
                     <button
                       type="button"
                       onClick={() => setFormDeadline("")}
-                      className="px-2.5 py-1.5 rounded-full bg-white hover:bg-black/[0.03] border border-black/10 text-[#121212]/60 text-[11px] font-medium transition-colors"
+                      className="px-2.5 py-1.5 rounded-full bg-white hover:bg-black/[0.03] dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-black/10 dark:border-white/10 text-[#121212]/60 dark:text-zinc-400 text-[11px] font-medium transition-colors"
                     >
                       Tanpa batas
                     </button>
                   </div>
                 </div>
-                <p className="text-[11px] text-[#121212]/60 mt-1">
+                <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1">
                   Setelah lewat waktu, sesi terkunci otomatis untuk klien (pilihan tetap
                   tersimpan). Perpanjang tanggal untuk membuka kembali.
                 </p>
@@ -1859,7 +1859,7 @@ function doPost(e) {
               {/* Judul Sesi & Tempat / Lokasi */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1">
                     Tema / Judul Sesi
                   </label>
                   <input
@@ -1867,12 +1867,12 @@ function doPost(e) {
                     value={formSessionTitle}
                     onChange={(e) => setFormSessionTitle(e.target.value)}
                     placeholder="Contoh: Prewedding Alam & Sunset"
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Tempat / Lokasi Utama</span>
                   </label>
@@ -1881,14 +1881,14 @@ function doPost(e) {
                     value={formLocation}
                     onChange={(e) => setFormLocation(e.target.value)}
                     placeholder="Contoh: Kintamani & Pantai Melasti, Bali"
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                 </div>
               </div>
 
               {/* Tujuan & Esensi Sesi Foto */}
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                   <Target className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Tujuan Foto / Esensi Sesi</span>
                 </label>
@@ -1897,16 +1897,16 @@ function doPost(e) {
                   value={formSessionPurpose}
                   onChange={(e) => setFormSessionPurpose(e.target.value)}
                   placeholder="Contoh: Foto Cetak Kanvas Resepsi & Video Undangan Digital"
-                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                 />
-                <p className="text-[11px] text-[#121212]/60 mt-1">
+                <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1">
                   Menjelaskan esensi foto bagi klien (misal: album cetak, kanvas dekorasi, dokumentasi sakral).
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Kuota Maksimal Pilihan</span>
                   </label>
@@ -1916,12 +1916,12 @@ function doPost(e) {
                     max="1000"
                     value={formQuota}
                     onChange={(e) => setFormQuota(Number(e.target.value))}
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>Kata Sandi Galeri (Opsional)</span>
                   </label>
@@ -1937,12 +1937,12 @@ function doPost(e) {
                         ? "Biarkan kosong untuk mempertahankan sandi lama"
                         : "Kosongkan jika publik"
                     }
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                   {editingProject &&
                     !editingProject.password &&
                     Boolean(editingProject.passwordHash) && (
-                      <p className="text-[11px] text-[#121212]/60 mt-1">
+                      <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1">
                         Sandi tersimpan ter-hash dan tidak bisa ditampilkan kembali.
                       </p>
                     )}
@@ -1953,7 +1953,7 @@ function doPost(e) {
                         type="button"
                         onClick={() => setFormClearPassword((prev) => !prev)}
                         className={`mt-1.5 text-[11px] font-semibold transition-colors ${
-                          formClearPassword ? "text-rose-600" : "text-[#121212]/60 hover:text-rose-600"
+                          formClearPassword ? "text-rose-600 dark:text-rose-400" : "text-[#121212]/60 dark:text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400"
                         }`}
                       >
                         {formClearPassword
@@ -1966,7 +1966,7 @@ function doPost(e) {
 
               {/* Bab Acara & Lokasi */}
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                   <MapPin className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>Bab Acara & Lokasi Foto (Pisahkan koma)</span>
                 </label>
@@ -1975,16 +1975,16 @@ function doPost(e) {
                   value={formSections}
                   onChange={(e) => setFormSections(e.target.value)}
                   placeholder="Contoh: Persiapan (Hotel), Akad Nikah (Masjid), Resepsi (Ballroom)"
-                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                 />
-                <p className="text-[11px] text-[#121212]/60 mt-1">
-                  Format: <span className="text-[#121212]/60 font-mono">Nama Bab (Nama Lokasi)</span>, pisahkan dengan koma.
+                <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1">
+                  Format: <span className="text-[#121212]/70 dark:text-zinc-300 font-mono">Nama Bab (Nama Lokasi)</span>, pisahkan dengan koma.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-[#C2410C]" />
                     <span>WhatsApp Klien/Fotografer</span>
                   </label>
@@ -1993,12 +1993,12 @@ function doPost(e) {
                     value={formContact}
                     onChange={(e) => setFormContact(e.target.value)}
                     placeholder="08123456789"
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1">
+                  <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1">
                     Catatan Sesi (Opsional)
                   </label>
                   <input
@@ -2006,14 +2006,14 @@ function doPost(e) {
                     value={formNotes}
                     onChange={(e) => setFormNotes(e.target.value)}
                     placeholder="Paket Album Premium 2026"
-                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                    className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                   />
                 </div>
               </div>
 
               {/* Webhook Spreadsheet */}
               <div>
-                <label className="block text-[13px] font-semibold text-[#121212]/80 mb-1 flex items-center gap-1.5">
+                <label className="block text-[13px] font-semibold text-[#121212]/80 dark:text-zinc-300 mb-1 flex items-center gap-1.5">
                   <Code2 className="w-3.5 h-3.5 text-[#C2410C]" />
                   <span>URL Webhook Spreadsheet (Opsional)</span>
                 </label>
@@ -2022,15 +2022,15 @@ function doPost(e) {
                   value={formWebhookUrl}
                   onChange={(e) => setFormWebhookUrl(e.target.value)}
                   placeholder="https://script.google.com/macros/s/.../exec"
-                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] border border-black/10 rounded-full text-[#121212] placeholder-black/35 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white transition-all"
+                  className="w-full px-3 py-1 text-sm font-medium bg-[#F5F2EB] dark:bg-[#202026] border border-black/10 dark:border-white/10 rounded-full text-[#121212] dark:text-[#F4F4F6] placeholder-black/35 dark:placeholder-zinc-500 focus:outline-none focus:border-[#FF5A1F] focus:ring-2 focus:ring-[#FF5A1F]/20 focus:bg-white dark:focus:bg-[#1A1A20] transition-all"
                 />
-                <p className="text-[11px] text-[#121212]/60 mt-1">
-                  Diambil dari tab <span className="text-[#121212]/60">Integrasi</span>. Pilihan
+                <p className="text-[11px] text-[#121212]/60 dark:text-zinc-400 mt-1">
+                  Diambil dari tab <span className="text-[#121212]/80 dark:text-zinc-300 font-medium">Integrasi</span>. Pilihan
                   klien akan terkirim ke Google Sheets studio Anda.
                 </p>
               </div>
 
-              <div className="sticky bottom-0 z-10 -mx-6 px-6 pb-5 pt-3 bg-white border-t border-black/[0.06] rounded-b-[28px] mt-4 flex items-center justify-end gap-2">
+              <div className="sticky bottom-0 z-10 -mx-6 px-6 pb-5 pt-3 bg-white dark:bg-[#141417] border-t border-black/[0.06] dark:border-white/[0.08] rounded-b-[28px] mt-4 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

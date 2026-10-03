@@ -146,14 +146,36 @@ export const LandingPage: React.FC = () => {
       ?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  const previewShowcase =
-    showcaseItems.length > 0
-      ? showcaseItems.map((item) => ({
+  const previewShowcase = (() => {
+    const list: Array<{ id: string; name?: string; thumbnailUrl: string }> = [];
+    const seen = new Set<string>();
+
+    for (const item of showcaseItems) {
+      if (item.thumbnailUrl && !seen.has(item.thumbnailUrl)) {
+        seen.add(item.thumbnailUrl);
+        list.push({
           id: item.id,
           name: item.name,
           thumbnailUrl: item.thumbnailUrl,
-        }))
-      : photos.slice(0, 4);
+        });
+      }
+    }
+
+    // Complement with high-res sample photos so the gallery is rich & complete (8-10 photos)
+    for (const p of photos) {
+      if (list.length >= 10) break;
+      if (p.thumbnailUrl && !seen.has(p.thumbnailUrl)) {
+        seen.add(p.thumbnailUrl);
+        list.push({
+          id: p.id,
+          name: p.name || "Koleksi Studio",
+          thumbnailUrl: p.thumbnailUrl,
+        });
+      }
+    }
+
+    return list;
+  })();
 
   const sampleProjects = clientProjects.filter((p) => p.isSample);
   const primarySample = sampleProjects[0] || { projectId: "WED-2026-RIAN" };

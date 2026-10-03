@@ -56,7 +56,7 @@ const IDB_HERO_VIDEO_URL_KEY = "lumina_hero_video_url";
 const IDB_HERO_VIDEO_BLOB_KEY = "lumina_hero_video_blob";
 const IDB_STATE_MODIFIED_KEY = "lumina_studio_state_modified";
 
-export const MAX_SHOWCASE = 4;
+export const MAX_SHOWCASE = 8;
 export const MAX_HERO_VIDEO_BYTES = 30 * 1024 * 1024;
 
 export const DEFAULT_HERO_VIDEO_LOCAL = "/hero-video.mp4";

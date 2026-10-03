@@ -270,36 +270,13 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
               >
                 <img
                   src={photo.thumbnailUrl}
-                  alt="Contoh hasil kurasi foto"
+                  alt="Koleksi kurasi foto studio"
                   loading="lazy"
                   draggable={false}
                   className={`w-full h-full object-cover pointer-events-none transition-transform duration-700 ease-out ${
                     isHovered ? "scale-110" : "scale-100"
                   }`}
                 />
-
-                {/* Hover Dark Gradient Scrim */}
-                <div
-                  className={`absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent pointer-events-none transition-opacity duration-300 ${
-                    isHovered ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-
-                {/* Floating Interactive CTA Pill that glides up on hover */}
-                <div
-                  className={`absolute inset-x-3 bottom-3 p-2.5 rounded-xl bg-white/95 dark:bg-[#1C1C22]/95 backdrop-blur-md border border-black/10 dark:border-white/10 flex items-center justify-between shadow-lg pointer-events-none transition-all duration-300 ${
-                    isHovered
-                      ? "opacity-100 translate-y-0"
-                      : "opacity-0 translate-y-2"
-                  }`}
-                >
-                  <span className="text-[11px] font-bold text-[#121212] dark:text-white">
-                    Lihat Contoh Foto
-                  </span>
-                  <span className="w-5 h-5 rounded-full bg-[#FF5A1F] text-white flex items-center justify-center text-xs font-bold shadow-xs">
-                    →
-                  </span>
-                </div>
               </button>
             );
           })}

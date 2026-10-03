@@ -197,6 +197,7 @@ export const AdminDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState(globalApiKey);
   const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [apiKeyCloudWarn, setApiKeyCloudWarn] = useState(false);
 
   useEffect(() => {
     if (globalApiKey) {
@@ -205,6 +206,7 @@ export const AdminDashboard: React.FC = () => {
   }, [globalApiKey]);
   const [newPinInput, setNewPinInput] = useState("");
   const [pinSaved, setPinSaved] = useState(false);
+  const [pinCloudWarn, setPinCloudWarn] = useState(false);
   const [fbInput, setFbInput] = useState("");
   const [fbSaved, setFbSaved] = useState(false);
   const [fbError, setFbError] = useState<string | null>(null);
@@ -655,17 +657,25 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleSaveApiKey = async () => {
-    await setGlobalApiKey(apiKeyInput.trim());
-    setApiKeySaved(true);
-    setTimeout(() => setApiKeySaved(false), 2000);
+    const pushed = await setGlobalApiKey(apiKeyInput.trim());
+    setApiKeySaved(pushed);
+    setApiKeyCloudWarn(!pushed);
+    setTimeout(() => {
+      setApiKeySaved(false);
+      setApiKeyCloudWarn(false);
+    }, 2500);
   };
 
   const handleSavePin = async () => {
     if (!newPinInput.trim()) return;
-    await setAdminPin(newPinInput.trim());
+    const pushed = await setAdminPin(newPinInput.trim());
     setNewPinInput("");
-    setPinSaved(true);
-    setTimeout(() => setPinSaved(false), 2000);
+    setPinSaved(pushed);
+    setPinCloudWarn(!pushed);
+    setTimeout(() => {
+      setPinSaved(false);
+      setPinCloudWarn(false);
+    }, 2500);
   };
 
   const handleSaveFirebase = async () => {
@@ -1864,6 +1874,11 @@ function doPost(e) {
                 {pinSaved ? <Check className="w-4 h-4" /> : null}
                 <span>{pinSaved ? "PIN Berhasil Disimpan ke Cloud!" : "Simpan & Sinkronkan PIN Baru"}</span>
               </button>
+              {pinCloudWarn ? (
+                <p className="text-[11px] font-medium p-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                  PIN tersimpan di browser ini saja. Cloud tidak terjangkau (cek status Firestore), jadi PIN baru belum berlaku di perangkat lain.
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -1927,6 +1942,12 @@ function doPost(e) {
                   <span>{isTestingDrive ? "Menguji..." : "Uji Kunci API GDrive"}</span>
                 </button>
               </div>
+
+              {apiKeyCloudWarn ? (
+                <p className="text-[11px] font-medium p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                  Kunci tersimpan di browser ini saja. Cloud tidak terjangkau (cek status Firestore), jadi belum tersinkron ke perangkat lain.
+                </p>
+              ) : null}
 
               {driveTestResult && (
                 <p className={`text-[11px] font-medium p-2.5 rounded-xl ${

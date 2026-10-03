@@ -541,7 +541,7 @@ interface ProofingState {
   setIsSidebarActive: (active: boolean) => void;
   loginAdmin: (pin: string) => Promise<boolean>;
   logoutAdmin: () => void;
-  setAdminPin: (newPin: string) => Promise<void>;
+  setAdminPin: (newPin: string) => Promise<boolean>;
   openClientByCode: (codeOrUrl: string) => Promise<boolean>;
 
   loadPhotos: (forceReload?: boolean) => Promise<void>;
@@ -581,7 +581,7 @@ interface ProofingState {
   // Photo catalog of one session (uses the live list for the active one)
   getProjectPhotos: (projectId: string) => Promise<PhotoMetadata[]>;
   verifyPassword: (passwordInput: string) => Promise<boolean>;
-  setGlobalApiKey: (key: string) => Promise<void>;
+  setGlobalApiKey: (key: string) => Promise<boolean>;
   loadProjectSession: (projectId: string) => Promise<ClientSelectionSession>;
   importClientSelection: (projectId: string, selectedIds: string[], notes: Record<string, string>) => Promise<void>;
   // Saves the Firebase config override and restarts the cloud sync
@@ -1125,12 +1125,15 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
 
   setAdminPin: async (newPin: string) => {
     const clean = newPin.trim();
-    if (!clean) return;
+    if (!clean) return false;
     const hash = await hashPassword(clean);
     await set(IDB_ADMIN_PIN_HASH_KEY, hash);
     await del(IDB_ADMIN_PIN_KEY).catch(() => undefined);
     setStore({ adminPin: hash });
-    await persistStudioStateNow();
+    // True only when the cloud accepted it; a false return means the PIN
+    // lives in this browser alone (caller must say so instead of claiming
+    // a cloud save).
+    return persistStudioStateNow();
   },
 
   openClientByCode: async (codeOrUrl: string) => {
@@ -1495,7 +1498,9 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       });
       await getStore().loadPhotos(true);
     }
-    await persistStudioStateNow();
+    // True only when the cloud accepted it; a false return means the key
+    // lives in this browser alone (caller must say so).
+    return persistStudioStateNow();
   },
 
   setFirebaseConfigJson: async (json: string) => {

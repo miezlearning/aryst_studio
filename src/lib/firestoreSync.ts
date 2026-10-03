@@ -68,20 +68,52 @@ let pending: { projectId: string; session: ClientSelectionSession } | null = nul
 let statePushTimer: number | null = null;
 let pendingState: StudioState | null = null;
 
-const parseConfig = (json: string): Record<string, string> | null => {
-  const trimmed = (json || "").trim();
-  if (!trimmed.startsWith("{")) return null;
-  try {
-    const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-    const cfg: Record<string, string> = {};
-    for (const [key, value] of Object.entries(parsed)) {
-      if (typeof value === "string") cfg[key] = value;
+export const extractFirebaseConfig = (raw: string): Record<string, string> | null => {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return null;
+
+  // 1. Try standard JSON.parse first
+  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      const cfg: Record<string, string> = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        if (typeof value === "string") cfg[key] = value;
+      }
+      if (cfg.apiKey && cfg.projectId) return cfg;
+    } catch {
+      // Fall through to regex extraction
     }
-    if (cfg.apiKey && cfg.projectId) return cfg;
-    return null;
-  } catch {
-    return null;
   }
+
+  // 2. Lenient regex parser for JS object format directly copied from Firebase Console
+  const knownKeys = [
+    "apiKey",
+    "authDomain",
+    "projectId",
+    "storageBucket",
+    "messagingSenderId",
+    "appId",
+    "measurementId",
+  ];
+  const cfg: Record<string, string> = {};
+  for (const key of knownKeys) {
+    const regex = new RegExp(`['"]?${key}['"]?\\s*:\\s*['"\`]([^'"\`]+)['"\`]`, "i");
+    const match = trimmed.match(regex);
+    if (match && match[1]) {
+      cfg[key] = match[1].trim();
+    }
+  }
+
+  if (cfg.apiKey && cfg.projectId) {
+    return cfg;
+  }
+
+  return null;
+};
+
+const parseConfig = (json: string): Record<string, string> | null => {
+  return extractFirebaseConfig(json);
 };
 
 const normalize = (data: Record<string, unknown>): ClientSelectionSession => ({

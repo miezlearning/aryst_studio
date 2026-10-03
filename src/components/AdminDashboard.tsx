@@ -5,7 +5,7 @@ import { generateClientShareUrl } from "@/lib/sync";
 import { extractFolderId } from "@/lib/googleDrive";
 import { formatDate, verifyPassword } from "@/lib/utils";
 import { getR2Config, saveR2Config, parseR2Config, testR2Connection } from "@/lib/r2Storage";
-import { pingFirestore } from "@/lib/firestoreSync";
+import { pingFirestore, extractFirebaseConfig } from "@/lib/firestoreSync";
 import { ClientSelectionInspectorModal } from "./ClientSelectionInspectorModal";
 import { ShowcaseManager } from "./ShowcaseManager";
 import { HeroVideoManager } from "./HeroVideoManager";
@@ -661,23 +661,21 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleSaveFirebase = async () => {
-    const json = fbInput.trim();
-    if (!json) {
+    const raw = fbInput.trim();
+    if (!raw) {
       setFbError("Isi dulu konfigurasi Firebase, atau gunakan tombol Putuskan.");
       return;
     }
-    try {
-      const parsed = JSON.parse(json) as Record<string, unknown>;
-      if (typeof parsed.apiKey !== "string" || typeof parsed.projectId !== "string") {
-        setFbError("Konfigurasi harus memuat apiKey dan projectId.");
-        return;
-      }
-    } catch {
-      setFbError("Format JSON tidak valid. Salin apa adanya dari Firebase Console.");
+    const parsed = extractFirebaseConfig(raw);
+    if (!parsed) {
+      setFbError(
+        "Format konfigurasi tidak valid. Pastikan memuat apiKey dan projectId dari Firebase Console."
+      );
       return;
     }
     setFbError(null);
-    await setFirebaseConfigJson(json);
+    const cleanJson = JSON.stringify(parsed, null, 2);
+    await setFirebaseConfigJson(cleanJson);
     setFbInput("");
     setFbSaved(true);
     setTimeout(() => setFbSaved(false), 2000);

@@ -644,7 +644,7 @@ export const LandingPage: React.FC = () => {
           <div className="flex items-center gap-4 text-xs font-semibold text-[#71717A] dark:text-[#A1A1AA]">
             <span>Privasi Terjaga</span>
             <span>•</span>
-            <span>Tipografi Sunghyun Sans</span>
+            <span>Shooted by aryst studio</span>
             <span>•</span>
             <span
               onDoubleClick={() => setViewMode("admin")}

@@ -381,14 +381,16 @@ export const pushSelection = (projectId: string, session: ClientSelectionSession
   pushTimer = window.setTimeout(flushPush, PUSH_DEBOUNCE_MS);
 };
 
-// ── Studio-wide state (sessions, clients, landing, credentials) ──
+let lastKnownStateModified = 0;
 
 export const fetchStudioState = async (): Promise<StudioState | null> => {
   if (!db) return null;
   try {
     const snap = await getDoc(doc(db, STUDIO_COLLECTION, STUDIO_STATE_ID));
     if (!snap.exists()) return null;
-    return normalizeStudioState(snap.data() as Record<string, unknown>);
+    const res = normalizeStudioState(snap.data() as Record<string, unknown>);
+    if (res.lastModified > lastKnownStateModified) lastKnownStateModified = res.lastModified;
+    return res;
   } catch {
     return null;
   }
@@ -396,6 +398,9 @@ export const fetchStudioState = async (): Promise<StudioState | null> => {
 
 export const pushStudioState = (state: StudioState): void => {
   if (!db) return;
+  const nextModified = Math.max(Date.now(), lastKnownStateModified + 1);
+  state.lastModified = nextModified;
+  lastKnownStateModified = nextModified;
   pendingState = state;
   if (statePushTimer !== null) window.clearTimeout(statePushTimer);
   statePushTimer = window.setTimeout(flushStatePush, PUSH_DEBOUNCE_MS);
@@ -408,6 +413,9 @@ export const pushStudioStateNow = async (state: StudioState): Promise<boolean> =
     window.clearTimeout(statePushTimer);
     statePushTimer = null;
   }
+  const nextModified = Math.max(Date.now(), lastKnownStateModified + 1);
+  state.lastModified = nextModified;
+  lastKnownStateModified = nextModified;
   pendingState = null;
   try {
     await setDoc(doc(db, STUDIO_COLLECTION, STUDIO_STATE_ID), sanitizeForFirestore({ ...state }));
@@ -471,7 +479,11 @@ export const subscribeStudioState = (cb: (state: StudioState) => void): (() => v
     doc(current, STUDIO_COLLECTION, STUDIO_STATE_ID),
     (snap) => {
       handlers?.onStatus("live");
-      if (snap.exists()) cb(normalizeStudioState(snap.data() as Record<string, unknown>));
+      if (snap.exists()) {
+        const data = normalizeStudioState(snap.data() as Record<string, unknown>);
+        if (data.lastModified > lastKnownStateModified) lastKnownStateModified = data.lastModified;
+        cb(data);
+      }
     },
     (err) => {
       handlers?.onStatus("error", err?.message || "Gagal berlangganan studio state");

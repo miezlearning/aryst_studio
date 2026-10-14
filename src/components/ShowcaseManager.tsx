@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useProofingStore, MAX_SHOWCASE } from "@/lib/storage";
-import { downscaleImageFile } from "@/lib/image";
+import { getR2Config, uploadImageR2 } from "@/lib/r2Storage";
 import { ShowcaseCandidate } from "@/types";
 import {
   Plus,
@@ -194,22 +194,26 @@ export const ShowcaseManager: React.FC = () => {
         }
         setRow(row.id, { status: "working" });
         try {
-          const { dataUrl } = await downscaleImageFile(file);
+          const r2 = await getR2Config();
+          if (!r2) {
+            throw new Error("Cloudflare R2 belum terkonfigurasi. Pastikan R2 telah diatur di Pengaturan Studio atau .env.");
+          }
+          const mediaUrl = await uploadImageR2(file, r2);
           const ok = await addShowcaseUpload({
             id: `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             name: file.name,
-            thumbnailUrl: dataUrl,
-            previewUrl: dataUrl,
+            thumbnailUrl: mediaUrl,
+            previewUrl: mediaUrl,
             source: "upload",
           });
           if (row.thumb.startsWith("blob:")) URL.revokeObjectURL(row.thumb);
           if (!ok) {
-            setRow(row.id, { status: "error", error: "Ditolak", thumb: dataUrl });
+            setRow(row.id, { status: "error", error: "Ditolak", thumb: mediaUrl });
             markRemainingSkipped("Dilewati");
             break;
           }
           added += 1;
-          setRow(row.id, { status: "done", thumb: dataUrl });
+          setRow(row.id, { status: "done", thumb: mediaUrl });
         } catch (err) {
           if (row.thumb.startsWith("blob:")) URL.revokeObjectURL(row.thumb);
           setRow(row.id, {
@@ -372,6 +376,8 @@ export const ShowcaseManager: React.FC = () => {
                   src={item.thumbnailUrl}
                   alt={item.name}
                   loading="lazy"
+                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover"
                 />
                 <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/75 text-white backdrop-blur-sm border border-white/20">

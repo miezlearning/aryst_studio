@@ -122,6 +122,34 @@ export const uploadHeroVideoR2 = async (blob: Blob, cfg: R2Config): Promise<stri
   return publicUrl;
 };
 
+/**
+ * Upload an image to the R2 bucket and return its public URL.
+ */
+export const uploadImageR2 = async (blob: Blob, cfg: R2Config): Promise<string> => {
+  const rawExt = (blob.type.split("/")[1] || "jpg").replace(/[^a-z0-9]/gi, "") || "jpg";
+  const ext = rawExt === "jpeg" ? "jpg" : rawExt;
+  const objectKey = `showcase/img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+  const host = `${cfg.accountId}.r2.cloudflarestorage.com`;
+  const objectUrl = `https://${host}/${encodeKeyPath(cfg.bucket)}/${encodeKeyPath(objectKey)}`;
+  const contentType = blob.type || "image/jpeg";
+
+  const aws = new AwsClient({
+    accessKeyId: cfg.accessKeyId,
+    secretAccessKey: cfg.secretAccessKey,
+    region: "auto",
+    service: "s3",
+  });
+  const res = await aws.fetch(objectUrl, {
+    method: "PUT",
+    headers: { "content-type": contentType },
+    body: blob,
+  });
+  if (!res.ok) {
+    throw new Error(`R2 menolak unggahan gambar (HTTP ${res.status}). Periksa izin bucket.`);
+  }
+  return `${cfg.publicBaseUrl}/${objectKey}`;
+};
+
 /** Probe connection to Cloudflare R2 bucket: tests authorization and read/write availability. */
 export const testR2Connection = async (
   cfg: R2Config

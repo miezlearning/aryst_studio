@@ -757,7 +757,8 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     let savedClients = (await get<Client[]>(IDB_CLIENTS_KEY)) || [];
     let savedShowcase = (await get<ShowcaseItem[]>(IDB_SHOWCASE_KEY)) || [];
     let savedHeroVideoUrl = (await get<string>(IDB_HERO_VIDEO_URL_KEY)) || "";
-    const savedHeroVideoBlob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
+    // Clean up any legacy video blob from IndexedDB (media is strictly hosted in R2)
+    void del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
 
     // Credentials adopt independently of the projects guard below: an empty
     // project list must never veto the admin PIN or API key, or a fresh
@@ -775,9 +776,22 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     // IndexedDB serves strictly as an offline mirror & fast startup cache
     let stateModified = (await get<number>(IDB_STATE_MODIFIED_KEY)) || 0;
     if (cloudState && cloudState.projects && cloudState.projects.length > 0) {
-      savedProjects = cloudState.projects;
-      savedClients = cloudState.clients || [];
-      savedHeroVideoUrl = cloudState.heroVideoUrl || "";
+      // Merge cloud projects with existing local projects to preserve newly created galleries
+      const projectMap = new Map<string, ClientProject>();
+      cloudState.projects.forEach((p) => projectMap.set(p.id, p));
+      savedProjects.forEach((p) => {
+        if (!projectMap.has(p.id)) projectMap.set(p.id, p);
+      });
+      savedProjects = Array.from(projectMap.values());
+
+      const clientMap = new Map<string, Client>();
+      (cloudState.clients || []).forEach((c) => clientMap.set(c.id, c));
+      savedClients.forEach((c) => {
+        if (!clientMap.has(c.id)) clientMap.set(c.id, c);
+      });
+      savedClients = Array.from(clientMap.values());
+
+      savedHeroVideoUrl = cloudState.heroVideoUrl || savedHeroVideoUrl || "";
       const cloudDocs = await fetchShowcaseCloud();
       cloudShowcaseDocs = new Map(cloudDocs.map((item) => [item.id, item]));
       cloudShowcaseOrder = cloudState.showcaseOrder || [];
@@ -961,7 +975,7 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
       photos: cachedPhotos && cachedPhotos.length > 0 ? cachedPhotos : [],
       showcaseItems: savedShowcase.slice(0, MAX_SHOWCASE),
       heroVideoUrl: savedHeroVideoUrl,
-      hasHeroVideoUpload: Boolean(savedHeroVideoBlob) && !savedHeroVideoUrl,
+      hasHeroVideoUpload: Boolean(savedHeroVideoUrl),
       isBooted: true,
     });
 
@@ -1621,10 +1635,10 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     };
     const updated: ShowcaseItem[] = [...showcaseItems, item];
     await set(IDB_SHOWCASE_KEY, updated);
-    setStore({ showcaseItems: updated });
+    setStore({ showcaseItems: updated, showcaseRev: getStore().showcaseRev + 1 });
     notifyShowcaseChange();
     pushShowcaseCloud(asCloudShowcase(item));
-    persistStudioState();
+    await persistStudioStateNow();
     return true;
   },
 
@@ -1635,20 +1649,20 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     const stored: ShowcaseItem = { ...item, source: "upload" };
     const updated: ShowcaseItem[] = [...showcaseItems, stored];
     await set(IDB_SHOWCASE_KEY, updated);
-    setStore({ showcaseItems: updated });
+    setStore({ showcaseItems: updated, showcaseRev: getStore().showcaseRev + 1 });
     notifyShowcaseChange();
     pushShowcaseCloud(asCloudShowcase(stored));
-    persistStudioState();
+    await persistStudioStateNow();
     return true;
   },
 
   removeShowcaseItem: async (id: string) => {
     const updated = getStore().showcaseItems.filter((item) => item.id !== id);
     await set(IDB_SHOWCASE_KEY, updated);
-    setStore({ showcaseItems: updated });
+    setStore({ showcaseItems: updated, showcaseRev: getStore().showcaseRev + 1 });
     notifyShowcaseChange();
     deleteShowcaseCloud(id);
-    persistStudioState();
+    await persistStudioStateNow();
   },
 
   moveShowcaseItem: async (id: string, direction: -1 | 1) => {
@@ -1658,82 +1672,54 @@ export const useProofingStore = create<ProofingState>((setStore, getStore) => ({
     if (idx < 0 || target < 0 || target >= items.length) return;
     [items[idx], items[target]] = [items[target], items[idx]];
     await set(IDB_SHOWCASE_KEY, items);
-    setStore({ showcaseItems: items });
+    setStore({ showcaseItems: items, showcaseRev: getStore().showcaseRev + 1 });
     notifyShowcaseChange();
-    persistStudioState();
+    await persistStudioStateNow();
   },
 
   resetShowcase: async () => {
     await set(IDB_SHOWCASE_KEY, []);
-    setStore({ showcaseItems: [] });
+    setStore({ showcaseItems: [], showcaseRev: getStore().showcaseRev + 1 });
     notifyShowcaseChange();
     void clearShowcaseCloud();
-    persistStudioState();
+    await persistStudioStateNow();
   },
 
   setHeroVideoUrl: async (url: string) => {
     const clean = url.trim();
     await set(IDB_HERO_VIDEO_URL_KEY, clean);
     revokeHeroBlobUrl();
+    setStore({ heroVideoUrl: clean, hasHeroVideoUpload: Boolean(clean), heroVideoRev: getStore().heroVideoRev + 1 });
     notifyHeroVideoChange("url", clean);
-    persistStudioState();
+    await persistStudioStateNow();
   },
 
   saveHeroVideoUpload: async (blob: Blob) => {
-    // 1. Immediately store the uploaded video in local IndexedDB so it always
-    // plays smoothly in this browser without requiring an external cloud server
-    await set(IDB_HERO_VIDEO_BLOB_KEY, blob);
-    await set(IDB_HERO_VIDEO_URL_KEY, "");
-    notifyHeroVideoChange("upload");
-
-    // 2. If Cloudflare R2 is configured, also upload to R2 for public sync.
-    // R2 failures are propagated (not silenced): the local copy above keeps
-    // this browser playing, but the user must see the real error so other
-    // devices are not left with a dead URL.
     const r2 = await getR2Config();
-    if (r2) {
-      try {
-        const url = await uploadHeroVideoR2(blob, r2);
-        await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
-        await set(IDB_HERO_VIDEO_URL_KEY, url);
-        revokeHeroBlobUrl();
-        notifyHeroVideoChange("url", url);
-        persistStudioState();
-      } catch (err) {
-        const detail = err instanceof Error ? err.message : "Unggahan R2 gagal.";
-        throw new Error(`${detail} Video tetap tersimpan di browser ini saja.`);
-      }
+    if (!r2) {
+      throw new Error("Cloudflare R2 belum terkonfigurasi. Pastikan R2 telah diatur di Pengaturan Studio atau .env.");
     }
+    const url = await uploadHeroVideoR2(blob, r2);
+    await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
+    await set(IDB_HERO_VIDEO_URL_KEY, url);
+    revokeHeroBlobUrl();
+    setStore({ heroVideoUrl: url, hasHeroVideoUpload: true, heroVideoRev: getStore().heroVideoRev + 1 });
+    notifyHeroVideoChange("url", url);
+    await persistStudioStateNow();
   },
 
   clearHeroVideo: async () => {
     await del(IDB_HERO_VIDEO_BLOB_KEY).catch(() => undefined);
     await set(IDB_HERO_VIDEO_URL_KEY, "");
     revokeHeroBlobUrl();
+    setStore({ heroVideoUrl: "", hasHeroVideoUpload: false, heroVideoRev: getStore().heroVideoRev + 1 });
     notifyHeroVideoChange("clear");
-    persistStudioState();
+    await persistStudioStateNow();
   },
 
   resolveHeroVideoUrl: async () => {
     const { heroVideoUrl } = getStore();
-    if (heroVideoUrl) return heroVideoUrl;
-    try {
-      const blob = await get<Blob>(IDB_HERO_VIDEO_BLOB_KEY);
-      if (blob && blob.size > 0) {
-        // Stable object URL per blob: re-resolving (tab focus, sync, upload
-        // in another tab) must not mint a new URL, or every consumer would
-        // reload the video and flash the skeleton again.
-        const key = `${blob.size}:${blob.type}`;
-        if (!heroBlobUrl || heroBlobUrl.key !== key) {
-          revokeHeroBlobUrl();
-          heroBlobUrl = { key, url: URL.createObjectURL(blob) };
-        }
-        return heroBlobUrl.url;
-      }
-    } catch {
-      // Fall through to default
-    }
-    return DEFAULT_HERO_VIDEO_LOCAL;
+    return heroVideoUrl || DEFAULT_HERO_VIDEO_LOCAL;
   },
 
   loadPhotos: async (forceReload = false) => {
@@ -2007,8 +1993,6 @@ let cloudShowcaseDocs = new Map<string, ShowcaseCloudItem>();
 const applyCloudShowcase = () => {
   const order = cloudShowcaseOrder;
   if (!order) return;
-  // Never wipe a populated local showcase while its docs are still loading
-  if (order.length > 0 && !order.every((id) => cloudShowcaseDocs.has(id))) return;
   const items = order
     .map((id) => cloudShowcaseDocs.get(id))
     .filter((item): item is ShowcaseCloudItem => Boolean(item))
@@ -2018,7 +2002,7 @@ const applyCloudShowcase = () => {
   const same =
     items.length === current.length && items.every((item, i) => item.id === current[i]?.id);
   if (same) return;
-  useProofingStore.setState({ showcaseItems: items });
+  useProofingStore.setState({ showcaseItems: items, showcaseRev: useProofingStore.getState().showcaseRev + 1 });
   void set(IDB_SHOWCASE_KEY, items);
 };
 

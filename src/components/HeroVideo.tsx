@@ -60,6 +60,7 @@ export const HeroVideo: React.FC = () => {
       return;
     }
     srcRef.current = effectiveUrl;
+    setBroken([]);
     setCustomSrc(effectiveUrl);
     setResolved(true);
   }, [resolveHeroVideoUrl]);

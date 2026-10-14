@@ -64,10 +64,14 @@ jobs:
 
       - name: Build Static Web App
         env:
-          VITE_GOOGLE_API_KEY: ${{ secrets.PROD_GOOGLE_API_KEY }}
-          VITE_FIREBASE_CONFIG: ${{ secrets.VITE_FIREBASE_CONFIG }}
-          VITE_R2_CONFIG: ${{ secrets.VITE_R2_CONFIG }}
-        run: npm run build
+          PROD_GOOGLE_API_KEY: ${{ secrets.PROD_GOOGLE_API_KEY }}
+          SECRET_FIREBASE_CONFIG: ${{ secrets.VITE_FIREBASE_CONFIG }}
+          SECRET_R2_CONFIG: ${{ secrets.VITE_R2_CONFIG }}
+        run: |
+          if [ -n "$PROD_GOOGLE_API_KEY" ]; then export VITE_GOOGLE_API_KEY="$PROD_GOOGLE_API_KEY"; fi
+          if [ -n "$SECRET_FIREBASE_CONFIG" ]; then export VITE_FIREBASE_CONFIG="$SECRET_FIREBASE_CONFIG"; fi
+          if [ -n "$SECRET_R2_CONFIG" ]; then export VITE_R2_CONFIG="$SECRET_R2_CONFIG"; fi
+          npm run build
 
       - name: SPA Route Fallback & Jekyll Bypass
         run: |

@@ -381,10 +381,8 @@ export const HeroVideoManager: React.FC = () => {
     }
   };
 
-  const activeSource = hasHeroVideoUpload
-    ? "File upload lokal"
-    : heroVideoUrl
-    ? "URL kustom (Cloud)"
+  const activeSource = heroVideoUrl
+    ? (heroVideoUrl.includes("r2") ? "Cloudflare R2" : "URL Kustom")
     : "Default studio bawaan";
 
   return (

@@ -272,6 +272,8 @@ export const ShowcaseStrip: React.FC<ShowcaseStripProps> = ({
                   src={photo.thumbnailUrl}
                   alt="Koleksi kurasi foto studio"
                   loading="lazy"
+                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
                   draggable={false}
                   className={`w-full h-full object-cover pointer-events-none transition-transform duration-700 ease-out ${
                     isHovered ? "scale-110" : "scale-100"
